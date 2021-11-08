@@ -1,0 +1,302 @@
+import React from "react";
+
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createStackNavigator } from "@react-navigation/stack";
+import WorkInProgress from "./WorkInProgress";
+import posed from "react-native-pose";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import BottomTabNavigator from "../../components/Navigation/BottomTabNavigator";
+import Dashboard from "./Dashboard/Dashboard";
+import Notifications from "./Notifications";
+import CitizenEngagement from "./CitizenEngagement/CitizenEngagement";
+import ParticipatoryBudgetingList from "./ParticipatoryBudgeting/ParticipatoryBudgetingList";
+import PhaseTasks from "./PhaseTasks/PhaseTasks";
+import DocumentTask from "./DocumentTask/DocumentTask";
+import Diagnostics from "./Diagnostics";
+import SyncAttachments from "./SyncAttachments/SyncAttachments";
+import RegisterSubprojects from "./RegisterSubprojects/RegisterSubprojects";
+import RegisterVotesActivity from "./RegisterVotesActivity/RegisterVotesActivity";
+import BudgetAllocation from "./BudgetAllocation/BudgetAllocation";
+import BudgetLog from "./BudgetLog/BudgetLog";
+import GRM from "./GRM/GRM";
+import CitizenReport from "./CitizenReport/CitizenReport";
+import CitizenReportStep2 from "./CitizenReportStep2/CitizenReportStep2";
+import CitizenReportStep3 from "./CitizenReportStep3/CitizenReportStep3";
+import CitizenReportStep4 from "./CitizenReportStep4/CitizenReportStep4";
+import IssueSearch from "./IssueSearch/IssueSearch";
+import CitizenReportContactInfo from "./CitizenReportContactInfo/CitizenReportContactInfo";
+import IssueDetail from "./IssueDetail/IssueDetail";
+import CitizenReportIntro from "./CitizenReportIntro/CitizenReportIntro";
+import CitizenReportLocationStep from "./CitizenReportLocationStep/CitizenReportLocationStep";
+
+const iconConfig = {
+  focused: {
+    x: 0,
+    transition: { type: "tween", ease: "linear" },
+  },
+  unfocused: { x: 0 },
+};
+
+const customHeaderOptions = (label) => ({
+  headerBackTitle: () => null,
+  headerTintColor: "#00bc82",
+  headerTitle: label,
+  headerTitleAllowFontScaling: true,
+  headerTitleAlign: "center",
+  headerTitleStyle: {
+    fontFamily: "Poppins_500Medium",
+    fontSize: 20,
+    fontWeight: "500",
+    fontStyle: "normal",
+    letterSpacing: 0,
+    textAlign: "left",
+    color: "#373737",
+  },
+});
+
+const Tab = createBottomTabNavigator();
+const AnimatedFeatherIcon = posed(Feather)(iconConfig);
+const AnimatedIonicons = posed(Ionicons)(iconConfig);
+
+const HomeStack = createStackNavigator();
+const NotificationsStack = createStackNavigator();
+function DashboardStackScreen() {
+  return (
+    <HomeStack.Navigator>
+      {/*<HomeStack.Screen*/}
+      {/*  options={{ headerShown: false }}*/}
+      {/*  name="Dashboard"*/}
+      {/*  component={Dashboard}*/}
+      {/*/>*/}
+      {/*<HomeStack.Screen*/}
+      {/*  options={({ navigation, route }) => ({*/}
+      {/*    headerBackTitle: () => null,*/}
+      {/*  })}*/}
+      {/*  name="WorkInProgress"*/}
+      {/*  component={WorkInProgress}*/}
+      {/*/>*/}
+      {/*<HomeStack.Screen*/}
+      {/*  name="CitizenEngagement"*/}
+      {/*  component={CitizenEngagement}*/}
+      {/*  options={({ navigation, route }) =>*/}
+      {/*    customHeaderOptions("Engagement Citoyen")*/}
+      {/*  }*/}
+      {/*/>*/}
+
+      {/*GRM Module*/}
+      <HomeStack.Screen
+        name="GRM"
+        component={GRM}
+        options={({ navigation, route }) => customHeaderOptions("MGR")}
+      />
+      <HomeStack.Screen
+        name="CitizenReportIntro"
+        component={CitizenReportIntro}
+        options={({ navigation, route }) =>
+          customHeaderOptions("ADL Citizen Input")
+        }
+      />
+      <HomeStack.Screen
+        name="CitizenReport"
+        component={CitizenReport}
+        options={({ navigation, route }) =>
+          customHeaderOptions("ADL Citizen Input")
+        }
+      />
+      <HomeStack.Screen
+        name="CitizenReportContactInfo"
+        component={CitizenReportContactInfo}
+        options={({ navigation, route }) =>
+          customHeaderOptions("ADL Citizen Input")
+        }
+      />
+      <HomeStack.Screen
+        name="CitizenReportStep2"
+        component={CitizenReportStep2}
+        options={({ navigation, route }) =>
+          customHeaderOptions("ADL Citizen Input")
+        }
+      />
+      <HomeStack.Screen
+        name="CitizenReportLocationStep"
+        component={CitizenReportLocationStep}
+        options={({ navigation, route }) =>
+          customHeaderOptions("ADL Citizen Input")
+        }
+      />
+      <HomeStack.Screen
+        name="CitizenReportStep3"
+        component={CitizenReportStep3}
+        options={({ navigation, route }) =>
+          customHeaderOptions("ADL Citizen Input")
+        }
+      />
+      <HomeStack.Screen
+        name="CitizenReportStep4"
+        component={CitizenReportStep4}
+        options={({ navigation, route }) => {
+          return {
+            ...customHeaderOptions("ADL Citizen Input"),
+            headerLeft: () => null,
+          };
+        }}
+      />
+
+      <HomeStack.Screen
+        name="IssueSearch"
+        component={IssueSearch}
+        options={({ navigation, route }) =>
+          customHeaderOptions("Summary of Your Work")
+        }
+      />
+
+      <HomeStack.Screen
+        name="IssueDetail"
+        component={IssueDetail}
+        options={({ navigation, route }) =>
+          customHeaderOptions(route.params.item?.title)
+        }
+      />
+
+      <HomeStack.Screen
+        name="RegisterSubprojects"
+        component={RegisterSubprojects}
+        options={({ navigation, route }) =>
+          customHeaderOptions("Engagement Citoyen")
+        }
+      />
+      <HomeStack.Screen
+        name="BudgetAllocation"
+        component={BudgetAllocation}
+        options={({ navigation, route }) =>
+          customHeaderOptions("Budgetisation")
+        }
+      />
+      <HomeStack.Screen
+        name="BudgetLog"
+        component={BudgetLog}
+        options={({ navigation, route }) => customHeaderOptions("Budget Log")}
+      />
+      <HomeStack.Screen
+        name="RegisterVotesActivity"
+        component={RegisterVotesActivity}
+        options={({ navigation, route }) =>
+          customHeaderOptions("Enregistrer les votes")
+        }
+      />
+      <HomeStack.Screen
+        name="ParticipatoryBudgetingList"
+        component={ParticipatoryBudgetingList}
+        options={({ navigation, route }) =>
+          customHeaderOptions("Budget Participatif")
+        }
+      />
+      <HomeStack.Screen
+        name="PhaseTasks"
+        component={PhaseTasks}
+        options={({ navigation, route }) => customHeaderOptions("Phase Tasks")}
+      />
+      <HomeStack.Screen
+        name="DocumentTask"
+        component={DocumentTask}
+        options={({ navigation, route }) =>
+          customHeaderOptions("Document Task")
+        }
+      />
+      <HomeStack.Screen
+        name="SyncAttachments"
+        component={SyncAttachments}
+        options={({ navigation, route }) => customHeaderOptions("Sync Files")}
+      />
+      {/*<HomeStack.Screen name="Details" component={WorkInProgress} />*/}
+    </HomeStack.Navigator>
+  );
+}
+
+function NotificationsStackScreen() {
+  return (
+    <NotificationsStack.Navigator>
+      <NotificationsStack.Screen
+        options={{
+          headerShown: true,
+          headerTitleStyle: {
+            alignSelf: "center",
+            fontFamily: "Poppins_500Medium",
+          },
+        }}
+        name="Notifications"
+        component={Notifications}
+      />
+      <NotificationsStack.Screen
+        name="WorkInProgress"
+        component={WorkInProgress}
+      />
+    </NotificationsStack.Navigator>
+  );
+}
+
+const HomeRouter = () => {
+  return (
+    <BottomTabNavigator>
+      <Tab.Screen
+        name="Dashboard"
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <AnimatedFeatherIcon
+              pose={focused ? "focused" : "unfocused"}
+              name="home"
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+        component={DashboardStackScreen}
+      />
+      <Tab.Screen
+        name="Notifications"
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <AnimatedIonicons
+              pose={focused ? "focused" : "unfocused"}
+              name="notifications-outline"
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+        component={NotificationsStackScreen}
+      />
+      <Tab.Screen
+        name="Diagnostics"
+        options={{
+          header: true,
+          tabBarIcon: ({ focused, color, size }) => (
+            <AnimatedIonicons
+              pose={focused ? "focused" : "unfocused"}
+              name="analytics"
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+        component={Diagnostics}
+      />
+      <Tab.Screen
+        name="Profile"
+        options={{
+          tabBarIcon: ({ focused, color, size }) => (
+            <AnimatedFeatherIcon
+              pose={focused ? "focused" : "unfocused"}
+              name="user"
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+        component={WorkInProgress}
+      />
+    </BottomTabNavigator>
+  );
+};
+
+export default HomeRouter;

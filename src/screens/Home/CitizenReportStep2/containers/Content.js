@@ -1,0 +1,486 @@
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  ScrollView,
+  Text,
+  Platform,
+  KeyboardAvoidingView,
+  ImageBackground,
+  TouchableOpacity,
+  TextInput as NativeTextInput,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { styles } from "./Content.styles";
+import { Button, Checkbox, IconButton, TextInput } from "react-native-paper";
+import { colors } from "../../../../utils/colors";
+import CustomDropDownPicker from "../../../../components/CustomDropDownPicker/CustomDropDownPicker";
+import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
+import moment from "moment";
+import { Audio } from "expo-av";
+import i18n from "i18n-js";
+
+const theme = {
+  roundness: 12,
+  colors: {
+    ...colors,
+    background: "white",
+    placeholder: "#dedede",
+    text: "#707070",
+  },
+};
+
+function Content({ stepOneParams, issueCategories, issueTypes }) {
+  const navigation = useNavigation();
+  const [pickerValue, setPickerValue] = useState(null);
+  const [pickerValue2, setPickerValue2] = useState(null);
+  const [checked, setChecked] = useState(false);
+  const [additionalDetails, setAdditionalDetails] = useState(null);
+  const [date, setDate] = useState(null);
+  const [attachment, setAttachment] = useState({});
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [recording, setRecording] = useState();
+  const [items, setItems] = useState(issueTypes ?? []);
+  const [recordingURI, setRecordingURI] = useState();
+  const [items2, setItems2] = useState(issueCategories ?? []);
+  const [sound, setSound] = React.useState();
+
+  useEffect(() => {
+    if (issueTypes) {
+      setItems(issueTypes);
+    }
+    if (issueCategories) {
+      setItems2(issueCategories);
+    }
+  }, [issueTypes, issueCategories]);
+
+  React.useEffect(() => {
+    return sound
+      ? () => {
+          // console.log("Unloading Sound");
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS !== "web") {
+        const {
+          status,
+        } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          alert("Sorry, we need camera roll permissions to make this work!");
+        }
+      }
+    })();
+  }, []);
+
+  const showDatePicker = () => {
+    setDatePickerVisibility(true);
+  };
+
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
+  };
+
+  const handleConfirm = (_date) => {
+    setDate(_date);
+    hideDatePicker();
+  };
+
+  const startRecording = async () => {
+    try {
+      // console.log("Requesting permissions..");
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+      // console.log("Starting recording..");
+      const recording = new Audio.Recording();
+      await recording.prepareToRecordAsync(
+        Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
+      );
+      await recording.startAsync();
+      setRecording(recording);
+      // console.log("Recording started");
+    } catch (err) {
+      // console.error("Failed to start recording", err);
+    }
+  };
+
+  const stopRecording = async () => {
+    // console.log("Stopping recording..");
+    setRecording(undefined);
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+    setRecordingURI(uri);
+    // console.log("Recording stopped and stored at", uri);
+  };
+
+  const playSound = async () => {
+    // console.log("Loading Sound");
+    const { sound } = await Audio.Sound.createAsync({ uri: recordingURI });
+    setSound(sound);
+
+    // console.log("Playing Sound");
+    await sound.playAsync();
+  };
+
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS !== "web") {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== "granted") {
+          alert("Sorry, we need camera roll permissions to make this work!");
+        }
+      }
+    })();
+  }, []);
+
+  const openCamera = async () => {
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.cancelled) {
+      const manipResult = await ImageManipulator.manipulateAsync(
+        result.localUri || result.uri,
+        [{ resize: { width: 1000, height: 1000 } }],
+        { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+      );
+      setAttachment(manipResult);
+    }
+  };
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      // aspect: [4, 3],
+      quality: 1,
+    });
+    if (!result.cancelled) {
+      const manipResult = await ImageManipulator.manipulateAsync(
+        result.localUri || result.uri,
+        [{ resize: { width: 1000, height: 1000 } }],
+        { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+      );
+      setAttachment(manipResult);
+    }
+  };
+
+  return (
+    <ScrollView>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : null}>
+        <View style={{ padding: 23 }}>
+          <Text style={styles.stepText}>{i18n.t("step_3")}</Text>
+          <Text style={styles.stepDescription}>
+            {i18n.t("step_2_subtitle")}
+          </Text>
+          <Text style={styles.stepNote}>{i18n.t("step_2_explanation")}</Text>
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            paddingHorizontal: 23,
+            paddingBottom: 10,
+            justifyContent: "space-between",
+          }}
+        >
+          <Button
+            theme={{ ...theme, colors: { ...theme.colors, primary: "white" } }}
+            icon="calendar"
+            compact
+            style={{
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 0,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+              elevation: 3,
+              flex: 1,
+              marginHorizontal: 10,
+            }}
+            uppercase={false}
+            labelStyle={{
+              color: colors.primary,
+              fontFamily: "Poppins_400Regular",
+              fontSize: 13,
+            }}
+            mode="contained"
+            onPress={showDatePicker}
+          >
+            {date
+              ? moment(date).format("DD-MMMM-YY")
+              : i18n.t("step_2_select_date")}
+          </Button>
+          <Button
+            compact
+            theme={theme}
+            labelStyle={{
+              color: "white",
+              fontFamily: "Poppins_400Regular",
+              fontSize: 12,
+            }}
+            mode="contained"
+            uppercase={false}
+            onPress={() => setDate(new Date())}
+          >
+            {i18n.t("step_2_set_today")}
+          </Button>
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            paddingHorizontal: 43,
+            paddingBottom: 10,
+            alignItems: "center",
+          }}
+        >
+          <Checkbox.Android
+            color={colors.primary}
+            status={checked ? "checked" : "unchecked"}
+            onPress={() => {
+              setChecked(!checked);
+            }}
+          />
+          <Text style={[styles.stepNote, { flex: 1 }]}>
+            {i18n.t("step_2_ongoing_hint")}
+          </Text>
+        </View>
+        <View
+          style={{
+            flexDirection: "row",
+            paddingHorizontal: 23,
+            marginBottom: 35,
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={{ flex: 2 }} />
+        </View>
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
+          mode="date"
+          onConfirm={handleConfirm}
+          onCancel={hideDatePicker}
+        />
+        <CustomDropDownPicker
+          schema={{
+            label: "name",
+            value: "name",
+          }}
+          placeholder={i18n.t("step_2_placeholder_1")}
+          value={pickerValue}
+          items={items}
+          setPickerValue={setPickerValue}
+          setItems={setItems}
+        />
+        <CustomDropDownPicker
+          schema={{
+            label: "name",
+            value: "name",
+          }}
+          placeholder={i18n.t("step_2_placeholder_2")}
+          value={pickerValue2}
+          items={items2}
+          setPickerValue={setPickerValue2}
+          setItems={setItems2}
+        />
+        <View style={{ paddingHorizontal: 50 }}>
+          <TextInput
+            multiline
+            numberOfLines={4}
+            style={[
+              styles.grmInput,
+              {
+                height: 100,
+                justifyContent: "flex-start",
+                textAlignVertical: "top",
+              },
+            ]}
+            placeholder={i18n.t("step_2_placeholder_3")}
+            outlineColor={"#f6f6f6"}
+            theme={theme}
+            mode={"outlined"}
+            value={additionalDetails}
+            onChangeText={(text) => setAdditionalDetails(text)}
+            render={(innerProps) => (
+              <NativeTextInput
+                {...innerProps}
+                style={[
+                  innerProps.style,
+                  {
+                    paddingTop: 8,
+                    paddingBottom: 8,
+                    height: 100,
+                  },
+                ]}
+              />
+            )}
+          />
+        </View>
+        <View style={{ paddingHorizontal: 50 }}>
+          <Text
+            style={{
+              fontFamily: "Poppins_400Regular",
+              fontSize: 12,
+              fontWeight: "normal",
+              fontStyle: "normal",
+              lineHeight: 18,
+              letterSpacing: 0,
+              textAlign: "left",
+              color: "#707070",
+              marginVertical: 13,
+            }}
+          >
+            {i18n.t("step_2_share_photos")}
+          </Text>
+          <View>
+            {attachment.uri && (
+              <ImageBackground
+                source={{ uri: attachment.uri }}
+                style={{
+                  height: 80,
+                  width: 80,
+                  alignSelf: "center",
+                  justifyContent: "flex-end",
+                  marginVertical: 20,
+                }}
+              >
+                <TouchableOpacity
+                  onPress={() => setAttachment({})}
+                  style={{
+                    alignItems: "center",
+                    padding: 5,
+                    backgroundColor: "rgba(36, 195, 139, 1)",
+                  }}
+                >
+                  <Text style={{ color: "white" }}>X</Text>
+                </TouchableOpacity>
+              </ImageBackground>
+            )}
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+            }}
+          >
+            <Button
+              theme={theme}
+              style={{ alignSelf: "center" }}
+              labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
+              mode="contained"
+              onPress={pickImage}
+              uppercase={false}
+            >
+              {i18n.t("step_2_upload_attachment")}
+            </Button>
+            <View style={styles.iconButtonStyle}>
+              <IconButton
+                icon="camera"
+                color={colors.primary}
+                size={24}
+                onPress={openCamera}
+              />
+            </View>
+            <View style={styles.iconButtonStyle}>
+              <IconButton
+                icon={recording ? "record-circle-outline" : "microphone"}
+                color={recording ? "#f80102" : colors.primary}
+                size={24}
+                onPress={recording ? stopRecording : startRecording}
+              />
+            </View>
+          </View>
+        </View>
+        {recordingURI && (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <IconButton
+              icon="play"
+              color={colors.primary}
+              size={24}
+              onPress={playSound}
+            />
+            <Text
+              style={{
+                fontFamily: "Poppins_400Regular",
+                fontSize: 12,
+                fontWeight: "normal",
+                fontStyle: "normal",
+                lineHeight: 18,
+                letterSpacing: 0,
+                textAlign: "left",
+                color: "#707070",
+                marginVertical: 13,
+              }}
+            >
+              Play Recorded Audio
+            </Text>
+            <IconButton
+              icon="close"
+              color={colors.primary}
+              size={24}
+              onPress={() => setRecordingURI()}
+            />
+          </View>
+        )}
+        <View style={{ paddingHorizontal: 50 }}>
+          <Button
+            theme={theme}
+            style={{ alignSelf: "center", margin: 24 }}
+            labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
+            mode="contained"
+            onPress={() =>
+              navigation.navigate("CitizenReportLocationStep", {
+                stepOneParams,
+                stepTwoParams: {
+                  date: date ? date.toISOString() : undefined,
+                  issueType: pickerValue,
+                  ongoingEvent: checked,
+                  attachment: attachment.uri
+                    ? {
+                        url: "",
+                        id: new Date(),
+                        uploaded: false,
+                        local_url: attachment?.uri,
+                      }
+                    : {},
+                  recording: recordingURI
+                    ? {
+                        url: "",
+                        id: new Date(),
+                        uploaded: false,
+                        local_url: recordingURI,
+                        isAudio: true,
+                      }
+                    : {},
+                  issueCategory: pickerValue2,
+                  additionalDetails: additionalDetails,
+                },
+              })
+            }
+          >
+            {i18n.t("next")}
+          </Button>
+        </View>
+      </KeyboardAvoidingView>
+    </ScrollView>
+  );
+}
+
+export default Content;
