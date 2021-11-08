@@ -43,7 +43,7 @@ const SyncAttachments = ({ navigation }) => {
       });
 
       await axios.post(
-        `https://eadl-backend-3467h.ondigitalocean.app${
+        `https://grm-6u3m7.ondigitalocean.app${
           file.taskOrdinal
             ? "/attachments/upload-to-task"
             : "/attachments/upload-to-issue"
