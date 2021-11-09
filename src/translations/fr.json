@@ -62,8 +62,15 @@
   "step_3_field_title_4": "Description of Issue:",
   "step_3_attachments": "Attachments:",
 
+  //location step
+  "step_4": "Étape 4",
+  "step_location_description": "Où cela s’est-il produit ?",
+  "step_location_body": "Facilitateur : vous devez essayer d’obtenir un lieu aussi précis que nécessaire pour résoudre le problème. Les adresses, les coins de rue, les descriptions du quartier peuvent tous être utiles. S’il s’agit d’un problème confidentiel ou sensible, sélectionnez simplement les paramètres régionaux et ne collectez aucun autre détail.",
+  "step_location_dropdown_placeholder": "Tapez pour sélectionner",
+  "step_location_input_explanation": "Veuillez entrer des détails supplémentaires sur\nLe lieu qui pourraient aider à résoudre\nle problème (par exemple, adresse, coin de rue\nou description de l’emplacement).",
+
+
   //step 4
-  "step_4": "Step 4",
   "step_4_subtitle": "You’re done!",
   "step_4_description": "The issue has been captured and will be assigned to a government representative.  To track progress on this issue, please use the code below. (Facilitators: please encourage the citizen to write down or repeat the code below).",
   "step_4_short_code": "SHORT CODE",

@@ -63,8 +63,14 @@
   "step_3_field_title_4": "Description of Issue:",
   "step_3_attachments": "Attachments:",
 
-
+  //location step
   "step_4": "Step 4",
+  "step_location_description": "Where did this occur?",
+  "step_location_body": "Facilitator: You should try to get as specific a location as needed\nto solve the issue. Addresses, street corners, descriptions of the\narea can all be helpful. If this is a confidential or sensitive issue,\nsimply select the locale and collect no further detalls.",
+  "step_location_dropdown_placeholder": "Tap to select",
+  "step_location_input_explanation": "Please enter additional details about the location\nthat might help resolve the issue (e.g. street\naddress, street corner, or description of location).",
+
+
   "step_4_subtitle": "You’re done!",
   "step_4_description": "The issue has been captured and will be assigned to a government representative.  To track progress on this issue, please use the code below. (Facilitators: please encourage the citizen to write down or repeat the code below).",
   "step_4_issue_code": "Issue Access Code:",

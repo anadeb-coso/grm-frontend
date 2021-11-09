@@ -94,15 +94,10 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
     <ScrollView>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : null}>
         <View style={{ padding: 23 }}>
-          <Text style={styles.stepText}>Étape 4</Text>
-          <Text style={styles.stepDescription}>Où cela s’est-il produit ?</Text>
+          <Text style={styles.stepText}>{i18n.t("step_4")}</Text>
+          <Text style={styles.stepDescription}>{i18n.t("step_location_description")}</Text>
           <Text style={styles.stepNote}>
-            Facilitateur : vous devez essayer d’obtenir un lieu aussi précis que
-            nécessaire pour résoudre le problème. Les adresses, les coins de
-            rue, les descriptions du quartier peuvent tous être utiles. S’il
-            s’agit d’un problème confidentiel ou sensible, sélectionnez
-            simplement les paramètres régionaux et ne collectez aucun autre
-            détail.
+            {i18n.t("step_location_body")}
           </Text>
         </View>
 
@@ -112,7 +107,7 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
               label: "name",
               value: "administrative_id",
             }}
-            placeholder={"Tapez pour sélectionner"}
+            placeholder= {i18n.t("step_location_dropdown_placeholder")}
             value={commune1}
             items={filterCommunes(null)}
             setPickerValue={(val) => {
@@ -130,7 +125,7 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
               label: "name",
               value: "administrative_id",
             }}
-            placeholder={"Select administrative level"}
+            placeholder={i18n.t("step_location_dropdown_placeholder")}
             value={pickersState[index]}
             items={filterCommunes(parent, index)}
             setPickerValue={(val) => {
@@ -146,9 +141,7 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
         ))}
         <View style={{ paddingHorizontal: 50 }}>
           <Text style={styles.stepNote}>
-            Veuillez entrer des détails supplémentaires sur Le lieu qui
-            pourraient aider à résoudre le problème (par exemple, adresse, coin
-            de rue ou description de l’emplacement)
+            {i18n.t("step_location_input_explanation")}
           </Text>
           <TextInput
             multiline
