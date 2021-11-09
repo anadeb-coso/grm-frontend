@@ -125,6 +125,7 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
               label: "name",
               value: "administrative_id",
             }}
+            zIndex={1000 + index}
             placeholder={i18n.t("step_location_dropdown_placeholder")}
             value={pickersState[index]}
             items={filterCommunes(parent, index)}

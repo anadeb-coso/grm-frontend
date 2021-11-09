@@ -15,6 +15,7 @@ const CustomDropDownPicker = ({
   placeholder,
   onChangeValue,
   schema,
+  zIndex=100,
   customDropdownWrapperStyle,
   disabled = false,
   onOpen = () => null,
@@ -31,6 +32,7 @@ const CustomDropDownPicker = ({
       ]}
     >
       <DropDownPicker
+          zIndex={zIndex}
         schema={schema}
         disabled={disabled}
         onOpen={() => {

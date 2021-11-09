@@ -93,42 +93,42 @@ function DashboardStackScreen() {
         name="CitizenReportIntro"
         component={CitizenReportIntro}
         options={({ navigation, route }) =>
-          customHeaderOptions("ADL Citizen Input")
+          customHeaderOptions("Citizen Input")
         }
       />
       <HomeStack.Screen
         name="CitizenReport"
         component={CitizenReport}
         options={({ navigation, route }) =>
-          customHeaderOptions("ADL Citizen Input")
+          customHeaderOptions("Citizen Input")
         }
       />
       <HomeStack.Screen
         name="CitizenReportContactInfo"
         component={CitizenReportContactInfo}
         options={({ navigation, route }) =>
-          customHeaderOptions("ADL Citizen Input")
+          customHeaderOptions("Citizen Input")
         }
       />
       <HomeStack.Screen
         name="CitizenReportStep2"
         component={CitizenReportStep2}
         options={({ navigation, route }) =>
-          customHeaderOptions("ADL Citizen Input")
+          customHeaderOptions("Citizen Input")
         }
       />
       <HomeStack.Screen
         name="CitizenReportLocationStep"
         component={CitizenReportLocationStep}
         options={({ navigation, route }) =>
-          customHeaderOptions("ADL Citizen Input")
+          customHeaderOptions("Citizen Input")
         }
       />
       <HomeStack.Screen
         name="CitizenReportStep3"
         component={CitizenReportStep3}
         options={({ navigation, route }) =>
-          customHeaderOptions("ADL Citizen Input")
+          customHeaderOptions("Citizen Input")
         }
       />
       <HomeStack.Screen
@@ -136,7 +136,7 @@ function DashboardStackScreen() {
         component={CitizenReportStep4}
         options={({ navigation, route }) => {
           return {
-            ...customHeaderOptions("ADL Citizen Input"),
+            ...customHeaderOptions("Citizen Input"),
             headerLeft: () => null,
           };
         }}
