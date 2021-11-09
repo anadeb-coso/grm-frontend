@@ -51,7 +51,7 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
 
     //Filter communes by parent (administrative ID)
     communesCopy = communesCopy.filter(
-      (x) => x.parent === selectedAdministrativeId
+      (x) => x.parent_id === selectedAdministrativeId
     );
 
 
@@ -86,7 +86,7 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
 
   const filterCommunes = (parent) => {
     let _communes = communes.slice();
-    _communes = _communes.filter((commune) => commune.parent === parent);
+    _communes = _communes.filter((commune) => commune.parent_id === parent);
 
     return _communes;
   };

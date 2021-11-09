@@ -42,14 +42,14 @@ export const SyncToRemoteDatabase = async (
   const sync = LocalDatabase.sync(remoteDB, {
     live: true,
     retry: true,
-    filter: "eadl/by_user_email",
-    query_params: { email: userEmail },
+    // filter: "eadl/by_user_email",
+    // query_params: { email: userEmail },
   });
 
   const syncCommunes = LocalCommunesDatabase.sync(communesRemoteDB, {
     live: true,
     retry: true,
-    view: "eadl/all_communes",
+    // view: "eadl/all_administrative_levels",
     // filter: "eadl/all_communes",
     // query_params: { email: userEmail },
   });

@@ -110,7 +110,7 @@ function Content({ issue, eadl }) {
   return (
     <ScrollView>
       <View style={{ padding: 23 }}>
-        <Text style={styles.stepText}>{i18n.t("step_4")}</Text>
+        <Text style={styles.stepText}>{i18n.t("step_5")}</Text>
         <Text style={styles.stepSubtitle}>{i18n.t("step_3_confirmation")}</Text>
         <Text style={styles.stepDescription}>{i18n.t("step_3_subtitle")}</Text>
       </View>

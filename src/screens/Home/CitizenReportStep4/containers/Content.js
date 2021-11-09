@@ -45,7 +45,7 @@ function Content({ issue }) {
   return (
     <ScrollView>
       <View style={{ padding: 23 }}>
-        <Text style={styles.stepText}>{i18n.t("step_5")}</Text>
+        <Text style={styles.stepText}>{i18n.t("step_6")}</Text>
         <Text style={styles.stepSubtitle}>{i18n.t("step_4_subtitle")}</Text>
         <Text style={styles.stepDescription}>
           {i18n.t("step_4_description")}
