@@ -4,8 +4,10 @@
   "information": "Information",
   "collect_reports": "Collect Reports from Citizens",
   "search_reports": "Search Reports",
+  "sync_files": "Sync Files",
 
   //GRM-Intro
+  "intro_text_0": "Facilitators: ",
   "intro_text_1": "We have included talking points to help you guide citizens through the process. To start the session, please consider informing people of the following.",
   "intro_text_2": "I appreciate you coming to us with your issues about the project. This will be quick - a couple of minutes - and easy. Before we begin, you should know a few things.",
   "intro_text_3": "Everything can be as private and confidential as you want it to be. The more information we have, the better we can help you, but you should only tell us what you're comfortable sharing.",
@@ -23,7 +25,7 @@
   "step_1_option_2": "Receive updates through facilitator",
   "step_1_option_3": "Receive alerts directly",
   "step_1_method_1": "Text / SMS",
-  "step_1_method_2": "What’s App",
+  "step_1_method_2": "WhatsApp",
   "step_1_method_3": "Email",
   "step_1_placeholder_1": "Method of contact",
   "step_1_placeholder_2": "Enter information here",
