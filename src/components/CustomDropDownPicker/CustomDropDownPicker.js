@@ -10,6 +10,10 @@ const screenHeight = Dimensions.get("window").height;
 const CustomDropDownPicker = ({
   value,
   items,
+  listMode="SCROLLVIEW",
+  scrollViewProps={
+    nestedScrollEnabled: true
+  },
   setPickerValue,
   setItems,
   placeholder,
@@ -27,7 +31,7 @@ const CustomDropDownPicker = ({
     <View
       style={[
         styles.dropdownWrapper,
-        { minHeight: screenHeight * (dropdownVisible ? 0.25 : 0) },
+        { minHeight: screenHeight * (dropdownVisible ? 0.40 : 0), zIndex },
         customDropdownWrapperStyle,
       ]}
     >
@@ -73,6 +77,8 @@ const CustomDropDownPicker = ({
         setOpen={setOpen}
         setValue={(newValue) => setPickerValue(newValue)}
         setItems={(newItems) => setItems(newItems)}
+        listMode={listMode}
+        scrollViewProps={scrollViewProps}
       />
     </View>
   );
