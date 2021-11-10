@@ -72,40 +72,40 @@ function Content({ issue }) {
         {issue.tracking_code}
       </Text>
       <View style={{ alignSelf: "center" }}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "center",
-            marginBottom: 23,
-          }}
-        >
-          <Button
-            theme={theme}
-            style={{
-              alignSelf: "center",
-              marginRight: 7,
-              backgroundColor: "#dedede",
-            }}
-            labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
-            mode="contained"
-            onPress={() => console.log("Pressed")}
-          >
-            {i18n.t("step_4_short_code")}
-          </Button>
-          <Button
-            theme={theme}
-            style={{
-              alignSelf: "center",
-              marginLeft: 7,
-              backgroundColor: "#dedede",
-            }}
-            labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
-            mode="contained"
-            onPress={() => console.log("Pressed")}
-          >
-            {i18n.t("step_4_two_word_code")}
-          </Button>
-        </View>
+        {/*<View*/}
+        {/*  style={{*/}
+        {/*    flexDirection: "row",*/}
+        {/*    justifyContent: "center",*/}
+        {/*    marginBottom: 23,*/}
+        {/*  }}*/}
+        {/*>*/}
+        {/*  <Button*/}
+        {/*    theme={theme}*/}
+        {/*    style={{*/}
+        {/*      alignSelf: "center",*/}
+        {/*      marginRight: 7,*/}
+        {/*      backgroundColor: "#dedede",*/}
+        {/*    }}*/}
+        {/*    labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}*/}
+        {/*    mode="contained"*/}
+        {/*    onPress={() => console.log("Pressed")}*/}
+        {/*  >*/}
+        {/*    {i18n.t("step_4_short_code")}*/}
+        {/*  </Button>*/}
+        {/*  <Button*/}
+        {/*    theme={theme}*/}
+        {/*    style={{*/}
+        {/*      alignSelf: "center",*/}
+        {/*      marginLeft: 7,*/}
+        {/*      backgroundColor: "#dedede",*/}
+        {/*    }}*/}
+        {/*    labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}*/}
+        {/*    mode="contained"*/}
+        {/*    onPress={() => console.log("Pressed")}*/}
+        {/*  >*/}
+        {/*    {i18n.t("step_4_two_word_code")}*/}
+        {/*  </Button>*/}
+        {/*</View>*/}
 
         <Button
           theme={theme}

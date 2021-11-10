@@ -16,7 +16,7 @@
   "intro_text_6": "Nous essayons de résoudre les problèmes dans les {x} jours suivant votre signalement, et nous vous aiderons à suivre et à suivre votre problème.",
 
   //step 1
-  "welcome_citizen_input": "Welcome to the Digital GRM!",
+  "welcome_citizen_input": "Bienvenue sur le portail du MGP numérique!",
   "step_1": "Étape 1",
   "stay_touch_question": "Méthode préférée de contact",
   "step_1_hint_1": "Facilitateur : “Si vous le souhaitez, nous pouvons vous informer de l’avancement par SMS ou par e-mail. Mais si vous voulez rester anonyme, nous pouvons vous donner un code, ou vous pouvez revenir vers moi pour faire le suivi. Lequel veux-tu?”",
@@ -52,17 +52,17 @@
   "step_2_placeholder_3": "Veuillez résumer le problème.",
   "step_2_placeholder_4": "Please provide any additional details.",
   "step_2_share_photos": "Partagez toute vidéo, photo ou audio à l’appui comme preuve ou clarification.\n",
-  "step_2_upload_attachment": "Télécharger attachement",
+  "step_2_upload_attachment": "Pièces jointes",
 
   //step 3
   "step_3": "Étape 3",
-  "step_3_confirmation": "Confirmation",
-  "step_3_subtitle": "Please review the information below and confirm that it is correct. If you need to change any information, click the edit button.",
-  "step_3_field_title_1": "Date of concern:",
-  "step_3_field_title_2": "This is a:",
-  "step_3_field_title_3": "This issue is about:",
-  "step_3_field_title_4": "Description of Issue:",
-  "step_3_attachments": "Attachments:",
+  "step_3_confirmation": "Confirmez les détails et soumettez",
+  "step_3_subtitle": "Facilitateur : “Nous avons presque terminé. Je veux prendre un moment et revoir ce que nous avons capturé. Nous pouvons modifier les informations ou les soumettre.”",
+  "step_3_field_title_1": "Date de la plainte:",
+  "step_3_field_title_2": "Type de problème:",
+  "step_3_field_title_3": "Sujet:",
+  "step_3_field_title_4": "Description:",
+  "step_3_attachments": "Pièces jointes:",
 
   //location step
   "step_4": "Étape 4",
@@ -73,19 +73,20 @@
 
 
   //step 4
-  "step_4_subtitle": "You’re done!",
-  "step_4_description": "The issue has been captured and will be assigned to a government representative.  To track progress on this issue, please use the code below. (Facilitators: please encourage the citizen to write down or repeat the code below).",
+  "step_4_subtitle": "Vous avez terminé ! N’oubliez pas ce code!",
+  "step_4_description": "Facilitateur : “Le problème a été capturé et sera attribué à un représentant du gouvernement. Pour suivre les progrès sur ce problème, veuillez utiliser le code ci-dessous. (Facilitateurs : encouragez le citoyen à écrire ou à répéter le code ci-dessous.”\n\nRappelez au plaignant combien de temps il lui faudra pour obtenir une confirmation et une résolution.",
+  "step_4_issue_code": "Code d’accès du problème:",
   "step_4_short_code": "SHORT CODE",
   "step_4_two_word_code": "2-WORD CODE",
-  "step_4_back_text": "Back to Citizen Input Home",
-  "step_5": "Step 5",
-  "step_6": "Step 6",
+  "step_4_back_text": "Retour à l’accueil du GRM",
+  "step_5": "Étape 5",
+  "step_6": "Étape 6",
 
 
   //general
-  "save_button_text": "SAVE & NEXT",
+  "save_button_text": "ENREGISTRER",
   "next": "SUIVANT",
-  "submit_button_text": "SAVE & NEXT",
+  "submit_button_text": "ENREGISTRER",
   "male": "Mâle",
   "female": "Femelle",
 
