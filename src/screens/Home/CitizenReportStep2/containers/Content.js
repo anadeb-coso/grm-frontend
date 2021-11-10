@@ -272,28 +272,32 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
           onConfirm={handleConfirm}
           onCancel={hideDatePicker}
         />
-        <CustomDropDownPicker
-          schema={{
-            label: "name",
-            value: "name",
-          }}
-          placeholder={i18n.t("step_2_placeholder_1")}
-          value={pickerValue}
-          items={items}
-          setPickerValue={setPickerValue}
-          setItems={setItems}
-        />
-        <CustomDropDownPicker
-          schema={{
-            label: "name",
-            value: "name",
-          }}
-          placeholder={i18n.t("step_2_placeholder_2")}
-          value={pickerValue2}
-          items={items2}
-          setPickerValue={setPickerValue2}
-          setItems={setItems2}
-        />
+        <View style={{zIndex: 2000}}>
+            <CustomDropDownPicker
+              schema={{
+                label: "name",
+                value: "name",
+              }}
+              placeholder={i18n.t("step_2_placeholder_1")}
+              value={pickerValue}
+              items={items}
+              setPickerValue={setPickerValue}
+              setItems={setItems}
+            />
+        </View>
+          <View style={{zIndex: 1000}}>
+              <CustomDropDownPicker
+              schema={{
+                label: "name",
+                value: "name",
+              }}
+              placeholder={i18n.t("step_2_placeholder_2")}
+              value={pickerValue2}
+              items={items2}
+              setPickerValue={setPickerValue2}
+              setItems={setItems2}
+            />
+          </View>
         <View style={{ paddingHorizontal: 50 }}>
           <TextInput
             multiline
