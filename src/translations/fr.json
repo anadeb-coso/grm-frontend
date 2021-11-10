@@ -31,12 +31,12 @@
 
   //contact step
   "contact_step_title": "Contact Information",
-  "contact_step_subtitle": "Name of Complainant.",
-  "contact_step_explanation": "Facilitator to Anonymous Complaint: “You have asked to be anonymous, so I’m typing “Anonymous” here” \n\nFacilitator to Non-Anonymous Complaint: “I’m going to type your name in here”",
-  "contact_step_placeholder_1": "Enter complainant name here",
-  "contact_step_placeholder_2": "Enter Age Group (Optional)",
-  "contact_step_placeholder_3": "Choose Gender (Optional)",
-  "contact_step_placeholder_4": "This person is filling the complaint on somebody else’s behalf.",
+  "contact_step_subtitle": "Nom du Plaignant.",
+  "contact_step_explanation": "Facilitateur au plaignant anonyme : “Vous avez demandé à rester anonyme, alors je tape  ”Anonyme” ici”\n\nFacilitateur au plaignant non-anonyme : “Je vais saisir votre nom ici.”",
+  "contact_step_placeholder_1": "Entrez le nom du plaignant ici",
+  "contact_step_placeholder_2": "Entrez le groupe d’âge (facultatif)",
+  "contact_step_placeholder_3": "Choisissez le sexe (facultatif)",
+  "contact_step_placeholder_4": "Cette personne dépose la plainte au nom de quelqu’un d’autre.",
 
 
 
@@ -86,8 +86,8 @@
   "save_button_text": "SAVE & NEXT",
   "next": "SUIVANT",
   "submit_button_text": "SAVE & NEXT",
-  "male": "Male",
-  "female": "Female",
+  "male": "Mâle",
+  "female": "Femelle",
 
   //issue detail
   "description_label": "Description",

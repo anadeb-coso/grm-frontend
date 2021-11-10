@@ -132,7 +132,7 @@ function Content({ stepOneParams }) {
                   }
                 }}
               >
-                {i18n.t("save_button_text")}
+                {i18n.t("next")}
               </Button>
             </View>
           </>
