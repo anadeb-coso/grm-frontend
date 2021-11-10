@@ -43,7 +43,7 @@ function Content() {
               </Text>
             </View>
           </View>
-          <Text style={styles.stepNote}>Facilitators: </Text>
+          <Text style={styles.stepNote}>{i18n.t("intro_text_0")}</Text>
           <Text
             style={[
               styles.stepNote,
