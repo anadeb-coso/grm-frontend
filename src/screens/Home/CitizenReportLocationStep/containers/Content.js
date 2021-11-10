@@ -120,25 +120,26 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
           />
         )}
         {communesPickers.map((parent, index) => (
-          <CustomDropDownPicker
-            schema={{
-              label: "name",
-              value: "administrative_id",
-            }}
-            zIndex={1000 + index}
-            placeholder={i18n.t("step_location_dropdown_placeholder")}
-            value={pickersState[index]}
-            items={filterCommunes(parent, index)}
-            setPickerValue={(val) => {
-              const newState = [...pickersState];
-              newState.splice(index, newState.length - index);
-              newState[index] = val();
-              setPickersState(newState);
-              if (val) {
-                handlePickCommune(val(), index);
-              }
-            }}
-          />
+            <View style={{zIndex: 1000 + index}}>
+              <CustomDropDownPicker
+                schema={{
+                  label: "name",
+                  value: "administrative_id",
+                }}
+                placeholder={i18n.t("step_location_dropdown_placeholder")}
+                value={pickersState[index]}
+                items={filterCommunes(parent, index)}
+                setPickerValue={(val) => {
+                  const newState = [...pickersState];
+                  newState.splice(index, newState.length - index);
+                  newState[index] = val();
+                  setPickersState(newState);
+                  if (val) {
+                    handlePickCommune(val(), index);
+                  }
+                }}
+              />
+            </View>
         ))}
         <View style={{ paddingHorizontal: 50 }}>
           <Text style={styles.stepNote}>
