@@ -12,28 +12,7 @@ import i18n from "i18n-js";
 function Content() {
   const navigation = useNavigation();
   return (
-    <ScrollView style={{ backgroundColor: "white" }}>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-evenly",
-          marginVertical: 20,
-          borderRadius: 15,
-        }}
-      >
-        <SmallCard
-          image={require("../../../../../assets/BG_1.png")}
-          onCardPress={() => alert("Fonctionnalité à venir")}
-          title={i18n.t("diagnostics")}
-          icon={<Chart />}
-        />
-        <SmallCard
-          image={require("../../../../../assets/BG_2.png")}
-          onCardPress={() => alert("Fonctionnalité à venir")}
-          title={i18n.t("information")}
-          icon={<FileIcon />}
-        />
-      </View>
+    <ScrollView contentContainerStyle={{paddingTop: 20}} style={{ backgroundColor: "white" }}>
       <BigCard
         image={require("../../../../../assets/BG_9.png")}
         onCardPress={() => navigation.navigate("CitizenReportIntro")}
@@ -48,13 +27,34 @@ function Content() {
           icon={<SyncIcon />}
         />
       </View>
-            <BigCard
-                image={require("../../../../../assets/small-rectangle.png")}
-                onCardPress={() => navigation.navigate("SyncAttachments")}
-                title={"Sync Files"}
-                icon={<SyncIcon />}
-                cardHeight={79}
+        <BigCard
+            image={require("../../../../../assets/small-rectangle.png")}
+            onCardPress={() => navigation.navigate("SyncAttachments")}
+            title={"Sync Files"}
+            icon={<SyncIcon />}
+            // cardHeight={79}
+        />
+        <View
+            style={{
+                flexDirection: "row",
+                justifyContent: "space-evenly",
+                marginVertical: 20,
+                borderRadius: 15,
+            }}
+        >
+            <SmallCard
+                image={require("../../../../../assets/BG_1.png")}
+                onCardPress={() => alert("Fonctionnalité à venir")}
+                title={i18n.t("diagnostics")}
+                icon={<Chart />}
             />
+            <SmallCard
+                image={require("../../../../../assets/BG_2.png")}
+                onCardPress={() => alert("Fonctionnalité à venir")}
+                title={i18n.t("information")}
+                icon={<FileIcon />}
+            />
+        </View>
 
       {/*<ReactNativeSwipeableViewStack*/}
       {/*  // onSwipe={(swipedIndex) => this.onCardSwipe(swipedIndex)}*/}
