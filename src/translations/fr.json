@@ -1,9 +1,10 @@
 {
   //GRM
-  "diagnostics": "Diagnostics",
+  "diagnostics": "Statistiques",
   "information": "Information",
-  "collect_reports": "Collect Reports from Citizens",
-  "search_reports": "Search Reports",
+  "collect_reports": "Collecte Plaintes ou Suggestions",
+  "search_reports": "Recherche des Plaintes",
+  "sync_files": "Synchroniser les Fichiers",
 
   //GRM-Intro
   "intro_text_1": "We have included talking points to help you guide citizens through the process. To start the session, please consider informing people of the following.",

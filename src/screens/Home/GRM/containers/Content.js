@@ -30,7 +30,7 @@ function Content() {
         <BigCard
             image={require("../../../../../assets/small-rectangle.png")}
             onCardPress={() => navigation.navigate("SyncAttachments")}
-            title={"Sync Files"}
+            title={i18n.t("sync_files")}
             icon={<SyncIcon />}
             // cardHeight={79}
         />
