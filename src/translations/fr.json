@@ -42,17 +42,17 @@
 
   //step 2
   "step_2": "Étape 2",
-  "step_2_subtitle": "Complaint Details",
-  "step_2_explanation": "Facilitator: “I want to record the dates of the events you are reporting. If you can't remember the exact dates, do your best and I'll make a special note of it. Don't worry if you can't remember every detail.”",
-  "step_2_ongoing_hint": "Ongoing event or multiple occurrences",
-  "step_2_select_date": "Tap to select the date",
-  "step_2_set_today": "Set for Today",
-  "step_2_placeholder_1": "What kind of issue are you reporting?",
-  "step_2_placeholder_2": "What is this is issue about?",
-  "step_2_placeholder_3": "Please summarize the issue.",
+  "step_2_subtitle": "Détails de la plainte",
+  "step_2_explanation": "Facilitateur: “Je souhaite enregistrer les dates des événements que vous signalez. Si vous ne vous souvenez pas des dates exactes, faites de votre mieux et j’en ferai une note spéciale. Ne vous inquiétez pas si vous ne vous souvenez pas de chaque détail.”",
+  "step_2_ongoing_hint": "Événement en cours ou occurrences multiples",
+  "step_2_select_date": "Tapez pour sélectionner la date",
+  "step_2_set_today": "Aujourd’hui",
+  "step_2_placeholder_1": "Quel type de problème signalez-vous?",
+  "step_2_placeholder_2": "De quoi s’agit-il?",
+  "step_2_placeholder_3": "Veuillez résumer le problème.",
   "step_2_placeholder_4": "Please provide any additional details.",
-  "step_2_share_photos": "Share any supporting video, photos or audio as evidence or clarification",
-  "step_2_upload_attachment": "Upload attachment",
+  "step_2_share_photos": "Partagez toute vidéo, photo ou audio à l’appui comme preuve ou clarification.\n",
+  "step_2_upload_attachment": "Télécharger attachement",
 
   //step 3
   "step_3": "Étape 3",
