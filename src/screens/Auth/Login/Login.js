@@ -25,6 +25,7 @@ import { getEncryptedData } from "../../../utils/storageManager";
 function Login() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
+  const [isPasswordSecure, setIsPasswordSecure] = useState(true);
 
   const onLoginPress = async (data) => {
     setLoading(true);
@@ -144,14 +145,15 @@ function Login() {
                         style={styles.loginFormTextInput}
                         left={
                           <TextInput.Icon
-                            name="eye-off-outline"
+                            onPress={() => setIsPasswordSecure(!isPasswordSecure)}
+                            name={isPasswordSecure ? "eye-off-outline" : "eye-outline"}
                             color={"#24c38b"}
                           />
                         }
                         value={value}
                         onBlur={onBlur}
                         onChangeText={onChange}
-                        secureTextEntry
+                        secureTextEntry={isPasswordSecure}
                       />
                     )}
                     name="password"

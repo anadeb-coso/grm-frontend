@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 
 import styles from "./SignUp.style";
 import {
@@ -35,6 +35,7 @@ function SignUp({ route }) {
   const [credentials, setCredentials] = React.useState();
   const [loading, setLoading] = React.useState(false);
   const [successModal, setSuccessModal] = React.useState(false);
+  const [isPasswordSecure, setIsPasswordSecure] = useState(true);
   const { control, handleSubmit, errors, watch } = useForm({
     criteriaMode: "all",
   });
@@ -249,14 +250,15 @@ function SignUp({ route }) {
                         style={styles.loginFormTextInput}
                         left={
                           <TextInput.Icon
-                            name="eye-off-outline"
-                            color={"#24c38b"}
+                              onPress={() => setIsPasswordSecure(!isPasswordSecure)}
+                              name={isPasswordSecure ? "eye-off-outline" : "eye-outline"}
+                              color={"#24c38b"}
                           />
                         }
                         value={value}
                         onBlur={onBlur}
                         onChangeText={onChange}
-                        secureTextEntry
+                        secureTextEntry={isPasswordSecure}
                       />
                     )}
                     name="password"
