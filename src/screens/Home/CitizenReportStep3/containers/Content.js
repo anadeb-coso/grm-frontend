@@ -60,7 +60,7 @@ function Content({ issue, eadl }) {
       //   name: "Environmental",
       //   confidentiality_level: "Confidential",
       // },
-      category: issue.issueCategory,
+      category: issue.category,
       issue_type: issue.issueType,
       //   type: {
       //   id: 1,
@@ -148,7 +148,7 @@ function Content({ issue, eadl }) {
           {i18n.t("step_3_field_title_3")}
         </Text>
         <Text style={styles.stepDescription}>
-          {issue.issueCategory ?? "--"}
+          {issue.category?.name ?? "--"}
         </Text>
 
         <Text style={styles.stepSubtitle}>

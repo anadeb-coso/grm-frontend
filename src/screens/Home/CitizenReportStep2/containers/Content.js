@@ -175,6 +175,19 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     }
   };
 
+  const getCategory = (value) => {
+      const result = issueCategories.filter(obj => {
+          return obj.name === value
+      })
+      const _category = {
+          id: result[0].id,
+          name: result[0].name,
+          confidentiality_level: result[0].confidentiality_level,
+          assigned_department: result[0].assigned_department?.id
+      }
+      return _category
+  }
+
   return (
     <ScrollView>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : null}>
@@ -290,6 +303,9 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
               schema={{
                 label: "name",
                 value: "name",
+                id: "id",
+                confidentiality_level: "confidentiality_level",
+                assigned_department: "assigned_department"
               }}
               placeholder={i18n.t("step_2_placeholder_2")}
               value={pickerValue2}
@@ -449,34 +465,35 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             style={{ alignSelf: "center", margin: 24 }}
             labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
             mode="contained"
-            onPress={() =>
-              navigation.navigate("CitizenReportLocationStep", {
-                stepOneParams,
-                stepTwoParams: {
-                  date: date ? date.toISOString() : undefined,
-                  issueType: pickerValue,
-                  ongoingEvent: checked,
-                  attachment: attachment.uri
-                    ? {
-                        url: "",
-                        id: new Date(),
-                        uploaded: false,
-                        local_url: attachment?.uri,
-                      }
-                    : {},
-                  recording: recordingURI
-                    ? {
-                        url: "",
-                        id: new Date(),
-                        uploaded: false,
-                        local_url: recordingURI,
-                        isAudio: true,
-                      }
-                    : {},
-                  issueCategory: pickerValue2,
-                  additionalDetails: additionalDetails,
-                },
-              })
+            onPress={() => {
+                navigation.navigate("CitizenReportLocationStep", {
+                    stepOneParams,
+                    stepTwoParams: {
+                        date: date ? date.toISOString() : undefined,
+                        issueType: pickerValue,
+                        ongoingEvent: checked,
+                        attachment: attachment.uri
+                            ? {
+                                url: "",
+                                id: new Date(),
+                                uploaded: false,
+                                local_url: attachment?.uri,
+                            }
+                            : {},
+                        recording: recordingURI
+                            ? {
+                                url: "",
+                                id: new Date(),
+                                uploaded: false,
+                                local_url: recordingURI,
+                                isAudio: true,
+                            }
+                            : {},
+                        category: getCategory(pickerValue2),
+                        additionalDetails: additionalDetails,
+                    },
+                })
+            }
             }
           >
             {i18n.t("next")}
