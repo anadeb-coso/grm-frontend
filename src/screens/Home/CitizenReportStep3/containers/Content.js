@@ -74,6 +74,7 @@ function Content({ issue, eadl }) {
       resolution_date: "",
       intake_date: new Date(),
       issue_date: issue.date,
+      ongoing_issue: issue.ongoingEvent,
       comments: [],
       contact_information: {
         type: issue.methodOfContact,
