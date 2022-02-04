@@ -20,9 +20,9 @@
   "step_1_subtitle": "We value your input and hope to work with you to solve any issues or make our work better.",
   "step_1": "Step 1",
   "stay_touch_question": "Preferred Method of Contact",
-  "step_1_hint_1": "Facilitator: If you like, we can inform you of progress by text or email. But if you want to be anonymous, we can give you a code, or you can come back to me to follow up. Which would you like?",
+  "step_1_hint_1": "Facilitator: “If you wish, we can update you on the progress by text or email. But if you want to stay anonymous, we can give you a code, or you can come back to me to follow up. Which one do you want?”",
   "step_1_option_1": "Remain Anonymous",
-  "step_1_option_2": "Receive updates through facilitator",
+  "step_1_option_2": "Receive updates from facilitator",
   "step_1_option_3": "Receive alerts directly",
   "step_1_method_1": "Text / SMS",
   "step_1_method_2": "WhatsApp",
@@ -32,7 +32,7 @@
 
   //contact step
   "contact_step_title": "Contact Information",
-  "contact_step_subtitle": "Name of Complainant.",
+  "contact_step_subtitle": "Name of Person or Group",
   "contact_step_explanation": "Facilitator to Anonymous Complaint: “You have asked to be anonymous, so I’m typing “Anonymous” here” \n\nFacilitator to Non-Anonymous Complaint: “I’m going to type your name in here”",
   "contact_step_placeholder_1": "Enter complainant name here",
   "contact_step_placeholder_2": "Enter Age Group (Optional)",

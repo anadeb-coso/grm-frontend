@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { styles } from "./Content.styles";
-import { Button, TextInput, Checkbox } from "react-native-paper";
+import {Button, TextInput, Checkbox, RadioButton} from "react-native-paper";
 import { colors } from "../../../../utils/colors";
 import i18n from "i18n-js";
 import CustomDropDownPicker from "../../../../components/CustomDropDownPicker/CustomDropDownPicker";
@@ -23,27 +23,25 @@ const theme = {
   },
 };
 
-function Content({ stepOneParams }) {
+function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) {
   const navigation = useNavigation();
   const [name, setName] = useState("");
   const [checked, setChecked] = useState(false);
   const [contactMethodError, setContactMethodError] = React.useState();
   const [isPreviousPickerClosed, setIsPreviousPickerClosed] = useState(true);
   const [pickerAgeValue, setPickerAgeValue] = useState(null);
-  const [ages, setAges] = useState([
-    { label: "16-19", value: "16-19" },
-    { label: "20-29", value: "20-29" },
-    { label: "30-39", value: "30-39" },
-    { label: "40-49", value: "40-49" },
-    { label: "50-59", value: "50-59" },
-    { label: "60-69", value: "60-69" },
-    { label: "70-79", value: "70-79" },
-    { label: "80+", value: "80+" },
-  ]);
+  const [confidentialValue, setConfidentialValue] = useState(null);
+  const [selectedCitizenGroupI, setSelectedCitizenGroupI] = useState(null);
+  const [selectedCitizenGroupII, setSelectedCitizenGroupII] = useState(null);
+  const [_citizenGroupsI, setCitizenGroupsI] = useState(citizenGroupsI ?? []);
+  const [_citizenGroupsII, setCitizenGroupsII] = useState(citizenGroupsII ?? []);
+  const [ages, setAges] = useState(issueAges ?? []);
   const [pickerGenderValue, setPickerGenderValue] = useState(null);
   const [genders, setGenders] = useState([
     { label: i18n.t("male"), value: "male" },
     { label: i18n.t("female"), value: "female" },
+    { label: "Other", value: "other" },
+    { label: "Rather not say", value: "rather_not_say" },
   ]);
 
   return (
@@ -76,18 +74,42 @@ function Content({ stepOneParams }) {
             }}
           />
           <Text />
-          <View style={{ flexDirection: "row" }}>
-            <Checkbox.Android
-              color={colors.primary}
-              status={checked ? "checked" : "unchecked"}
-              onPress={() => {
-                setChecked(!checked);
+          <RadioButton.Group
+              onValueChange={(newValue) => {
+                if(newValue == confidentialValue){
+                  setConfidentialValue(0)
+                } else {
+                  setConfidentialValue(newValue)
+                }
               }}
-            />
-            <Text style={[styles.stepNote, { flex: 1 }]}>
-              {i18n.t("contact_step_placeholder_4")}
-            </Text>
-          </View>
+              value={confidentialValue}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 5 }}>
+              <RadioButton.Android
+                  value={1}
+                  uncheckedColor={"#dedede"}
+                  color={colors.primary}
+              />
+              <Text style={styles.radioLabel}>Keep name confidential.  Only the person resolving the issue will see the name. </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 5 }}>
+              <RadioButton.Android
+                  value={2}
+                  uncheckedColor={"#dedede"}
+                  color={colors.primary}
+              />
+              <Text style={styles.radioLabel}>This is an individual filing on behalf of someone else. </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 5 }}>
+              <RadioButton.Android
+                  value={3}
+                  uncheckedColor={"#dedede"}
+                  color={colors.primary}
+              />
+              <Text style={styles.radioLabel}>This is an organization filing on behalf of someone else.</Text>
+            </View>
+          </RadioButton.Group>
+
         </View>
         <Text />
         <CustomDropDownPicker
@@ -108,6 +130,20 @@ function Content({ stepOneParams }) {
               setPickerValue={setPickerGenderValue}
               setItems={setGenders}
             />
+            <CustomDropDownPicker
+                placeholder={'Citizen Group I'}
+                value={selectedCitizenGroupI}
+                items={_citizenGroupsI}
+                setPickerValue={setSelectedCitizenGroupI}
+                setItems={setCitizenGroupsI}
+            />
+            <CustomDropDownPicker
+                placeholder={'Citizen Group II'}
+                value={selectedCitizenGroupII}
+                items={_citizenGroupsII}
+                setPickerValue={setSelectedCitizenGroupII}
+                setItems={setCitizenGroupsII}
+            />
             <View style={{ paddingHorizontal: 50 }}>
               <Button
                 theme={theme}
@@ -121,6 +157,7 @@ function Content({ stepOneParams }) {
                         ...stepOneParams,
                         name,
                         ageGroup: pickerAgeValue,
+                        citizen_type: confidentialValue,
                         gender: pickerGenderValue,
                         filledOnSomebodyElseBehalf: checked,
                       },

@@ -51,6 +51,7 @@ function Content({ issue, eadl }) {
       },
       citizen: issue.name ?? "",
       contact_medium: issue.typeOfPerson,
+      citizen_type: issue.citizen_type,
       location_info: {
         issue_location: issue.issueLocation,
         location_description: issue.locationDescription,

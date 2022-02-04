@@ -132,7 +132,7 @@ function Content() {
                   );
                 }
               } else {
-                navigation.navigate("CitizenReportStep2", {
+                navigation.navigate("CitizenReportContactInfo", {
                   stepOneParams: {
                     typeOfPerson: value,
                     methodOfContact: pickerValue,
