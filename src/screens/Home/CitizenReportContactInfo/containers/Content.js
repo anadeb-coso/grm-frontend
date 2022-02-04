@@ -158,6 +158,8 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
                         name,
                         ageGroup: pickerAgeValue,
                         citizen_type: confidentialValue,
+                        citizen_group_1: selectedCitizenGroupI,
+                        citizen_group_2: selectedCitizenGroupII,
                         gender: pickerGenderValue,
                         filledOnSomebodyElseBehalf: checked,
                       },
