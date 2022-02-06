@@ -62,7 +62,7 @@ function Content() {
         <View style={{ paddingHorizontal: 50 }}>
           <Button
             theme={theme}
-            style={{ alignSelf: "center", margin: 24 }}
+            style={{ alignSelf: "center", margin: 0 }}
             labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
             mode="contained"
             onPress={() => {

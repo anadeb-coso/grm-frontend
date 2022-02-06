@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import {
   View,
   ScrollView,
@@ -43,6 +43,18 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
     { label: "Other", value: "other" },
     { label: "Rather not say", value: "rather_not_say" },
   ]);
+  console.log(citizenGroupsI)
+  console.log(_citizenGroupsI)
+
+  useEffect(() => {
+    if (citizenGroupsI) {
+      setCitizenGroupsI(citizenGroupsI);
+    }
+    if (citizenGroupsII) {
+      setCitizenGroupsII(citizenGroupsII);
+    }
+
+  }, [citizenGroupsI, citizenGroupsII]);
 
   return (
     <ScrollView>
@@ -131,6 +143,10 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
               setItems={setGenders}
             />
             <CustomDropDownPicker
+                schema={{
+                  label: "name",
+                  value: "id",
+                }}
                 placeholder={'Citizen Group I'}
                 value={selectedCitizenGroupI}
                 items={_citizenGroupsI}
@@ -138,6 +154,10 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
                 setItems={setCitizenGroupsI}
             />
             <CustomDropDownPicker
+                schema={{
+                  label: "name",
+                  value: "id",
+                }}
                 placeholder={'Citizen Group II'}
                 value={selectedCitizenGroupII}
                 items={_citizenGroupsII}
