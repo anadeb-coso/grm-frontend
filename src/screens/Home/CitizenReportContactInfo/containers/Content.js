@@ -43,8 +43,6 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
     { label: "Other", value: "other" },
     { label: "Rather not say", value: "rather_not_say" },
   ]);
-  console.log(citizenGroupsI)
-  console.log(_citizenGroupsI)
 
   useEffect(() => {
     if (citizenGroupsI) {
@@ -52,6 +50,9 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
     }
     if (citizenGroupsII) {
       setCitizenGroupsII(citizenGroupsII);
+    }
+    if (issueAges) {
+      setAges(issueAges);
     }
 
   }, [citizenGroupsI, citizenGroupsII]);
@@ -125,6 +126,10 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
         </View>
         <Text />
         <CustomDropDownPicker
+            schema={{
+              label: "name",
+              value: "id",
+            }}
           placeholder={i18n.t("contact_step_placeholder_2")}
           value={pickerAgeValue}
           onOpen={() => setIsPreviousPickerClosed(false)}
