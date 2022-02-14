@@ -47,9 +47,10 @@ function Content({ issues, eadl }) {
       <Item
         item={item}
         onPress={() =>
-          navigation.navigate("IssueDetail", {
-            item,
-          })
+            navigation.navigate('IssueDetailTabs', {
+            screen: 'IssueDetail',
+            params: { item, merge: true },
+        })
         }
         backgroundColor={{ backgroundColor }}
         textColor={{ color }}

@@ -27,7 +27,11 @@ import IssueSearch from "./IssueSearch/IssueSearch";
 import CitizenReportContactInfo from "./CitizenReportContactInfo/CitizenReportContactInfo";
 import IssueDetail from "./IssueDetail/IssueDetail";
 import CitizenReportIntro from "./CitizenReportIntro/CitizenReportIntro";
+import { colors } from "../../utils/colors";
+
 import CitizenReportLocationStep from "./CitizenReportLocationStep/CitizenReportLocationStep";
+import {createMaterialTopTabNavigator} from "@react-navigation/material-top-tabs";
+import IssueActions from "./IssueActions/IssueActions";
 
 const iconConfig = {
   focused: {
@@ -55,6 +59,7 @@ const customHeaderOptions = (label) => ({
 });
 
 const Tab = createBottomTabNavigator();
+const TopTab = createMaterialTopTabNavigator();
 const AnimatedFeatherIcon = posed(Feather)(iconConfig);
 const AnimatedIonicons = posed(Ionicons)(iconConfig);
 
@@ -63,26 +68,6 @@ const NotificationsStack = createStackNavigator();
 function DashboardStackScreen() {
   return (
     <HomeStack.Navigator>
-      {/*<HomeStack.Screen*/}
-      {/*  options={{ headerShown: false }}*/}
-      {/*  name="Dashboard"*/}
-      {/*  component={Dashboard}*/}
-      {/*/>*/}
-      {/*<HomeStack.Screen*/}
-      {/*  options={({ navigation, route }) => ({*/}
-      {/*    headerBackTitle: () => null,*/}
-      {/*  })}*/}
-      {/*  name="WorkInProgress"*/}
-      {/*  component={WorkInProgress}*/}
-      {/*/>*/}
-      {/*<HomeStack.Screen*/}
-      {/*  name="CitizenEngagement"*/}
-      {/*  component={CitizenEngagement}*/}
-      {/*  options={({ navigation, route }) =>*/}
-      {/*    customHeaderOptions("Engagement Citoyen")*/}
-      {/*  }*/}
-      {/*/>*/}
-
       {/*GRM Module*/}
       <HomeStack.Screen
         name="GRM"
@@ -150,13 +135,21 @@ function DashboardStackScreen() {
         }
       />
 
-      <HomeStack.Screen
-        name="IssueDetail"
-        component={IssueDetail}
-        options={({ navigation, route }) =>
-          customHeaderOptions(route.params.item?.title)
-        }
-      />
+      {/*<HomeStack.Screen*/}
+      {/*  name="IssueDetail"*/}
+      {/*  component={IssueDetail}*/}
+      {/*  options={({ navigation, route }) =>*/}
+      {/*    customHeaderOptions(route.params.item?.title)*/}
+      {/*  }*/}
+      {/*/>*/}
+
+        <HomeStack.Screen
+            name="IssueDetailTabs"
+            component={IssueDetailTabsStack}
+            options={({ navigation, route }) =>
+                customHeaderOptions("e3GRM")
+            }
+        />
 
       <HomeStack.Screen
         name="RegisterSubprojects"
@@ -233,6 +226,21 @@ function NotificationsStackScreen() {
       />
     </NotificationsStack.Navigator>
   );
+}
+
+function IssueDetailTabsStack() {
+    return (
+        <TopTab.Navigator tabBarOptions={{
+            activeTintColor: colors.primary,
+            indicatorStyle: {
+                backgroundColor: colors.primary,
+            },
+        }}>
+            <TopTab.Screen options={{ tabBarLabel: 'Actions' }} name="Actions" component={IssueActions} />
+            <TopTab.Screen options={{ tabBarLabel: 'Details' }} name="IssueDetail" component={IssueDetail} />
+            <TopTab.Screen options={{ tabBarLabel: 'History' }} name="History" component={IssueActions} />
+        </TopTab.Navigator>
+    );
 }
 
 const HomeRouter = () => {

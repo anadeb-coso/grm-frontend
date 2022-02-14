@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, ScrollView, Text, Platform } from "react-native";
+import { View, ScrollView, Text, Platform, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { styles } from "./Content.styles";
 import * as ImagePicker from "expo-image-picker";
@@ -11,6 +11,10 @@ import CustomGreenButton from "../../../../components/CustomGreenButton/CustomGr
 import i18n from "i18n-js";
 import { Button, TextInput } from "react-native-paper";
 import { LocalGRMDatabase } from "../../../../utils/databaseManager";
+import {citizenTypes} from "../../../../utils/utils";
+import Collapsible from 'react-native-collapsible';
+import {MaterialCommunityIcons} from "@expo/vector-icons";
+
 
 const theme = {
   roundness: 12,
@@ -24,7 +28,12 @@ const theme = {
 
 function Content({ issue }) {
   const [comments, setComments] = useState(issue.comments);
+  const [currentDate, setCurrentDate] = useState(moment());
   const [newComment, setNewComment] = useState();
+  const [isDescriptionCollapsed, setIsDescriptionCollapsed] = useState(true);
+  const [isDecisionCollapsed, setIsDecisionCollapsed] = useState(true);
+  const [isSatisfactionCollapsed, setIsSatisfactionCollapsed] = useState(true);
+  const [isAppealCollapsed, setIsAppealCollapsed] = useState(true);
   const scrollViewRef = useRef();
 
   useBackHandler(() => {
@@ -83,93 +92,78 @@ function Content({ issue }) {
       ref={scrollViewRef}
       contentContainerStyle={{ alignItems: "center", padding: 20 }}
     >
+
+
       <View
-        style={{
-          marginTop: 23,
-          width: "100%",
-          height: 90,
-          borderRadius: 10,
-          backgroundColor: "#ffffff",
-          shadowColor: "rgba(0, 0, 0, 0.05)",
-          shadowOffset: {
-            width: 0,
-            height: 3,
-          },
-          shadowRadius: 15,
-          shadowOpacity: 1,
-          padding: 17,
-        }}
+        style={styles.infoContainer}
       >
-        <Text style={styles.title}>{issue.title}</Text>
-        <View style={{ marginVertical: 5 }}>
-          <Text style={styles.text}>
-            {i18n.t("reported_label")}:{" "}
-            <Text
-              style={{ color: colors.primary, fontFamily: "Poppins_700Bold" }}
-            >
-              {" "}
-              {issue.issue_date &&
-                moment(issue.issue_date).format("DD-MMM-YYYY")}
-            </Text>{" "}
-            <Text>/</Text>{" "}
-            <Text style={{ color: "#ef6a78", fontFamily: "Poppins_700Bold" }}>
-              15 days ago
-            </Text>
-          </Text>
-        </View>
-        <CustomGreenButton buttonStyle={{ height: 25, width: 100 }}>
-          <Text
-            style={{
-              fontFamily: "Poppins_400Regular",
-              fontSize: 12,
-              lineHeight: 0,
-            }}
+          <View
+              style={{flexDirection: 'row'}}
           >
-            {i18n.t("status_label")}:{" "}
-            <Text style={{ fontFamily: "Poppins_700Bold" }}>OPEN</Text>
-          </Text>
-        </CustomGreenButton>
-      </View>
-      <CustomSeparator />
-      <View
-        style={{
-          flex: 1,
-          width: "100%",
-          borderRadius: 10,
-          backgroundColor: "#ffffff",
-          shadowColor: "rgba(0, 0, 0, 0.05)",
-          shadowOffset: {
-            width: 0,
-            height: 3,
-          },
-          shadowRadius: 15,
-          shadowOpacity: 1,
-          // marginHorizontal: 23,
-          padding: 18,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            flex: 1,
-            justifyContent: "space-between",
-          }}
+              <View style={{ marginBottom: 10, justifyContent: 'flex-end', flex: 1, flexDirection:'row' }}>
+                  <Text style={[styles.text, {fontSize: 12, color: colors.primary}]}>
+                      {" "}
+                      {issue.issue_date &&
+                      moment(issue.issue_date).format("DD-MMM-YYYY")}   {issue.issue_date &&
+                  currentDate.diff(issue.issue_date, "days")} {"days ago"}
+                  </Text>
+              </View>
+          </View>
+          <View
+              style={{
+                  flexDirection: "row",
+                  flex: 1,
+                  justifyContent: "space-between",
+                  marginTop: 10,
+              }}
+          >
+              <View style={{ flex: 1 }}>
+
+                  <Text style={styles.subtitle}>
+                      Lodged by:
+                      <Text style={styles.text}> {citizenTypes[issue.citizen_type]}</Text>
+                  </Text>
+                  <Text style={styles.subtitle}>
+                      Name:
+                      <Text style={styles.text}> {issue.citizen_type == 1 ? "Confidential" : issue.citizen}</Text>
+                  </Text>
+                  <Text style={styles.subtitle}>
+                      Age:{" "}
+                      <Text style={styles.text}> {issue.citizen_age_group?.name}</Text>
+                  </Text>
+                  <Text style={styles.subtitle}>
+                      {i18n.t("citizen_label")}:{" "}
+                      <Text style={styles.text}> {issue?.citizen}</Text>
+                  </Text>
+                  <Text style={styles.subtitle}>
+                      Location:
+                      <Text style={styles.text}> {issue.administrative_region?.name}</Text>
+                  </Text>
+                  <Text style={styles.subtitle}>
+                      Category:
+                      <Text style={styles.text}> {issue.category?.name}</Text>
+                  </Text>
+                  <Text style={styles.subtitle}>
+                      Assigned to:
+                      <Text style={styles.text}> {issue.assignee ?? "Pending Assignment"}</Text>
+                  </Text>
+              </View>
+          </View>
+          <CustomSeparator/>
+        <TouchableOpacity onPress={() => setIsDescriptionCollapsed(!isDescriptionCollapsed)}
+          style={styles.collapsibleTrigger}
         >
-          <Text style={styles.title}>{i18n.t("description_label")}</Text>
-          {/*<TouchableOpacity>*/}
-          {/*  <Feather name="edit" size={24} color={colors.primary} />*/}
-          {/*</TouchableOpacity>*/}
-        </View>
+          <Text style={styles.subtitle}>{i18n.t("description_label")}</Text>
+            <MaterialCommunityIcons
+                name={isDescriptionCollapsed ? "chevron-down-circle" : "chevron-up-circle"}
+                size={24}
+                color={colors.primary}
+            />
+        </TouchableOpacity>
+          <Collapsible collapsed={isDescriptionCollapsed}>
+
         <View
-          style={{
-            borderRadius: 10,
-            padding: 14,
-            marginTop: 5,
-            backgroundColor: "#ffffff",
-            borderStyle: "solid",
-            borderWidth: 1,
-            borderColor: "#f7f7f7",
-          }}
+          style={styles.collapsibleContent}
         >
           <Text
             style={{
@@ -186,92 +180,163 @@ function Content({ issue }) {
             {issue.description}
           </Text>
         </View>
-        <View
-          style={{
-            flexDirection: "row",
-            flex: 1,
-            justifyContent: "space-between",
-            marginTop: 10,
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={styles.subtitle}>
-              {i18n.t("assigned_to_label")}:{" "}
-              <Text style={styles.text}> {issue.assignee}</Text>
-            </Text>
-            <Text style={styles.subtitle}>
-              {i18n.t("reporter_label")}:{" "}
-              <Text style={styles.text}> {issue?.reporter?.name}</Text>
-            </Text>
-            <Text style={styles.subtitle}>
-              {i18n.t("citizen_label")}:{" "}
-              <Text style={styles.text}> {issue?.citizen}</Text>
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.subtitle}>
-              {i18n.t("privacy_label")}: <Text style={styles.text}>--</Text>
-            </Text>
-            <Text style={styles.subtitle}>
-              {i18n.t("category_label")}:{" "}
-              <Text style={styles.text}> {issue.category}</Text>
-            </Text>
-            <Text style={styles.subtitle}>
-              {i18n.t("issue_type_label")}:{" "}
-              <Text style={styles.text}> {issue.type}</Text>
-            </Text>
-          </View>
-        </View>
-        <CustomSeparator />
-        <Text style={styles.title}>{i18n.t("attachments_label")}</Text>
-        {issue?.attachments.map((item) => (
-          <Text style={[styles.text, { marginBottom: 10 }]}>{item.uri}</Text>
-        ))}
-        <CustomSeparator />
-        <Text style={styles.title}>Activity</Text>
-        {comments?.map((item) => (
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", marginVertical: 10, flex: 1 }}>
-              <View
-                style={{
-                  width: 32,
-                  height: 32,
-                  backgroundColor: "#f5ba74",
-                  borderRadius: 16,
-                }}
+          </Collapsible>
+          <CustomSeparator />
+          <TouchableOpacity onPress={() => setIsDecisionCollapsed(!isDecisionCollapsed)}
+                            style={styles.collapsibleTrigger}
+          >
+              <Text style={styles.subtitle}>Decision</Text>
+              <MaterialCommunityIcons
+                  name={isDecisionCollapsed ? "chevron-down-circle" : "chevron-up-circle"}
+                  size={24}
+                  color={colors.primary}
               />
-              <View style={{ marginLeft: 10 }}>
-                <Text style={styles.text}>{item.name}</Text>
-                <Text style={styles.text}>
-                  {moment(item.due_at).format("DD-MMM-YYYY")}
-                </Text>
+          </TouchableOpacity>
+          <Collapsible collapsed={isDecisionCollapsed}>
+
+              <View
+                  style={styles.collapsibleContent}
+              >
+                  <Text
+                      style={{
+                          fontFamily: "Poppins_400Regular",
+                          fontSize: 12,
+                          fontWeight: "normal",
+                          fontStyle: "normal",
+                          lineHeight: 15,
+                          letterSpacing: 0,
+                          textAlign: "left",
+                          color: "#707070",
+                      }}
+                  >
+                      {" Decision "}
+                  </Text>
               </View>
-            </View>
-            <Text style={styles.text}>{item.comment}</Text>
-          </View>
-        ))}
+          </Collapsible>
+          <CustomSeparator />
+          <TouchableOpacity onPress={() => setIsSatisfactionCollapsed(!isSatisfactionCollapsed)}
+                            style={styles.collapsibleTrigger}
+          >
+              <Text style={styles.subtitle}>Satisfaction</Text>
+              <MaterialCommunityIcons
+                  name={isSatisfactionCollapsed ? "chevron-down-circle" : "chevron-up-circle"}
+                  size={24}
+                  color={colors.primary}
+              />
+          </TouchableOpacity>
+          <Collapsible collapsed={isSatisfactionCollapsed}>
 
-        <TextInput
-          multiline
-          numberOfLines={4}
-          style={[styles.grmInput, { height: 80 }]}
-          placeholder={i18n.t("comment_placeholder")}
-          outlineColor={"#f6f6f6"}
-          theme={theme}
-          mode={"outlined"}
-          value={newComment}
-          onChangeText={(text) => setNewComment(text)}
-        />
+              <View
+                  style={styles.collapsibleContent}
+              >
+                  <Text
+                      style={{
+                          fontFamily: "Poppins_400Regular",
+                          fontSize: 12,
+                          fontWeight: "normal",
+                          fontStyle: "normal",
+                          lineHeight: 15,
+                          letterSpacing: 0,
+                          textAlign: "left",
+                          color: "#707070",
+                      }}
+                  >
+                      {" Satisfaction "}
+                  </Text>
+              </View>
+          </Collapsible>
+          <CustomSeparator />
+          <TouchableOpacity onPress={() => setIsAppealCollapsed(!isAppealCollapsed)}
+                            style={styles.collapsibleTrigger}
+          >
+              <Text style={styles.subtitle}>Appeal Reason</Text>
+              <MaterialCommunityIcons
+                  name={isAppealCollapsed ? "chevron-down-circle" : "chevron-up-circle"}
+                  size={24}
+                  color={colors.primary}
+              />
+          </TouchableOpacity>
+          <Collapsible collapsed={isAppealCollapsed}>
 
-        <Button
-          theme={theme}
-          style={{ alignSelf: "center", margin: 24 }}
-          labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
-          mode="contained"
-          onPress={onAddComment}
-        >
-          Add comment
-        </Button>
+              <View
+                  style={styles.collapsibleContent}
+              >
+                  <Text
+                      style={{
+                          fontFamily: "Poppins_400Regular",
+                          fontSize: 12,
+                          fontWeight: "normal",
+                          fontStyle: "normal",
+                          lineHeight: 15,
+                          letterSpacing: 0,
+                          textAlign: "left",
+                          color: "#707070",
+                      }}
+                  >
+                      {" Appeal Reason "}
+                  </Text>
+              </View>
+          </Collapsible>
+        {/*<CustomSeparator />*/}
+        {/*<Text style={styles.title}>{i18n.t("attachments_label")}</Text>*/}
+        {/*{issue?.attachments.map((item) => (*/}
+        {/*  <Text style={[styles.text, { marginBottom: 10 }]}>{item.uri}</Text>*/}
+        {/*))}*/}
+        {/*<CustomSeparator />*/}
+        {/*<Text style={styles.title}>Activity</Text>*/}
+        {/*{comments?.map((item) => (*/}
+        {/*  <View style={{ flex: 1 }}>*/}
+        {/*    <View style={{ flexDirection: "row", marginVertical: 10, flex: 1 }}>*/}
+        {/*      <View*/}
+        {/*        style={{*/}
+        {/*          width: 32,*/}
+        {/*          height: 32,*/}
+        {/*          backgroundColor: "#f5ba74",*/}
+        {/*          borderRadius: 16,*/}
+        {/*        }}*/}
+        {/*      />*/}
+        {/*      <View style={{ marginLeft: 10 }}>*/}
+        {/*        <Text style={styles.text}>{item.name}</Text>*/}
+        {/*        <Text style={styles.text}>*/}
+        {/*          {moment(item.due_at).format("DD-MMM-YYYY")}*/}
+        {/*        </Text>*/}
+        {/*      </View>*/}
+        {/*    </View>*/}
+        {/*    <Text style={styles.text}>{item.comment}</Text>*/}
+        {/*  </View>*/}
+        {/*))}*/}
+
+        {/*<TextInput*/}
+        {/*  multiline*/}
+        {/*  numberOfLines={4}*/}
+        {/*  style={[styles.grmInput, { height: 80 }]}*/}
+        {/*  placeholder={i18n.t("comment_placeholder")}*/}
+        {/*  outlineColor={"#f6f6f6"}*/}
+        {/*  theme={theme}*/}
+        {/*  mode={"outlined"}*/}
+        {/*  value={newComment}*/}
+        {/*  onChangeText={(text) => setNewComment(text)}*/}
+        {/*/>*/}
+
+        {/*<Button*/}
+        {/*  theme={theme}*/}
+        {/*  style={{ alignSelf: "center", margin: 24 }}*/}
+        {/*  labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}*/}
+        {/*  mode="contained"*/}
+        {/*  onPress={onAddComment}*/}
+        {/*>*/}
+        {/*  Add comment*/}
+        {/*</Button>*/}
+        <CustomSeparator/>
+          <Button
+            theme={theme}
+            style={{ alignSelf: "center", margin: 24 }}
+            labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
+            mode="contained"
+            onPress={onAddComment}
+          >
+            Back
+          </Button>
       </View>
     </ScrollView>
   );

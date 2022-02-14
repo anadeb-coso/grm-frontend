@@ -24,6 +24,7 @@ const CustomDropDownPicker = ({
   disabled = false,
   onOpen = () => null,
   onClose = () => null,
+  onSelectItem = () => null,
 }) => {
   const [dropdownVisible, setDropdownVisible] = React.useState(false);
   const [open, setOpen] = useState(false);
@@ -61,6 +62,7 @@ const CustomDropDownPicker = ({
             color={colors.primary}
           />
         )}
+          onSelectItem={(item) => onSelectItem(item)}
         style={styles.dropdownStyle}
         dropDownContainerStyle={styles.dropdownContainer}
         textStyle={styles.dropdownText}

@@ -49,6 +49,7 @@ function Content({ issue, eadl }) {
         id: eadl.representative.id,
         name: eadl.representative.name,
       },
+      citizen_age_group: issue.ageGroup,
       citizen: issue.name ?? "",
       contact_medium: issue.typeOfPerson,
       citizen_type: issue.citizen_type,

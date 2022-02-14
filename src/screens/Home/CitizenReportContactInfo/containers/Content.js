@@ -30,6 +30,7 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
   const [contactMethodError, setContactMethodError] = React.useState();
   const [isPreviousPickerClosed, setIsPreviousPickerClosed] = useState(true);
   const [pickerAgeValue, setPickerAgeValue] = useState(null);
+  const [selectedAge, setSelectedAge] = useState(null);
   const [confidentialValue, setConfidentialValue] = useState(null);
   const [selectedCitizenGroupI, setSelectedCitizenGroupI] = useState(null);
   const [selectedCitizenGroupII, setSelectedCitizenGroupII] = useState(null);
@@ -130,6 +131,7 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
               label: "name",
               value: "id",
             }}
+            onSelectItem={(item)=> setSelectedAge(item)}
           placeholder={i18n.t("contact_step_placeholder_2")}
           value={pickerAgeValue}
           onOpen={() => setIsPreviousPickerClosed(false)}
@@ -181,7 +183,7 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
                       stepOneParams: {
                         ...stepOneParams,
                         name,
-                        ageGroup: pickerAgeValue,
+                        ageGroup: selectedAge,
                         citizen_type: confidentialValue,
                         citizen_group_1: selectedCitizenGroupI,
                         citizen_group_2: selectedCitizenGroupII,
