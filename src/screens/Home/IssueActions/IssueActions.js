@@ -3,12 +3,13 @@ import { SafeAreaView } from "react-native";
 import Content from "./containers/Content";
 import { styles } from "./IssueActions.styles";
 
-const IssueActions = () => {
-  const customStyles = styles();
+const IssueActions = ({ route, navigation }) => {
+    const { params } = route;
+    const customStyles = styles();
 
   return (
     <SafeAreaView style={customStyles.container}>
-      <Content />
+      <Content issue={params.item} navigation={navigation} />
     </SafeAreaView>
   );
 };

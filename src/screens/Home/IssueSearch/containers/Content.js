@@ -49,6 +49,7 @@ function Content({ issues, eadl }) {
         onPress={() =>
             navigation.navigate('IssueDetailTabs', {
             item,
+            merge: true
         })
         }
         backgroundColor={{ backgroundColor }}

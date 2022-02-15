@@ -1,5 +1,5 @@
 import React from "react";
-
+import {View} from 'react-native';
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import WorkInProgress from "./WorkInProgress";
@@ -229,6 +229,7 @@ function NotificationsStackScreen() {
 }
 
 function IssueDetailTabsStack(props) {
+    console.log(props.route.params);
     const temp = props.route.params.item
     return (
         <TopTab.Navigator tabBarOptions={{
@@ -239,9 +240,9 @@ function IssueDetailTabsStack(props) {
 
         }}
         initialRouteName={'Actions'}>
-            <TopTab.Screen options={{ tabBarLabel: 'Actions' }} name="Actions" component={IssueActions} />
-            <TopTab.Screen initialParams={{item: temp}} options={{ tabBarLabel: 'Details' }} name="IssueDetail" component={IssueDetail} />
-            <TopTab.Screen options={{ tabBarLabel: 'History' }} name="History" component={IssueActions} />
+            <TopTab.Screen name="Actions" initialParams={{item: temp}} options={{ tabBarLabel: 'Actions' }} component={IssueActions} />
+            <TopTab.Screen name="IssueDetail" initialParams={{item: temp}} options={{ tabBarLabel: 'Details' }} component={IssueDetail} />
+            <TopTab.Screen options={{ tabBarLabel: 'History' }} name="History" component={() => <View/>} />
         </TopTab.Navigator>
     );
 }
