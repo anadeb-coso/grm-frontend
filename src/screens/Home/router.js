@@ -228,16 +228,19 @@ function NotificationsStackScreen() {
   );
 }
 
-function IssueDetailTabsStack() {
+function IssueDetailTabsStack(props) {
+    const temp = props.route.params.item
     return (
         <TopTab.Navigator tabBarOptions={{
             activeTintColor: colors.primary,
             indicatorStyle: {
                 backgroundColor: colors.primary,
             },
-        }}>
+
+        }}
+        initialRouteName={'Actions'}>
             <TopTab.Screen options={{ tabBarLabel: 'Actions' }} name="Actions" component={IssueActions} />
-            <TopTab.Screen options={{ tabBarLabel: 'Details' }} name="IssueDetail" component={IssueDetail} />
+            <TopTab.Screen initialParams={{item: temp}} options={{ tabBarLabel: 'Details' }} name="IssueDetail" component={IssueDetail} />
             <TopTab.Screen options={{ tabBarLabel: 'History' }} name="History" component={IssueActions} />
         </TopTab.Navigator>
     );

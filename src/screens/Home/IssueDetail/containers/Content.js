@@ -129,23 +129,23 @@ function Content({ issue }) {
                   </Text>
                   <Text style={styles.subtitle}>
                       Age:{" "}
-                      <Text style={styles.text}> {issue.citizen_age_group?.name}</Text>
+                      <Text style={styles.text}> {issue.citizen_age_group?.name ?? "Information not available"}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
                       {i18n.t("citizen_label")}:{" "}
-                      <Text style={styles.text}> {issue?.citizen}</Text>
+                      <Text style={styles.text}> {!!issue?.citizen ? issue.citizen : "Information not available"}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
-                      Location:
-                      <Text style={styles.text}> {issue.administrative_region?.name}</Text>
+                      Location:{" "}
+                      <Text style={styles.text}> {issue.administrative_region?.name ?? "Information not available"}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
-                      Category:
-                      <Text style={styles.text}> {issue.category?.name}</Text>
+                      Category:{" "}
+                      <Text style={styles.text}> {issue.category?.name ?? "Information not available"}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
-                      Assigned to:
-                      <Text style={styles.text}> {issue.assignee ?? "Pending Assignment"}</Text>
+                      Assigned to:{" "}
+                      <Text style={styles.text}> {!!issue.assignee ? issue.assignee : "Information not available"}</Text>
                   </Text>
               </View>
           </View>
@@ -209,7 +209,7 @@ function Content({ issue }) {
                           color: "#707070",
                       }}
                   >
-                      {" Decision "}
+                      {" Information not available "}
                   </Text>
               </View>
           </Collapsible>
@@ -241,7 +241,7 @@ function Content({ issue }) {
                           color: "#707070",
                       }}
                   >
-                      {" Satisfaction "}
+                      {" Information not available "}
                   </Text>
               </View>
           </Collapsible>
@@ -273,7 +273,7 @@ function Content({ issue }) {
                           color: "#707070",
                       }}
                   >
-                      {" Appeal Reason "}
+                      {" Information not available "}
                   </Text>
               </View>
           </Collapsible>
