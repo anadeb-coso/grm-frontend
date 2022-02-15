@@ -11,14 +11,11 @@ export const styles = StyleSheet.create({
     color: "#24c38b",
   },
   subtitle: {
-    fontFamily: "Poppins_400Regular",
-    fontSize: 10,
-    fontWeight: "normal",
-    fontStyle: "normal",
-    lineHeight: 14,
+    fontFamily: "Poppins_700Bold",
     letterSpacing: 0,
     textAlign: "left",
     color: "#707070",
+    marginVertical: 2
   },
   stepText: {
     marginVertical: 5,

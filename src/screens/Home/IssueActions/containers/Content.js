@@ -13,6 +13,8 @@ import { colors } from "../../../../utils/colors";
 import CustomDropDownPicker from "../../../../components/CustomDropDownPicker/CustomDropDownPicker";
 import i18n from "i18n-js";
 import moment from "moment";
+import {AntDesign, Feather} from "@expo/vector-icons";
+
 
 const theme = {
   roundness: 12,
@@ -81,6 +83,68 @@ function Content({ issue, navigation }) {
             >
               VIEW DETAILS
             </Button>
+          </View>
+
+
+          {/*ACTION BUTTONS*/}
+          <View style={{borderWidth: 1, borderRadius: 15, padding: 15, borderColor: colors.lightgray}}>
+            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
+              <Text style={styles.subtitle}>
+                Accept Issue
+              </Text>
+              <View style={{flexDirection:'row', alignItems:'center'}}>
+                <AntDesign
+                style={{marginRight: 5}}
+                  name={"rightsquare"}
+                  size={35}
+                  color={colors.primary}
+              />
+              <Feather name="help-circle" size={24} color={'gray'} />
+              </View>
+            </View>
+            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
+              <Text style={styles.subtitle}>
+                Record Steps Taken
+              </Text>
+              <View style={{flexDirection:'row', alignItems:'center'}}>
+                <AntDesign
+                    style={{marginRight: 5}}
+                  name={"rightsquare"}
+                  size={35}
+                  color={colors.primary}
+              />
+              <Feather name="help-circle" size={24} color={'gray'} />
+              </View>
+            </View>
+            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
+              <Text style={styles.subtitle}>
+                Record Resolution
+              </Text>
+              <View style={{flexDirection:'row', alignItems:'center'}}>
+                <AntDesign
+                style={{marginRight: 5}}
+                  name={"rightsquare"}
+                  size={35}
+                  color={colors.primary}
+              />
+              <Feather name="help-circle" size={24} color={'gray'} />
+              </View>
+            </View>
+            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
+              <Text style={styles.subtitle}>
+                Rate & Appeal
+              </Text>
+              <View style={{flexDirection:'row', alignItems:'center'}}>
+                <AntDesign
+                style={{marginRight: 5}}
+                  name={"rightsquare"}
+                  size={35}
+                  color={colors.primary}
+              />
+              <Feather name="help-circle" size={24} color={'gray'} />
+              </View>
+            </View>
+
           </View>
         </View>
       </KeyboardAvoidingView>
