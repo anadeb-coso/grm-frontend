@@ -229,7 +229,6 @@ function NotificationsStackScreen() {
 }
 
 function IssueDetailTabsStack(props) {
-    console.log(props.route.params);
     const temp = props.route.params.item
     return (
         <TopTab.Navigator tabBarOptions={{

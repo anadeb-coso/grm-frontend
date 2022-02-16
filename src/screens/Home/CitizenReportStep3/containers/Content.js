@@ -46,7 +46,7 @@ function Content({ issue, eadl }) {
       confirmed: true,
       assignee: "",
       reporter: {
-        id: eadl.representative.id,
+        id: eadl._id,
         name: eadl.representative.name,
       },
       citizen_age_group: issue.ageGroup,

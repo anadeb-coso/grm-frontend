@@ -121,7 +121,7 @@ function Content({ issue }) {
 
                   <Text style={styles.subtitle}>
                       Lodged by:
-                      <Text style={styles.text}> {citizenTypes[issue.citizen_type]}</Text>
+                      <Text style={styles.text}> {citizenTypes[issue.citizen_type] ?? 'No information available'}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
                       Name:
@@ -145,7 +145,7 @@ function Content({ issue }) {
                   </Text>
                   <Text style={styles.subtitle}>
                       Assigned to:{" "}
-                      <Text style={styles.text}> {!!issue.assignee ? issue.assignee : "Information not available"}</Text>
+                      <Text style={styles.text}> {issue.assignee?.name ?? "Information not available"}</Text>
                   </Text>
               </View>
           </View>
