@@ -28,6 +28,7 @@ const theme = {
 
 function Content({ issue }) {
   const [comments, setComments] = useState(issue.comments);
+  const [isIssueAssignedToMe, setIsIssueAssignedToMe] = useState(false);
   const [currentDate, setCurrentDate] = useState(moment());
   const [newComment, setNewComment] = useState();
   const [isDescriptionCollapsed, setIsDescriptionCollapsed] = useState(true);
@@ -52,6 +53,16 @@ function Content({ issue }) {
       }
     })();
   }, []);
+
+  useEffect(() =>{
+      function _isIssueAssignedToMe() {
+          if(issue.assignee && issue.assignee.id) {
+              return issue.reporter.id === issue.assignee.id
+          }
+      }
+
+      setIsIssueAssignedToMe(_isIssueAssignedToMe())
+  }, [])
 
   const upsertNewComment = () => {
     LocalGRMDatabase.upsert(issue._id, (doc) => {
@@ -125,19 +136,16 @@ function Content({ issue }) {
                   </Text>
                   <Text style={styles.subtitle}>
                       Name:
-                      <Text style={styles.text}> {issue.citizen_type == 1 ? "Confidential" : issue.citizen}</Text>
+                      <Text style={styles.text}> {issue.citizen_type == 1 && !isIssueAssignedToMe ? "Confidential" : issue.citizen}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
                       Age:{" "}
-                      <Text style={styles.text}> {issue.citizen_age_group?.name ?? "Information not available"}</Text>
+                      <Text style={styles.text}> {issue.citizen_type == 1 && !isIssueAssignedToMe ? 'Confidential' : issue.citizen_age_group?.name ?? "Information not available"}</Text>
                   </Text>
-                  <Text style={styles.subtitle}>
-                      {i18n.t("citizen_label")}:{" "}
-                      <Text style={styles.text}> {!!issue?.citizen ? issue.citizen : "Information not available"}</Text>
-                  </Text>
+
                   <Text style={styles.subtitle}>
                       Location:{" "}
-                      <Text style={styles.text}> {issue.administrative_region?.name ?? "Information not available"}</Text>
+                      <Text style={styles.text}> {issue.citizen_type == 1 && !isIssueAssignedToMe ? 'Confidential' : issue.administrative_region?.name ?? "Information not available"}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
                       Category:{" "}
@@ -145,7 +153,7 @@ function Content({ issue }) {
                   </Text>
                   <Text style={styles.subtitle}>
                       Assigned to:{" "}
-                      <Text style={styles.text}> {issue.assignee?.name ?? "Information not available"}</Text>
+                      <Text style={styles.text}> {issue.assignee?.name ?? "Pending Assigment"}</Text>
                   </Text>
               </View>
           </View>
