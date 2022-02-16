@@ -5,6 +5,7 @@ import {
   Text,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { styles } from "./Content.styles";
@@ -26,27 +27,19 @@ const theme = {
   },
 };
 
-function Content({ issue, navigation }) {
-  const [value, setValue] = React.useState("facilitator");
+function Content({ issue, navigation, statuses = [] }) {
   const [currentDate, setCurrentDate] = useState(moment());
   const [citizenName, setCitizenName] = useState();
-  const [dropdownDisabled, setDropdownDisabled] = React.useState(true);
-  const [contactMethodError, setContactMethodError] = React.useState();
-  const [contactInfo, setContactInfo] = React.useState("");
-  const [pickerValue, setPickerValue] = useState("email");
+  const [isAcceptEnabled, setIsAcceptEnabled] = useState(false);
+  const [isRecordResolutionEnabled, setIsRecordResolutionEnabled] = useState(false);
+  const [isRateAppealEnabled, setIsRateAppealEnabled] = useState(false);
+  const [isIssueAssignedToMe, setIsIssueAssignedToMe] = useState(false);
   const goToDetails = () => navigation.jumpTo('IssueDetail');
   const [items, setItems] = useState([
     { label: i18n.t("step_1_method_1"), value: "text-sms" },
     { label: i18n.t("step_1_method_2"), value: "whatsapp" },
     { label: i18n.t("step_1_method_3"), value: "email" },
   ]);
-  useEffect(() => {
-    if (value === "channel-alert") {
-      setDropdownDisabled(false);
-    } else {
-      setDropdownDisabled(true);
-    }
-  }, [value, pickerValue]);
 
   useEffect(()=>{
     const isAssignedToMyself = true;
@@ -57,8 +50,44 @@ function Content({ issue, navigation }) {
     } else if(issue.citizen_type === 1){
       setCitizenName(isAssignedToMyself ? issue.citizen : "Anonymous")
     }
+
+    function _isIssueAssignedToMe() {
+      if(issue.assignee && issue.assignee.id) {
+        return issue.reporter.id === issue.assignee.id
+      }
+    }
+
+    setIsIssueAssignedToMe(_isIssueAssignedToMe())
+
   },[])
 
+  useEffect(()=>{
+    function _isAcceptEnabled(x) {
+      if(x.initial_status && isIssueAssignedToMe) {
+        return (issue.status?.id === x.id);
+      }
+    }
+
+    function _isRecordResolutionEnabled(x) {
+      if((!x.initial_status || !x.final_status) && isIssueAssignedToMe) {
+        return issue.status?.id === x.id;
+      }
+    }
+
+    function _isRateAppealEnabled(x) {
+      if(x.final_status && !isIssueAssignedToMe) {
+        return issue.status?.id === x.id;
+      }
+    }
+
+    if(statuses){
+      console.log(issue)
+      console.log(statuses)
+      setIsAcceptEnabled(statuses.some(_isAcceptEnabled));
+      setIsRecordResolutionEnabled(statuses.some(_isRecordResolutionEnabled));
+      setIsRateAppealEnabled(statuses.some(_isRateAppealEnabled));
+    }
+  },[statuses])
 
   return (
     <ScrollView>
@@ -88,7 +117,7 @@ function Content({ issue, navigation }) {
 
           {/*ACTION BUTTONS*/}
           <View style={{borderWidth: 1, borderRadius: 15, padding: 15, borderColor: colors.lightgray}}>
-            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
+            <TouchableOpacity disabled={!isAcceptEnabled} style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
               <Text style={styles.subtitle}>
                 Accept Issue
               </Text>
@@ -97,12 +126,12 @@ function Content({ issue, navigation }) {
                 style={{marginRight: 5}}
                   name={"rightsquare"}
                   size={35}
-                  color={colors.primary}
+                  color={isAcceptEnabled ? colors.primary : colors.disabled}
               />
               <Feather name="help-circle" size={24} color={'gray'} />
               </View>
-            </View>
-            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
+            </TouchableOpacity>
+            <TouchableOpacity disabled={!isRecordResolutionEnabled} style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
               <Text style={styles.subtitle}>
                 Record Steps Taken
               </Text>
@@ -111,12 +140,12 @@ function Content({ issue, navigation }) {
                     style={{marginRight: 5}}
                   name={"rightsquare"}
                   size={35}
-                  color={colors.primary}
+                  color={isRecordResolutionEnabled ? colors.primary : colors.disabled}
               />
               <Feather name="help-circle" size={24} color={'gray'} />
               </View>
-            </View>
-            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
+            </TouchableOpacity>
+            <TouchableOpacity disabled={!isRecordResolutionEnabled} style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
               <Text style={styles.subtitle}>
                 Record Resolution
               </Text>
@@ -125,12 +154,13 @@ function Content({ issue, navigation }) {
                 style={{marginRight: 5}}
                   name={"rightsquare"}
                   size={35}
-                  color={colors.primary}
-              />
+                  color={isRecordResolutionEnabled ? colors.primary : colors.disabled}
+
+                />
               <Feather name="help-circle" size={24} color={'gray'} />
               </View>
-            </View>
-            <View style={{flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
+            </TouchableOpacity>
+            <TouchableOpacity disabled={!isRateAppealEnabled} style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
               <Text style={styles.subtitle}>
                 Rate & Appeal
               </Text>
@@ -139,13 +169,29 @@ function Content({ issue, navigation }) {
                 style={{marginRight: 5}}
                   name={"rightsquare"}
                   size={35}
-                  color={colors.primary}
-              />
+                  color={isRateAppealEnabled ? colors.primary : colors.disabled}
+
+                />
               <Feather name="help-circle" size={24} color={'gray'} />
               </View>
-            </View>
+            </TouchableOpacity>
 
           </View>
+          <TouchableOpacity disabled={!isRecordResolutionEnabled} style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10, padding: 15}}>
+            <Text style={styles.subtitle}>
+               Escalate
+            </Text>
+            <View style={{flexDirection:'row', alignItems:'center'}}>
+              <AntDesign
+                  style={{marginRight: 5}}
+                  name={"rightsquare"}
+                  size={35}
+                  color={isRecordResolutionEnabled ? colors.primary : colors.disabled}
+
+              />
+              <Feather name="help-circle" size={24} color={'gray'} />
+            </View>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </ScrollView>
