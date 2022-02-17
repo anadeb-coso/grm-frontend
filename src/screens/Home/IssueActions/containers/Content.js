@@ -35,11 +35,7 @@ function Content({ issue, navigation, statuses = [] }) {
   const [isRateAppealEnabled, setIsRateAppealEnabled] = useState(false);
   const [isIssueAssignedToMe, setIsIssueAssignedToMe] = useState(false);
   const goToDetails = () => navigation.jumpTo('IssueDetail');
-  const [items, setItems] = useState([
-    { label: i18n.t("step_1_method_1"), value: "text-sms" },
-    { label: i18n.t("step_1_method_2"), value: "whatsapp" },
-    { label: i18n.t("step_1_method_3"), value: "email" },
-  ]);
+
 
   useEffect(()=>{
     const isAssignedToMyself = true;
@@ -69,7 +65,7 @@ function Content({ issue, navigation, statuses = [] }) {
     }
 
     function _isRecordResolutionEnabled(x) {
-      if((!x.initial_status || !x.final_status) && isIssueAssignedToMe) {
+      if(x.open_status && isIssueAssignedToMe) {
         return issue.status?.id === x.id;
       }
     }
@@ -81,8 +77,6 @@ function Content({ issue, navigation, statuses = [] }) {
     }
 
     if(statuses){
-      console.log(issue)
-      console.log(statuses)
       setIsAcceptEnabled(statuses.some(_isAcceptEnabled));
       setIsRecordResolutionEnabled(statuses.some(_isRecordResolutionEnabled));
       setIsRateAppealEnabled(statuses.some(_isRateAppealEnabled));
@@ -117,7 +111,9 @@ function Content({ issue, navigation, statuses = [] }) {
 
           {/*ACTION BUTTONS*/}
           <View style={{borderWidth: 1, borderRadius: 15, padding: 15, borderColor: colors.lightgray}}>
-            <TouchableOpacity disabled={!isAcceptEnabled} style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
+            <TouchableOpacity onPress={()=>{
+
+            }} disabled={!isAcceptEnabled} style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
               <Text style={styles.subtitle}>
                 Accept Issue
               </Text>
