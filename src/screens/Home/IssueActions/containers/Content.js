@@ -32,16 +32,23 @@ function Content({ issue, navigation, statuses = [] }) {
   const [acceptDialog, setAcceptDialog] = useState(false);
   const [rejectDialog, setRejectDialog] = useState(false);
   const [acceptedDialog, setAcceptedDialog] = useState(false);
+  const [rejectedDialog, setRejectedDialog] = useState(false);
   const [currentDate, setCurrentDate] = useState(moment());
   const [citizenName, setCitizenName] = useState();
-  const [reason, onChangeReason] = React.useState('');
+  const [reason, onChangeReason] = useState('');
   const [isAcceptEnabled, setIsAcceptEnabled] = useState(false);
   const [isRecordResolutionEnabled, setIsRecordResolutionEnabled] = useState(false);
   const [isRateAppealEnabled, setIsRateAppealEnabled] = useState(false);
   const [isIssueAssignedToMe, setIsIssueAssignedToMe] = useState(false);
   const goToDetails = () => navigation.jumpTo('IssueDetail');
   const _showDialog = () => setAcceptDialog(true);
-  const _showRejectDialog = () => setRejectDialog(true);
+  const _hideDialog = () => setAcceptDialog(false);
+  const _showRejectDialog = () => {
+    _hideDialog();
+    setRejectDialog(true);
+  }
+  const _hideRejectDialog = () => setRejectDialog(false);
+
 
   const updateActionButtons = () =>{
     function _isAcceptEnabled(x) {
@@ -68,37 +75,43 @@ function Content({ issue, navigation, statuses = [] }) {
       setIsRateAppealEnabled(statuses.some(_isRateAppealEnabled));
     }
   }
-  const _hideDialog = () => setAcceptDialog(false);
-  const rejectIssue= () => {
-    //TODO reject issue
-  }
+
   const acceptIssue = () => {
-
     const newStatus = statuses.find((x)=>
-      x.open_status === true
+        x.open_status === true
     )
+    saveIssueStatus(newStatus, 'accept');
+  }
 
+  const rejectIssue= () => {
+    const newStatus = statuses.find((x)=>
+        x.rejected_status === true
+    );
+    saveIssueStatus(newStatus, 'reject');
+  }
+
+  const saveIssueStatus = (newStatus, type) => {
     if(!!newStatus){
       issue.status = {
         id: newStatus.id,
         name: newStatus.name
       }
-
       LocalGRMDatabase.upsert(issue._id, function (doc) {
         doc = issue;
         return doc;
       })
           .then(function (res) {
             updateActionButtons()
-            setAcceptedDialog(true)
+            if(type === 'accept') {
+              setAcceptedDialog(true)
+            } else if(type === 'reject') {
+              setRejectedDialog(true)
+            }
           })
           .catch(function (err) {
             console.log("Error", err);
-            // error
           });
-
     }
-
   }
 
 
@@ -232,41 +245,52 @@ function Content({ issue, navigation, statuses = [] }) {
             </View>
           </TouchableOpacity>
         </View>
-
       </KeyboardAvoidingView>
+
       {/*REJECT MODAL*/}
       <Portal>
           <Dialog
               visible={rejectDialog}
-              onDismiss={_hideDialog}>
+              onDismiss={_hideRejectDialog}>
             <Dialog.Content>
-              <Paragraph>You are rejecting this complaint for consideration. Please enter a reason for consideration.</Paragraph>
-              <TextInput multiline style={{marginTop: 10}} mode={'outlined'} theme={theme}
-                         onChangeText={onChangeReason}
-                         value={reason}
-
-              />
+              {!rejectedDialog ? <Paragraph>You are rejecting this complaint for consideration. Please enter a reason for
+                consideration.</Paragraph> : <Paragraph>This complaint has been rejected.  Notifications will be sent to the original recorder and the citizen.</Paragraph>}
+              {!rejectedDialog && <TextInput multiline style={{marginTop: 10}} mode={'outlined'} theme={theme}
+                          onChangeText={onChangeReason}
+              />}
             </Dialog.Content>
-            <Dialog.Actions>
+            {!rejectedDialog ? <Dialog.Actions>
               <Button
                   theme={theme}
-                  style={{ alignSelf: "center", backgroundColor: '#d4d4d4' }}
-                  labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
+                  style={{alignSelf: "center", backgroundColor: '#d4d4d4'}}
+                  labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
                   mode="contained"
-                  onPress={()=>{}}
+                  onPress={_hideRejectDialog}
               >
                 CANCEL
               </Button>
               <Button
                   theme={theme}
-                  style={{ alignSelf: "center", margin: 24 }}
-                  labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
+                  style={{alignSelf: "center", margin: 24}}
+                  labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
                   mode="contained"
                   onPress={rejectIssue}
               >
                 SUBMIT
               </Button>
             </Dialog.Actions>
+                :
+                <Dialog.Actions>
+                  <Button
+                      theme={theme}
+                      style={{alignSelf: "center", margin: 24}}
+                      labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
+                      mode="contained"
+                      onPress={_hideRejectDialog}
+                  >
+                    FINISHED
+                  </Button></Dialog.Actions>
+            }
           </Dialog>
       </Portal>
 
@@ -278,7 +302,7 @@ function Content({ issue, navigation, statuses = [] }) {
             onDismiss={_hideDialog}>
           {!acceptedDialog && <Dialog.Title>Accept Issue?</Dialog.Title>}
           <Dialog.Content>
-            {!acceptDialog ? <Paragraph>Are you accepting this is a grievance relevant to the project? Or are you rejecting because it is not relevant?</Paragraph>
+            {!acceptedDialog ? <Paragraph>Are you accepting this is a grievance relevant to the project? Or are you rejecting because it is not relevant?</Paragraph>
                 : <Paragraph>You have accepted this complaint into the system.  Notifications have been sent to the citizen and the original recorder of the complaint.</Paragraph>}
           </Dialog.Content>
           {!acceptedDialog ?<Dialog.Actions>
