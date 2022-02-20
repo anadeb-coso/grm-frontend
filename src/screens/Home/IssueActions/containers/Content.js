@@ -31,17 +31,26 @@ const theme = {
 function Content({ issue, navigation, statuses = [] }) {
   const [acceptDialog, setAcceptDialog] = useState(false);
   const [rejectDialog, setRejectDialog] = useState(false);
+  const [recordStepsDialog, setRecordStepsDialog] = useState(false);
   const [acceptedDialog, setAcceptedDialog] = useState(false);
   const [rejectedDialog, setRejectedDialog] = useState(false);
+  const [recordedSteps, setRecordedSteps] = useState(false);
   const [currentDate, setCurrentDate] = useState(moment());
   const [citizenName, setCitizenName] = useState();
   const [reason, onChangeReason] = useState('');
+  const [comment, onChangeComment] = useState('');
   const [isAcceptEnabled, setIsAcceptEnabled] = useState(false);
   const [isRecordResolutionEnabled, setIsRecordResolutionEnabled] = useState(false);
   const [isRateAppealEnabled, setIsRateAppealEnabled] = useState(false);
   const [isIssueAssignedToMe, setIsIssueAssignedToMe] = useState(false);
   const goToDetails = () => navigation.jumpTo('IssueDetail');
+  const goToHistory = () => {
+    _hideRecordStepsDialog();
+    navigation.jumpTo('History');
+  }
   const _showDialog = () => setAcceptDialog(true);
+  const _showRecordStepsDialog = () => setRecordStepsDialog(true);
+  const _hideRecordStepsDialog = () => setRecordStepsDialog(false);
   const _hideDialog = () => setAcceptDialog(false);
   const _showRejectDialog = () => {
     _hideDialog();
@@ -90,11 +99,22 @@ function Content({ issue, navigation, statuses = [] }) {
     saveIssueStatus(newStatus, 'reject');
   }
 
-  const saveIssueStatus = (newStatus, type) => {
-    if(!!newStatus){
+  const recordStep= () => {
+    issue.comments?.push(comment);
+    saveIssueStatus();
+    setRecordedSteps(true);
+  }
+
+  const saveIssueStatus = (newStatus, type = 'none') => {
+    if(!!newStatus) {
       issue.status = {
         id: newStatus.id,
         name: newStatus.name
+
+      }
+    }
+      if(type === 'rejected'){
+        issue.reject_reason=reason;
       }
       LocalGRMDatabase.upsert(issue._id, function (doc) {
         doc = issue;
@@ -111,7 +131,6 @@ function Content({ issue, navigation, statuses = [] }) {
           .catch(function (err) {
             console.log("Error", err);
           });
-    }
   }
 
 
@@ -183,7 +202,7 @@ function Content({ issue, navigation, statuses = [] }) {
               <Feather name="help-circle" size={24} color={'gray'} />
               </View>
             </TouchableOpacity>
-            <TouchableOpacity disabled={!isRecordResolutionEnabled} style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
+            <TouchableOpacity onPress={_showRecordStepsDialog} disabled={!isRecordResolutionEnabled} style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
               <Text style={styles.subtitle}>
                 Record Steps Taken
               </Text>
@@ -270,6 +289,7 @@ function Content({ issue, navigation, statuses = [] }) {
                 CANCEL
               </Button>
               <Button
+                  disabled={reason == ''}
                   theme={theme}
                   style={{alignSelf: "center", margin: 24}}
                   labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
@@ -336,6 +356,62 @@ function Content({ issue, navigation, statuses = [] }) {
                 >
             FINISHED
           </Button></Dialog.Actions>}
+        </Dialog>
+      </Portal>
+
+      {/*RECORD STEPS MODAL*/}
+      <Portal>
+        <Dialog
+            visible={recordStepsDialog}
+            onDismiss={_hideRecordStepsDialog}>
+          <Dialog.Content>
+            {!recordedSteps ? <Paragraph>Describe the activity below. This includes agreements, actions for investigation, or additional
+              findings. Remember to include dates where relevant. These comments are viewable by the team, the
+              complainant and the original recorder.</Paragraph>: <Paragraph>Your comment has been recorded and added to the record.</Paragraph>}
+            {!recordedSteps && <TextInput multiline style={{marginTop: 10}} mode={'outlined'} theme={theme} onChangeText={onChangeComment}
+            />}
+          </Dialog.Content>
+          {!recordedSteps ? <Dialog.Actions>
+            <Button
+                theme={theme}
+                style={{alignSelf: "center", backgroundColor: '#d4d4d4'}}
+                labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
+                mode="contained"
+                onPress={_hideRecordStepsDialog}
+            >
+              CANCEL
+            </Button>
+            <Button
+                disabled={comment == ''}
+                theme={theme}
+                style={{alignSelf: "center", margin: 24}}
+                labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
+                mode="contained"
+                onPress={recordStep}
+            >
+              SUBMIT
+            </Button>
+          </Dialog.Actions>
+              : <Dialog.Actions>
+                <Button
+                    theme={theme}
+                    style={{alignSelf: "center", margin: 24}}
+                    labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
+                    mode="contained"
+                    onPress={_hideRecordStepsDialog}
+                >
+                  FINISHED
+                </Button>
+                <Button
+                    theme={theme}
+                    style={{ alignSelf: "center", margin: 24 }}
+                    labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
+                    mode="contained"
+                    onPress={goToHistory}
+                >
+                  VIEW HISTORY
+                </Button></Dialog.Actions>}
+
         </Dialog>
       </Portal>
     </ScrollView>
