@@ -7,15 +7,12 @@ import {
   Platform,
   TouchableOpacity
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { styles } from "./Content.styles";
-import {Button, Dialog, Paragraph, Portal, RadioButton, TextInput} from "react-native-paper";
+import {Button, Dialog, Paragraph, Portal, TextInput} from "react-native-paper";
 import { colors } from "../../../../utils/colors";
-import CustomDropDownPicker from "../../../../components/CustomDropDownPicker/CustomDropDownPicker";
-import i18n from "i18n-js";
 import moment from "moment";
 import {AntDesign, Feather} from "@expo/vector-icons";
-import LocalDatabase, {LocalGRMDatabase} from "../../../../utils/databaseManager";
+import {LocalGRMDatabase} from "../../../../utils/databaseManager";
 
 
 const theme = {
@@ -28,17 +25,20 @@ const theme = {
   },
 };
 
-function Content({ issue, navigation, statuses = [] }) {
+function Content({ issue, navigation, statuses = [], eadl }) {
   const [acceptDialog, setAcceptDialog] = useState(false);
   const [rejectDialog, setRejectDialog] = useState(false);
   const [recordStepsDialog, setRecordStepsDialog] = useState(false);
+  const [recordResolutionDialog, setRecordResolutionDialog] = useState(false);
   const [acceptedDialog, setAcceptedDialog] = useState(false);
   const [rejectedDialog, setRejectedDialog] = useState(false);
   const [recordedSteps, setRecordedSteps] = useState(false);
+  const [recordedResolution, setRecordedResolution] = useState(false);
   const [currentDate, setCurrentDate] = useState(moment());
   const [citizenName, setCitizenName] = useState();
   const [reason, onChangeReason] = useState('');
   const [comment, onChangeComment] = useState('');
+  const [resolution, onChangeResolution] = useState('');
   const [isAcceptEnabled, setIsAcceptEnabled] = useState(false);
   const [isRecordResolutionEnabled, setIsRecordResolutionEnabled] = useState(false);
   const [isRateAppealEnabled, setIsRateAppealEnabled] = useState(false);
@@ -51,6 +51,8 @@ function Content({ issue, navigation, statuses = [] }) {
   const _showDialog = () => setAcceptDialog(true);
   const _showRecordStepsDialog = () => setRecordStepsDialog(true);
   const _hideRecordStepsDialog = () => setRecordStepsDialog(false);
+  const _showRecordResolutionDialog = () => setRecordResolutionDialog(true);
+  const _hideRecordResolutionDialog = () => setRecordResolutionDialog(false);
   const _hideDialog = () => setAcceptDialog(false);
   const _showRejectDialog = () => {
     _hideDialog();
@@ -100,9 +102,27 @@ function Content({ issue, navigation, statuses = [] }) {
   }
 
   const recordStep= () => {
-    issue.comments?.push(comment);
+    issue.comments?.push({
+        name: issue.reporter.name,
+        id: eadl._id,
+        comment,
+        due_at: moment(),
+    });
     saveIssueStatus();
     setRecordedSteps(true);
+  }
+
+  const recordResolution= () => {
+    setRecordedResolution(true);
+  }
+
+  const recordResolutionConfirmation= () => {
+    issue.research_result = resolution;
+    const newStatus = statuses.find((x)=>
+        x.final_status === true
+    );
+    saveIssueStatus(newStatus, 'record_resolution');
+    _hideRecordResolutionDialog()
   }
 
   const saveIssueStatus = (newStatus, type = 'none') => {
@@ -110,7 +130,6 @@ function Content({ issue, navigation, statuses = [] }) {
       issue.status = {
         id: newStatus.id,
         name: newStatus.name
-
       }
     }
       if(type === 'rejected'){
@@ -120,12 +139,16 @@ function Content({ issue, navigation, statuses = [] }) {
         doc = issue;
         return doc;
       })
-          .then(function (res) {
+          .then(function () {
             updateActionButtons()
             if(type === 'accept') {
               setAcceptedDialog(true)
             } else if(type === 'reject') {
               setRejectedDialog(true)
+            }
+            else if(type === 'record_resolution') {
+              setRecordedResolution(false)
+              _hideRecordResolutionDialog()
             }
           })
           .catch(function (err) {
@@ -216,7 +239,7 @@ function Content({ issue, navigation, statuses = [] }) {
               <Feather name="help-circle" size={24} color={'gray'} />
               </View>
             </TouchableOpacity>
-            <TouchableOpacity disabled={!isRecordResolutionEnabled} style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
+            <TouchableOpacity onPress={_showRecordResolutionDialog} disabled={!isRecordResolutionEnabled} style={{alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10}}>
               <Text style={styles.subtitle}>
                 Record Resolution
               </Text>
@@ -289,7 +312,7 @@ function Content({ issue, navigation, statuses = [] }) {
                 CANCEL
               </Button>
               <Button
-                  disabled={reason == ''}
+                  disabled={reason === ''}
                   theme={theme}
                   style={{alignSelf: "center", margin: 24}}
                   labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
@@ -382,7 +405,7 @@ function Content({ issue, navigation, statuses = [] }) {
               CANCEL
             </Button>
             <Button
-                disabled={comment == ''}
+                disabled={comment === ''}
                 theme={theme}
                 style={{alignSelf: "center", margin: 24}}
                 labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
@@ -411,6 +434,60 @@ function Content({ issue, navigation, statuses = [] }) {
                 >
                   VIEW HISTORY
                 </Button></Dialog.Actions>}
+
+        </Dialog>
+      </Portal>
+
+      <Portal>
+        <Dialog
+            visible={recordResolutionDialog}
+            onDismiss={_hideRecordResolutionDialog}>
+          <Dialog.Content>
+            {!recordedResolution ? <Paragraph>Please summarize the resolution and outcome.</Paragraph>: <Paragraph>Please confirm that you are marking this complaint as resolved.</Paragraph>}
+            {!recordedResolution ? <TextInput multiline style={{marginTop: 10}} mode={'outlined'} theme={theme} onChangeText={onChangeResolution}
+            />: <Text>{"\n"}"{resolution}"</Text>}
+          </Dialog.Content>
+          {!recordedResolution ? <Dialog.Actions>
+                <Button
+                    theme={theme}
+                    style={{alignSelf: "center", backgroundColor: '#d4d4d4'}}
+                    labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
+                    mode="contained"
+                    onPress={_hideRecordStepsDialog}
+                >
+                  CANCEL
+                </Button>
+                <Button
+                    disabled={resolution === ''}
+                    theme={theme}
+                    style={{alignSelf: "center", margin: 24}}
+                    labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
+                    mode="contained"
+                    onPress={recordResolution}
+                >
+                  SUBMIT
+                </Button>
+              </Dialog.Actions>
+              : <Dialog.Actions>
+                <Button
+                    theme={theme}
+                    style={{alignSelf: "center", backgroundColor: '#d4d4d4'}}
+                    labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
+                    mode="contained"
+                    onPress={() => setRecordedResolution(false)}
+                >
+                  CANCEL
+                </Button>
+                <Button
+                    theme={theme}
+                    style={{alignSelf: "center", margin: 24}}
+                    labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
+                    mode="contained"
+                    onPress={recordResolutionConfirmation}
+                >
+                  CONFIRM
+                </Button>
+              </Dialog.Actions>}
 
         </Dialog>
       </Portal>

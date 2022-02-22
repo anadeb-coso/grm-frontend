@@ -17,6 +17,7 @@ const IssueSearch = () => {
 
   useEffect(() => {
     if (username) {
+      console.log(username)
       LocalDatabase.find({
         selector: { "representative.email": username },
         // fields: ["_id", "commune", "phases"],
