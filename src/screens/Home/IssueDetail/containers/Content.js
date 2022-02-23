@@ -1,15 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { View, ScrollView, Text, Platform, TouchableOpacity } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { styles } from "./Content.styles";
 import * as ImagePicker from "expo-image-picker";
 import moment from "moment";
 import { colors } from "../../../../utils/colors";
 import { useBackHandler } from "@react-native-community/hooks";
 import CustomSeparator from "../../../../components/CustomSeparator/CustomSeparator";
-import CustomGreenButton from "../../../../components/CustomGreenButton/CustomGreenButton";
 import i18n from "i18n-js";
-import { Button, TextInput } from "react-native-paper";
+import { Button } from "react-native-paper";
 import { LocalGRMDatabase } from "../../../../utils/databaseManager";
 import {citizenTypes} from "../../../../utils/utils";
 import Collapsible from 'react-native-collapsible';
@@ -136,16 +134,16 @@ function Content({ issue }) {
                   </Text>
                   <Text style={styles.subtitle}>
                       Name:
-                      <Text style={styles.text}> {issue.citizen_type == 1 && !isIssueAssignedToMe ? "Confidential" : issue.citizen}</Text>
+                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? "Confidential" : issue.citizen}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
                       Age:{" "}
-                      <Text style={styles.text}> {issue.citizen_type == 1 && !isIssueAssignedToMe ? 'Confidential' : issue.citizen_age_group?.name ?? "Information not available"}</Text>
+                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? 'Confidential' : issue.citizen_age_group?.name ?? "Information not available"}</Text>
                   </Text>
 
                   <Text style={styles.subtitle}>
                       Location:{" "}
-                      <Text style={styles.text}> {issue.citizen_type == 1 && !isIssueAssignedToMe ? 'Confidential' : issue.administrative_region?.name ?? "Information not available"}</Text>
+                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? 'Confidential' : issue.administrative_region?.name ?? "Information not available"}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
                       Category:{" "}
@@ -217,7 +215,7 @@ function Content({ issue }) {
                           color: "#707070",
                       }}
                   >
-                      {" Information not available "}
+                      {issue.research_result ?? "Information not Available"}
                   </Text>
               </View>
           </Collapsible>
