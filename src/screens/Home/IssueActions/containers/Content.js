@@ -421,7 +421,11 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                     style={{alignSelf: "center", margin: 24}}
                     labelStyle={{color: "white", fontFamily: "Poppins_500Medium"}}
                     mode="contained"
-                    onPress={_hideRecordStepsDialog}
+                    onPress={()=>{
+                        _hideRecordStepsDialog()
+                        setRecordedSteps(false)
+                      }
+                    }
                 >
                   FINISHED
                 </Button>
