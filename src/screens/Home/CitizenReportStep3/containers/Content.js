@@ -44,7 +44,7 @@ function Content({ issue, eadl }) {
         id: 1,
       },
       confirmed: true,
-      assignee: "",
+      assignee: issue.category?.assigned_department === eadl.department ? eadl : "",
       reporter: {
         id: eadl._id,
         name: eadl.representative.name,
