@@ -195,7 +195,7 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
                 stepOneParams,
                 stepTwoParams,
                 stepLocationParams: {
-                  issueLocation: { administrative_id: location?.id, name: location?.name },
+                  issueLocation: { administrative_id: location?.administrative_id, name: location?.name },
                   locationDescription: additionalDetails,
                 },
               })
