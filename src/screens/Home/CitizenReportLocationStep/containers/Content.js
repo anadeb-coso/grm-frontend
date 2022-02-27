@@ -29,6 +29,7 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
   const navigation = useNavigation();
   const [communes, setCommunes] = useState(issueCommunes);
   const [commune1, setCommune1] = useState(null);
+  const [location, setLocation] = useState();
   const [pickersState, setPickersState] = useState([]);
   const [additionalDetails, setAdditionalDetails] = useState(null);
   const [initialized, setInitialized] = useState(false);
@@ -114,6 +115,7 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
               setCommune1(val());
               if (val() && val() !== commune1) handlePickCommune(val());
             }}
+            onSelectItem={(item) => setLocation(item)}
             // onChangeValue={(value) => {
             //   if (value) handlePickCommune(value);
             // }}
@@ -129,6 +131,7 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
                 placeholder={i18n.t("step_location_dropdown_placeholder")}
                 value={pickersState[index]}
                 items={filterCommunes(parent, index)}
+                onSelectItem={(item) => setLocation(item)}
                 setPickerValue={(val) => {
                   const newState = [...pickersState];
                   newState.splice(index, newState.length - index);
@@ -187,15 +190,16 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
             style={{ alignSelf: "center", margin: 24 }}
             labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
             mode="contained"
-            onPress={() =>
+            onPress={() => {
               navigation.navigate("CitizenReportStep3", {
                 stepOneParams,
                 stepTwoParams,
                 stepLocationParams: {
-                  issueLocation: [commune1, ...pickersState],
+                  issueLocation: { administrative_id: location?.id, name: location?.name },
                   locationDescription: additionalDetails,
                 },
               })
+            }
             }
           >
             {i18n.t("next")}
