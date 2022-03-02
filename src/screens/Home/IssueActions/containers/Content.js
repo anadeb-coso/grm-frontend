@@ -46,6 +46,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const goToDetails = () => navigation.jumpTo('IssueDetail');
   const goToHistory = () => {
     _hideRecordStepsDialog();
+    setRecordedSteps(false);
     navigation.jumpTo('History');
   }
   const _showDialog = () => setAcceptDialog(true);

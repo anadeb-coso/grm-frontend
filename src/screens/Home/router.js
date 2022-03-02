@@ -32,6 +32,7 @@ import { colors } from "../../utils/colors";
 import CitizenReportLocationStep from "./CitizenReportLocationStep/CitizenReportLocationStep";
 import {createMaterialTopTabNavigator} from "@react-navigation/material-top-tabs";
 import IssueActions from "./IssueActions/IssueActions";
+import IssueHistory from "./IssueHistory/IssueHistory";
 
 const iconConfig = {
   focused: {
@@ -241,7 +242,7 @@ function IssueDetailTabsStack(props) {
         initialRouteName={'Actions'}>
             <TopTab.Screen name="Actions" initialParams={{item: temp}} options={{ tabBarLabel: 'Actions' }} component={IssueActions} />
             <TopTab.Screen name="IssueDetail" initialParams={{item: temp}} options={{ tabBarLabel: 'Details' }} component={IssueDetail} />
-            <TopTab.Screen options={{ tabBarLabel: 'History' }} name="History" component={() => <View/>} />
+            <TopTab.Screen name="History" initialParams={{item: temp}} options={{ tabBarLabel: 'History' }}  component={IssueHistory} />
         </TopTab.Navigator>
     );
 }
