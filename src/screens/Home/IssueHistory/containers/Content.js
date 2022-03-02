@@ -50,7 +50,7 @@ function Content({ issue }) {
 
   return (
       <View style={styles.container}>
-        {comments && <FlatList ListHeaderComponent={listHeader} data={comments} renderItem={renderItem} keyExtractor={(item) => item.due_at}/>}
+        {comments && <FlatList ListFooterComponent={listHeader} data={comments} renderItem={renderItem} keyExtractor={(item) => item.due_at} inverted/>}
       </View>
   );
 }
