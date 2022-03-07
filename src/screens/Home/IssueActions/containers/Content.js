@@ -104,8 +104,8 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const escalateIssue = () => {
     issue.escalate_flag = true;
     issue.escalation_reasons?.push({
-      id: eadl._id,
-      name: eadl.representative?.name,
+      id: eadl?._id,
+      name: eadl?.representative?.name,
       comment: escalateComment,
       due_at: moment(),
     });

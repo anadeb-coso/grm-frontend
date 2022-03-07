@@ -1,57 +1,48 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  FlatList
-} from "react-native";
-import { styles } from "./Content.styles";
-import { Card } from "react-native-paper";
-import { colors } from "../../../../utils/colors";
-import moment from "moment";
-
-const theme = {
-  roundness: 12,
-  colors: {
-    ...colors,
-    background: "white",
-    placeholder: "#dedede",
-    text: "#707070",
-  },
-};
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList } from 'react-native';
+import { Divider } from 'react-native-paper';
+import moment from 'moment';
+import { styles } from './Content.styles';
 
 function Content({ issue }) {
   const [comments, setComments] = useState();
   const loadComments = () => {
-    setComments(issue.comments)
-  }
-  const renderItem = ({item, index}) => {
-    return (
-
-        <View key={index} style={styles.commentCard}>
-          <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 5}}>
-            <View style={styles.greenCircle} />
-            <View>
-              <Text style={styles.radioLabel}>{item.name}</Text>
-              <Text style={styles.radioLabel}>{moment(item.due_at).format('DD-MMM-YYYY')}</Text>
-            </View>
-          </View>
-          <Text style={styles.stepNote}>{item.comment}</Text>
+    setComments(issue.escalation_reasons?.reverse());
+  };
+  const renderItem = ({ item, index }) => (
+    <View key={index} style={styles.commentCard}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+        <View style={styles.greenCircle} />
+        <View>
+          <Text style={styles.radioLabel}>{item.name}</Text>
+          <Text style={styles.radioLabel}>{moment(item.due_at).format('DD-MMM-YYYY')}</Text>
         </View>
-    )
-  }
+      </View>
+      <Text style={styles.stepNote}>{item.comment}</Text>
+    </View>
+  );
 
-  const listHeader = () => <Text style={styles.title}>Activity</Text>
+  const listHeader = () => <Text style={styles.title}>Activity</Text>;
 
   useEffect(() => {
-    if(issue){
+    if (issue) {
       loadComments();
     }
-  }, [issue])
+  }, [issue]);
 
+  const dividerItem = () => <Divider />;
   return (
-      <View style={styles.container}>
-        {comments && <FlatList ListFooterComponent={listHeader} data={comments} renderItem={renderItem} keyExtractor={(item) => item.due_at} inverted/>}
-      </View>
+    <View style={styles.container}>
+      {comments?.length > 0 && (
+        <FlatList
+          ItemSeparatorComponent={dividerItem}
+          ListHeaderComponent={listHeader}
+          data={comments}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.due_at}
+        />
+      )}
+    </View>
   );
 }
 
