@@ -1,39 +1,37 @@
-import React from "react";
-import PouchDB from "pouchdb-react-native";
-import PouchAuth from "pouchdb-authentication";
-import PouchFind from "pouchdb-find";
-import PouchAsyncStorage from "pouchdb-adapter-asyncstorage";
+import React from 'react';
+import PouchDB from 'pouchdb-react-native';
+import PouchAuth from 'pouchdb-authentication';
+import PouchFind from 'pouchdb-find';
+import PouchAsyncStorage from 'pouchdb-adapter-asyncstorage';
 
 PouchDB.plugin(PouchAuth);
 PouchDB.plugin(PouchFind);
-PouchDB.plugin(require("pouchdb-upsert"));
+PouchDB.plugin(require('pouchdb-upsert'));
+
 PouchDB.plugin(PouchAsyncStorage);
 
-const LocalDatabase = new PouchDB("eadl", {
-  adapter: "asyncstorage",
+const LocalDatabase = new PouchDB('eadl', {
+  adapter: 'asyncstorage',
 });
 
-export const LocalGRMDatabase = new PouchDB("grm", {
-  adapter: "asyncstorage",
+export const LocalGRMDatabase = new PouchDB('grm', {
+  adapter: 'asyncstorage',
 });
 
-export const LocalCommunesDatabase = new PouchDB("commune", {
-  adapter: "asyncstorage",
+export const LocalCommunesDatabase = new PouchDB('commune', {
+  adapter: 'asyncstorage',
 });
 
-export const SyncToRemoteDatabase = async (
-  { username, password },
-  userEmail
-) => {
-  const remoteDB = new PouchDB("http://206.81.23.161:5984/eadls", {
+export const SyncToRemoteDatabase = async ({ username, password }, userEmail) => {
+  const remoteDB = new PouchDB('http://206.81.23.161:5984/eadls', {
     skip_setup: true,
   });
 
-  const grmRemoteDB = new PouchDB("http://206.81.23.161:5984/grm", {
+  const grmRemoteDB = new PouchDB('http://206.81.23.161:5984/grm', {
     skip_setup: true,
   });
 
-  const communesRemoteDB = new PouchDB("http://206.81.23.161:5984/eadls", {
+  const communesRemoteDB = new PouchDB('http://206.81.23.161:5984/eadls', {
     skip_setup: true,
   });
 
@@ -42,8 +40,8 @@ export const SyncToRemoteDatabase = async (
   const sync = LocalDatabase.sync(remoteDB, {
     live: true,
     retry: true,
-    // filter: "eadl/by_user_email",
-    // query_params: { email: userEmail },
+    filter: 'eadl/by_user_email',
+    query_params: { email: userEmail },
   });
 
   const syncCommunes = LocalCommunesDatabase.sync(communesRemoteDB, {
@@ -58,26 +56,15 @@ export const SyncToRemoteDatabase = async (
     live: true,
     retry: true,
   });
-  const syncStates = [
-    "change",
-    "paused",
-    "active",
-    "denied",
-    "complete",
-    "error",
-  ];
+  const syncStates = ['change', 'paused', 'active', 'denied', 'complete', 'error'];
   syncStates.forEach((state) => {
-    sync.on(state, (currState) =>
-      console.log(`[Sync: ${JSON.stringify(currState)}]`)
-    );
+    sync.on(state, (currState) => console.log(`[Sync EADL: ${JSON.stringify(currState)}]`));
 
     syncCommunes.on(state, (currState) =>
-      console.log(`[Sync: ${JSON.stringify(currState)}]`)
+      console.log(`[Sync COMMUNES: ${JSON.stringify(currState)}]`)
     );
 
-    syncGRM.on(state, (currState) =>
-      console.log(`[Sync GRM: ${JSON.stringify(currState)}]`)
-    );
+    syncGRM.on(state, (currState) => console.log(`[Sync GRM: ${JSON.stringify(currState)}]`));
   });
 };
 
