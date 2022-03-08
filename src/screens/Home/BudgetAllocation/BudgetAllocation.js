@@ -22,7 +22,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import "intl";
 import "intl/locale-data/jsonp/en";
 
-moment.locale("fr");
+moment.locale("en");
 
 function RegisterSubprojects() {
   const navigation = useNavigation();
