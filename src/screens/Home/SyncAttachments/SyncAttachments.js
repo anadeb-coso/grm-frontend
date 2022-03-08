@@ -175,7 +175,7 @@ const SyncAttachments = ({ navigation }) => {
                 color: "#707070",
               }}
             >
-              Synchronisation {"\n"} Réussie!
+              Synchronization {"\n"} Successful!
             </Text>
           </View>
           <SyncImage />
@@ -195,7 +195,7 @@ const SyncAttachments = ({ navigation }) => {
               color: "#ffffff",
             }}
           >
-            TERMINÉ
+            DONE
           </CustomGreenButton>
         </View>
       </Modal>
