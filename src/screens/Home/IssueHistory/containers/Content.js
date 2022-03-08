@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList } from 'react-native';
 import { Divider } from 'react-native-paper';
 import moment from 'moment';
+import { useFocusEffect } from '@react-navigation/native';
 import { styles } from './Content.styles';
 
 function Content({ issue }) {
   const [comments, setComments] = useState();
   const loadComments = () => {
-    setComments(issue.comments?.reverse());
+    const invertedComments = [...issue.comments];
+    setComments(invertedComments?.reverse());
   };
   const renderItem = ({ item, index }) => (
     <View key={index} style={styles.commentCard}>
@@ -28,7 +30,7 @@ function Content({ issue }) {
     if (issue) {
       loadComments();
     }
-  }, [issue.comments]);
+  }, [issue]);
 
   const dividerItem = () => <Divider />;
   return (
