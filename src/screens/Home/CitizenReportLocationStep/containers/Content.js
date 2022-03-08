@@ -97,7 +97,7 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes, uniqueReg
           <Text style={styles.stepNote}>{i18n.t('step_location_body')}</Text>
         </View>
 
-        {communes && (
+        {!uniqueRegion && communes && (
           <CustomDropDownPicker
             schema={{
               label: 'name',

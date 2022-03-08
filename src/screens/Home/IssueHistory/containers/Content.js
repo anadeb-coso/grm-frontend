@@ -7,7 +7,7 @@ import { styles } from './Content.styles';
 function Content({ issue }) {
   const [comments, setComments] = useState();
   const loadComments = () => {
-    setComments(issue.escalation_reasons?.reverse());
+    setComments(issue.comments?.reverse());
   };
   const renderItem = ({ item, index }) => (
     <View key={index} style={styles.commentCard}>
@@ -28,7 +28,7 @@ function Content({ issue }) {
     if (issue) {
       loadComments();
     }
-  }, [issue]);
+  }, [issue.comments]);
 
   const dividerItem = () => <Divider />;
   return (

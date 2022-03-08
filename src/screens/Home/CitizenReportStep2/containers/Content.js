@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -8,26 +8,26 @@ import {
   ImageBackground,
   TouchableOpacity,
   TextInput as NativeTextInput,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { styles } from "./Content.styles";
-import { Button, Checkbox, IconButton, TextInput } from "react-native-paper";
-import { colors } from "../../../../utils/colors";
-import CustomDropDownPicker from "../../../../components/CustomDropDownPicker/CustomDropDownPicker";
-import * as ImagePicker from "expo-image-picker";
-import * as ImageManipulator from "expo-image-manipulator";
-import moment from "moment";
-import { Audio } from "expo-av";
-import i18n from "i18n-js";
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { Button, Checkbox, IconButton, TextInput } from 'react-native-paper';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import moment from 'moment';
+import { Audio } from 'expo-av';
+import i18n from 'i18n-js';
+import CustomDropDownPicker from '../../../../components/CustomDropDownPicker/CustomDropDownPicker';
+import { colors } from '../../../../utils/colors';
+import { styles } from './Content.styles';
 
 const theme = {
   roundness: 12,
   colors: {
     ...colors,
-    background: "white",
-    placeholder: "#dedede",
-    text: "#707070",
+    background: 'white',
+    placeholder: '#dedede',
+    text: '#707070',
   },
 };
 
@@ -55,23 +55,23 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     }
   }, [issueTypes, issueCategories]);
 
-  React.useEffect(() => {
-    return sound
-      ? () => {
-          // console.log("Unloading Sound");
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
+  React.useEffect(
+    () =>
+      sound
+        ? () => {
+            // console.log("Unloading Sound");
+            sound.unloadAsync();
+          }
+        : undefined,
+    [sound]
+  );
 
   useEffect(() => {
     (async () => {
-      if (Platform.OS !== "web") {
-        const {
-          status,
-        } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== "granted") {
-          alert("Sorry, we need camera roll permissions to make this work!");
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Sorry, we need camera roll permissions to make this work!');
         }
       }
     })();
@@ -100,9 +100,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
       });
       // console.log("Starting recording..");
       const recording = new Audio.Recording();
-      await recording.prepareToRecordAsync(
-        Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
-      );
+      await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
       await recording.startAsync();
       setRecording(recording);
       // console.log("Recording started");
@@ -131,17 +129,17 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
 
   useEffect(() => {
     (async () => {
-      if (Platform.OS !== "web") {
+      if (Platform.OS !== 'web') {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== "granted") {
-          alert("Sorry, we need camera roll permissions to make this work!");
+        if (status !== 'granted') {
+          alert('Sorry, we need camera roll permissions to make this work!');
         }
       }
     })();
   }, []);
 
   const openCamera = async () => {
-    let result = await ImagePicker.launchCameraAsync({
+    const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [4, 3],
@@ -159,7 +157,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   };
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       // aspect: [4, 3],
@@ -176,42 +174,39 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   };
 
   const getCategory = (value) => {
-      const result = issueCategories.filter(obj => {
-          return obj.name === value
-      })
-      const _category = {
-          id: result[0].id,
-          name: result[0].name,
-          confidentiality_level: result[0].confidentiality_level,
-          assigned_department: result[0].assigned_department?.id
-      }
-      return _category
-  }
+    const result = issueCategories.filter((obj) => obj.name === value);
+    const _category = {
+      id: result[0].id,
+      name: result[0].name,
+      confidentiality_level: result[0].confidentiality_level,
+      assigned_department: result[0].assigned_department?.id,
+      administrative_level: result[0].assigned_department?.administrative_level,
+    };
+    return _category;
+  };
 
   return (
     <ScrollView>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : null}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : null}>
         <View style={{ padding: 23 }}>
-          <Text style={styles.stepText}>{i18n.t("step_3")}</Text>
-          <Text style={styles.stepDescription}>
-            {i18n.t("step_2_subtitle")}
-          </Text>
-          <Text style={styles.stepNote}>{i18n.t("step_2_explanation")}</Text>
+          <Text style={styles.stepText}>{i18n.t('step_3')}</Text>
+          <Text style={styles.stepDescription}>{i18n.t('step_2_subtitle')}</Text>
+          <Text style={styles.stepNote}>{i18n.t('step_2_explanation')}</Text>
         </View>
         <View
           style={{
-            flexDirection: "row",
+            flexDirection: 'row',
             paddingHorizontal: 23,
             paddingBottom: 10,
-            justifyContent: "space-between",
+            justifyContent: 'space-between',
           }}
         >
           <Button
-            theme={{ ...theme, colors: { ...theme.colors, primary: "white" } }}
+            theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
             icon="calendar"
             compact
             style={{
-              shadowColor: "#000",
+              shadowColor: '#000',
               shadowOffset: {
                 width: 0,
                 height: 2,
@@ -225,56 +220,52 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             uppercase={false}
             labelStyle={{
               color: colors.primary,
-              fontFamily: "Poppins_400Regular",
+              fontFamily: 'Poppins_400Regular',
               fontSize: 13,
             }}
             mode="contained"
             onPress={showDatePicker}
           >
-            {date
-              ? moment(date).format("DD-MMMM-YY")
-              : i18n.t("step_2_select_date")}
+            {date ? moment(date).format('DD-MMMM-YY') : i18n.t('step_2_select_date')}
           </Button>
           <Button
             compact
             theme={theme}
             labelStyle={{
-              color: "white",
-              fontFamily: "Poppins_400Regular",
+              color: 'white',
+              fontFamily: 'Poppins_400Regular',
               fontSize: 12,
             }}
             mode="contained"
             uppercase={false}
             onPress={() => setDate(new Date())}
           >
-            {i18n.t("step_2_set_today")}
+            {i18n.t('step_2_set_today')}
           </Button>
         </View>
         <View
           style={{
-            flexDirection: "row",
+            flexDirection: 'row',
             paddingHorizontal: 43,
             paddingBottom: 10,
-            alignItems: "center",
+            alignItems: 'center',
           }}
         >
           <Checkbox.Android
             color={colors.primary}
-            status={checked ? "checked" : "unchecked"}
+            status={checked ? 'checked' : 'unchecked'}
             onPress={() => {
               setChecked(!checked);
             }}
           />
-          <Text style={[styles.stepNote, { flex: 1 }]}>
-            {i18n.t("step_2_ongoing_hint")}
-          </Text>
+          <Text style={[styles.stepNote, { flex: 1 }]}>{i18n.t('step_2_ongoing_hint')}</Text>
         </View>
         <View
           style={{
-            flexDirection: "row",
+            flexDirection: 'row',
             paddingHorizontal: 23,
             marginBottom: 35,
-            justifyContent: "space-between",
+            justifyContent: 'space-between',
           }}
         >
           <View style={{ flex: 2 }} />
@@ -285,35 +276,35 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
           onConfirm={handleConfirm}
           onCancel={hideDatePicker}
         />
-        <View style={{zIndex: 2000}}>
-            <CustomDropDownPicker
-              schema={{
-                label: "name",
-                value: "name",
-              }}
-              placeholder={i18n.t("step_2_placeholder_1")}
-              value={pickerValue}
-              items={items}
-              setPickerValue={setPickerValue}
-              setItems={setItems}
-            />
+        <View style={{ zIndex: 2000 }}>
+          <CustomDropDownPicker
+            schema={{
+              label: 'name',
+              value: 'name',
+            }}
+            placeholder={i18n.t('step_2_placeholder_1')}
+            value={pickerValue}
+            items={items}
+            setPickerValue={setPickerValue}
+            setItems={setItems}
+          />
         </View>
-          <View style={{zIndex: 1000}}>
-              <CustomDropDownPicker
-              schema={{
-                label: "name",
-                value: "name",
-                id: "id",
-                confidentiality_level: "confidentiality_level",
-                assigned_department: "assigned_department"
-              }}
-              placeholder={i18n.t("step_2_placeholder_2")}
-              value={pickerValue2}
-              items={items2}
-              setPickerValue={setPickerValue2}
-              setItems={setItems2}
-            />
-          </View>
+        <View style={{ zIndex: 1000 }}>
+          <CustomDropDownPicker
+            schema={{
+              label: 'name',
+              value: 'name',
+              id: 'id',
+              confidentiality_level: 'confidentiality_level',
+              assigned_department: 'assigned_department',
+            }}
+            placeholder={i18n.t('step_2_placeholder_2')}
+            value={pickerValue2}
+            items={items2}
+            setPickerValue={setPickerValue2}
+            setItems={setItems2}
+          />
+        </View>
         <View style={{ paddingHorizontal: 50 }}>
           <TextInput
             multiline
@@ -322,14 +313,14 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
               styles.grmInput,
               {
                 height: 100,
-                justifyContent: "flex-start",
-                textAlignVertical: "top",
+                justifyContent: 'flex-start',
+                textAlignVertical: 'top',
               },
             ]}
-            placeholder={i18n.t("step_2_placeholder_3")}
-            outlineColor={"#f6f6f6"}
+            placeholder={i18n.t('step_2_placeholder_3')}
+            outlineColor="#f6f6f6"
             theme={theme}
-            mode={"outlined"}
+            mode="outlined"
             value={additionalDetails}
             onChangeText={(text) => setAdditionalDetails(text)}
             render={(innerProps) => (
@@ -350,18 +341,18 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         <View style={{ paddingHorizontal: 50 }}>
           <Text
             style={{
-              fontFamily: "Poppins_400Regular",
+              fontFamily: 'Poppins_400Regular',
               fontSize: 12,
-              fontWeight: "normal",
-              fontStyle: "normal",
+              fontWeight: 'normal',
+              fontStyle: 'normal',
               lineHeight: 18,
               letterSpacing: 0,
-              textAlign: "left",
-              color: "#707070",
+              textAlign: 'left',
+              color: '#707070',
               marginVertical: 13,
             }}
           >
-            {i18n.t("step_2_share_photos")}
+            {i18n.t('step_2_share_photos')}
           </Text>
           <View>
             {attachment.uri && (
@@ -370,52 +361,47 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                 style={{
                   height: 80,
                   width: 80,
-                  alignSelf: "center",
-                  justifyContent: "flex-end",
+                  alignSelf: 'center',
+                  justifyContent: 'flex-end',
                   marginVertical: 20,
                 }}
               >
                 <TouchableOpacity
                   onPress={() => setAttachment({})}
                   style={{
-                    alignItems: "center",
+                    alignItems: 'center',
                     padding: 5,
-                    backgroundColor: "rgba(36, 195, 139, 1)",
+                    backgroundColor: 'rgba(36, 195, 139, 1)',
                   }}
                 >
-                  <Text style={{ color: "white" }}>X</Text>
+                  <Text style={{ color: 'white' }}>X</Text>
                 </TouchableOpacity>
               </ImageBackground>
             )}
           </View>
           <View
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
+              flexDirection: 'row',
+              justifyContent: 'space-between',
             }}
           >
             <Button
               theme={theme}
-              style={{ alignSelf: "center" }}
-              labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
+              style={{ alignSelf: 'center' }}
+              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
               mode="contained"
               onPress={pickImage}
               uppercase={false}
             >
-              {i18n.t("step_2_upload_attachment")}
+              {i18n.t('step_2_upload_attachment')}
             </Button>
             <View style={styles.iconButtonStyle}>
-              <IconButton
-                icon="camera"
-                color={colors.primary}
-                size={24}
-                onPress={openCamera}
-              />
+              <IconButton icon="camera" color={colors.primary} size={24} onPress={openCamera} />
             </View>
             <View style={styles.iconButtonStyle}>
               <IconButton
-                icon={recording ? "record-circle-outline" : "microphone"}
-                color={recording ? "#f80102" : colors.primary}
+                icon={recording ? 'record-circle-outline' : 'microphone'}
+                color={recording ? '#f80102' : colors.primary}
                 size={24}
                 onPress={recording ? stopRecording : startRecording}
               />
@@ -425,27 +411,22 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         {recordingURI && (
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <IconButton
-              icon="play"
-              color={colors.primary}
-              size={24}
-              onPress={playSound}
-            />
+            <IconButton icon="play" color={colors.primary} size={24} onPress={playSound} />
             <Text
               style={{
-                fontFamily: "Poppins_400Regular",
+                fontFamily: 'Poppins_400Regular',
                 fontSize: 12,
-                fontWeight: "normal",
-                fontStyle: "normal",
+                fontWeight: 'normal',
+                fontStyle: 'normal',
                 lineHeight: 18,
                 letterSpacing: 0,
-                textAlign: "left",
-                color: "#707070",
+                textAlign: 'left',
+                color: '#707070',
                 marginVertical: 13,
               }}
             >
@@ -462,41 +443,40 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         <View style={{ paddingHorizontal: 50 }}>
           <Button
             theme={theme}
-            style={{ alignSelf: "center", margin: 24 }}
-            labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
+            style={{ alignSelf: 'center', margin: 24 }}
+            labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
             mode="contained"
             onPress={() => {
-                navigation.navigate("CitizenReportLocationStep", {
-                    stepOneParams,
-                    stepTwoParams: {
-                        date: date ? date.toISOString() : undefined,
-                        issueType: pickerValue,
-                        ongoingEvent: checked,
-                        attachment: attachment.uri
-                            ? {
-                                url: "",
-                                id: new Date(),
-                                uploaded: false,
-                                local_url: attachment?.uri,
-                            }
-                            : {},
-                        recording: recordingURI
-                            ? {
-                                url: "",
-                                id: new Date(),
-                                uploaded: false,
-                                local_url: recordingURI,
-                                isAudio: true,
-                            }
-                            : {},
-                        category: getCategory(pickerValue2),
-                        additionalDetails: additionalDetails,
-                    },
-                })
-            }
-            }
+              navigation.navigate('CitizenReportLocationStep', {
+                stepOneParams,
+                stepTwoParams: {
+                  date: date ? date.toISOString() : undefined,
+                  issueType: pickerValue,
+                  ongoingEvent: checked,
+                  attachment: attachment.uri
+                    ? {
+                        url: '',
+                        id: new Date(),
+                        uploaded: false,
+                        local_url: attachment?.uri,
+                      }
+                    : undefined,
+                  recording: recordingURI
+                    ? {
+                        url: '',
+                        id: new Date(),
+                        uploaded: false,
+                        local_url: recordingURI,
+                        isAudio: true,
+                      }
+                    : undefined,
+                  category: getCategory(pickerValue2),
+                  additionalDetails,
+                },
+              });
+            }}
           >
-            {i18n.t("next")}
+            {i18n.t('next')}
           </Button>
         </View>
       </KeyboardAvoidingView>
