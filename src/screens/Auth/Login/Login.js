@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { ActivityIndicator, Button } from "react-native-paper";
+import {ActivityIndicator, Button, Title} from "react-native-paper";
 import { useDispatch } from "react-redux";
 import { login } from "../../../store/ducks/authentication.duck";
 import MapBg from "../../../../assets/map-bg.svg";
@@ -21,6 +21,7 @@ import MESSAGES from "../../../utils/formErrorMessages";
 import { emailRegex, passwordRegex } from "../../../utils/formUtils";
 import API from "../../../services/API";
 import { getEncryptedData } from "../../../utils/storageManager";
+import {titles} from "../../Onboarding/containers/Content/utils";
 
 function Login() {
   const dispatch = useDispatch();
@@ -69,17 +70,28 @@ function Login() {
     >
       <KeyboardAvoidingView style={styles.containerView} behavior="position">
         <View style={{ alignItems: "center", justifyContent: "center" }}>
-          <MapBg
-            width={220}
-            height={190}
-            style={{
-              marginTop: -50,
-            }}
-          />
+          {/*<MapBg*/}
+          {/*  width={220}*/}
+          {/*  height={190}*/}
+          {/*  style={{*/}
+          {/*    marginTop: -50,*/}
+          {/*  }}*/}
+          {/*/>*/}
         </View>
 
-        <View style={{ marginBottom: 30, alignItems: "center" }}>
-          <EADLLogo height={90} width={180} />
+        <View style={{ marginBottom: 50, marginTop: 70, alignItems: "center" }}>
+          {/*<EADLLogo height={90} width={180} />*/}
+          <Text style={{
+            marginBottom: 15,
+            fontFamily: "Poppins_400Regular",
+            fontSize: 19,
+            fontWeight: "bold",
+            fontStyle: "normal",
+            lineHeight: 23,
+            letterSpacing: 0,
+            textAlign: "center",
+            color: "#707070",
+          }}>Welcome!  Log-in here.</Text>
         </View>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.loginScreenContainer}>
@@ -101,7 +113,7 @@ function Login() {
                           },
                         }}
                         mode={"outlined"}
-                        label="eADL email"
+                        label="Email"
                         labelColor="#dedede"
                         style={styles.loginFormTextInput}
                         left={
@@ -140,7 +152,7 @@ function Login() {
                           },
                         }}
                         mode={"outlined"}
-                        label="Mot de passe"
+                        label="Password"
                         placeholderColor={"#dedede"}
                         style={styles.loginFormTextInput}
                         left={
@@ -184,9 +196,9 @@ function Login() {
                   )}
                 </View>
 
-                <TouchableOpacity style={styles.hintContainer}>
-                  <Text style={styles.textHint}>Mot de passe oublié?</Text>
-                </TouchableOpacity>
+                {/*<TouchableOpacity style={styles.hintContainer}>*/}
+                {/*  <Text style={styles.textHint}>Forgo?</Text>*/}
+                {/*</TouchableOpacity>*/}
               </View>
             </KeyboardAvoidingView>
             {loading ? (
@@ -203,7 +215,7 @@ function Login() {
                 onPress={handleSubmit(onLoginPress)}
                 color={"white"}
               >
-                SUIVANT
+                LOGIN
               </Button>
             )}
           </View>

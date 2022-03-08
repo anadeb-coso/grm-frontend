@@ -17,18 +17,18 @@ const Content = () => {
 
   return (
     <View style={customStyles.content}>
-      <MapBg
-        width={320}
-        style={{
-          position: "absolute",
-          top: -10,
-          left: 20,
-          bottom: 0,
-        }}
-      />
+      {/*<MapBg*/}
+      {/*  width={320}*/}
+      {/*  style={{*/}
+      {/*    position: "absolute",*/}
+      {/*    top: -10,*/}
+      {/*    left: 20,*/}
+      {/*    bottom: 0,*/}
+      {/*  }}*/}
+      {/*/>*/}
 
       <View>
-        <EADLLogo height={90} width={180} style={{ marginTop: 100 }} />
+        {/*<EADLLogo height={90} width={180} style={{ marginTop: 100 }} />*/}
       </View>
       {/*</ImageBackground>*/}
       <View>
@@ -47,7 +47,7 @@ const Content = () => {
             navigation.navigate("AuthStack", { screen: "Login" });
           }}
         >
-          OUI
+          YES
         </Button>
         <Button
           style={customStyles.button}
@@ -57,7 +57,7 @@ const Content = () => {
             navigation.navigate("AuthStack", { screen: "SignUp" });
           }}
         >
-          NON
+          NO
         </Button>
       </View>
     </View>
