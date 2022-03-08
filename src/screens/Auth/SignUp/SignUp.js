@@ -100,7 +100,7 @@ function SignUp({ route }) {
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={"position"}>
             <CodeLogo />
             <Text style={modalStyles.title}>
-              {"Nous faisons une\n dernière validation!"}
+              {"We need a last validation!"}
             </Text>
             <Text
               style={{
@@ -116,7 +116,7 @@ function SignUp({ route }) {
                 color: "#707070",
               }}
             >
-              {"pour cela nous vous enverrons un\n code à votre email"}
+              {"Please use the code provided by your supervisor"}
             </Text>
             <CodeInput
               // secureTextEntry
@@ -163,7 +163,7 @@ function SignUp({ route }) {
               color: "#707070",
             }}
           >
-            Votre compte a été créé avec succès
+              Your account has been successfully created
           </Text>
         </View>
       </Modal>
@@ -178,18 +178,29 @@ function SignUp({ route }) {
       >
         <KeyboardAvoidingView style={styles.containerView} behavior="position">
           <View style={{ alignItems: "center", justifyContent: "center" }}>
-            <MapBg
-              width={220}
-              height={190}
-              style={{
-                marginTop: -50,
-              }}
-            />
+            {/*<MapBg*/}
+            {/*  width={220}*/}
+            {/*  height={190}*/}
+            {/*  style={{*/}
+            {/*    marginTop: -50,*/}
+            {/*  }}*/}
+            {/*/>*/}
           </View>
 
-          <View style={{ marginBottom: 30, alignItems: "center" }}>
-            <EADLLogo height={90} width={180} />
-          </View>
+            <View style={{ marginBottom: 50, marginTop: 70, alignItems: "center" }}>
+                {/*<EADLLogo height={90} width={180} />*/}
+                <Text style={{
+                    marginBottom: 15,
+                    fontFamily: "Poppins_400Regular",
+                    fontSize: 19,
+                    fontWeight: "bold",
+                    fontStyle: "normal",
+                    lineHeight: 23,
+                    letterSpacing: 0,
+                    textAlign: "center",
+                    color: "#707070",
+                }}>Please enter the email provided by your supervisor and use a password of your preference.</Text>
+            </View>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.loginScreenContainer}>
               <View style={styles.formContainer}>
@@ -206,7 +217,7 @@ function SignUp({ route }) {
                           },
                         }}
                         mode={"outlined"}
-                        label="eADL email"
+                        label="Email"
                         labelColor="#dedede"
                         style={styles.loginFormTextInput}
                         left={
@@ -245,7 +256,7 @@ function SignUp({ route }) {
                           },
                         }}
                         mode={"outlined"}
-                        label="Mot de passe"
+                        label="Choose your password"
                         placeholderColor={"#dedede"}
                         style={styles.loginFormTextInput}
                         left={
@@ -291,8 +302,8 @@ function SignUp({ route }) {
 
                 <View style={styles.hintContainer}>
                   <Text style={styles.textHint}>
-                    Entrez votre nouveau mot de passe. Doit contenir au moins 8
-                    caractères
+                      Enter your new password. Must contain at least 8
+                      characters long
                   </Text>
                 </View>
               </View>
@@ -307,7 +318,7 @@ function SignUp({ route }) {
                 onPress={handleSubmit(onPressSignUp)}
                 color={"white"}
               >
-                SUIVANT
+                NEXT
               </Button>
             </View>
           </TouchableWithoutFeedback>
