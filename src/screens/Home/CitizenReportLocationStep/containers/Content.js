@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -6,26 +6,26 @@ import {
   Platform,
   KeyboardAvoidingView,
   TextInput as NativeTextInput,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { styles } from "./Content.styles";
-import { Button, TextInput } from "react-native-paper";
-import { debounce } from "lodash";
-import { colors } from "../../../../utils/colors";
-import CustomDropDownPicker from "../../../../components/CustomDropDownPicker/CustomDropDownPicker";
-import i18n from "i18n-js";
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Button, TextInput } from 'react-native-paper';
+import { debounce } from 'lodash';
+import i18n from 'i18n-js';
+import { styles } from './Content.styles';
+import { colors } from '../../../../utils/colors';
+import CustomDropDownPicker from '../../../../components/CustomDropDownPicker/CustomDropDownPicker';
 
 const theme = {
   roundness: 12,
   colors: {
     ...colors,
-    background: "white",
-    placeholder: "#dedede",
-    text: "#707070",
+    background: 'white',
+    placeholder: '#dedede',
+    text: '#707070',
   },
 };
 
-export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
+export function Content({ stepOneParams, stepTwoParams, issueCommunes, uniqueRegion }) {
   const navigation = useNavigation();
   const [communes, setCommunes] = useState(issueCommunes);
   const [commune1, setCommune1] = useState(null);
@@ -50,11 +50,8 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
     let index;
     if (_index !== undefined) index = _index + 1;
 
-    //Filter communes by parent (administrative ID)
-    communesCopy = communesCopy.filter(
-      (x) => x.parent_id === selectedAdministrativeId
-    );
-
+    // Filter communes by parent (administrative ID)
+    communesCopy = communesCopy.filter((x) => x.parent_id === selectedAdministrativeId);
 
     if (communesCopy.length > 0) {
       if (communesPickers[index]) {
@@ -93,23 +90,22 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
   };
   return (
     <ScrollView>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : null}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : null}>
         <View style={{ padding: 23 }}>
-          <Text style={styles.stepText}>{i18n.t("step_4")}</Text>
-          <Text style={styles.stepDescription}>{i18n.t("step_location_description")}</Text>
-          <Text style={styles.stepNote}>
-            {i18n.t("step_location_body")}
-          </Text>
+          <Text style={styles.stepText}>{i18n.t('step_4')}</Text>
+          <Text style={styles.stepDescription}>{i18n.t('step_location_description')}</Text>
+          <Text style={styles.stepNote}>{i18n.t('step_location_body')}</Text>
         </View>
 
         {communes && (
           <CustomDropDownPicker
             schema={{
-              label: "name",
-              value: "administrative_id",
+              label: 'name',
+              value: 'administrative_id',
             }}
-            placeholder= {i18n.t("step_location_dropdown_placeholder")}
+            placeholder={i18n.t('step_location_dropdown_placeholder')}
             value={commune1}
+            disabled={!!uniqueRegion}
             items={filterCommunes(null)}
             setPickerValue={(val) => {
               setCommune1(val());
@@ -122,32 +118,31 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
           />
         )}
         {communesPickers.map((parent, index) => (
-            <View style={{zIndex: 1000 + index}}>
-              <CustomDropDownPicker
-                schema={{
-                  label: "name",
-                  value: "administrative_id",
-                }}
-                placeholder={i18n.t("step_location_dropdown_placeholder")}
-                value={pickersState[index]}
-                items={filterCommunes(parent, index)}
-                onSelectItem={(item) => setLocation(item)}
-                setPickerValue={(val) => {
-                  const newState = [...pickersState];
-                  newState.splice(index, newState.length - index);
-                  newState[index] = val();
-                  setPickersState(newState);
-                  if (val) {
-                    handlePickCommune(val(), index);
-                  }
-                }}
-              />
-            </View>
+          <View style={{ zIndex: 1000 + index }}>
+            <CustomDropDownPicker
+              schema={{
+                label: 'name',
+                value: 'administrative_id',
+              }}
+              disabled={!!uniqueRegion}
+              placeholder={i18n.t('step_location_dropdown_placeholder')}
+              value={pickersState[index]}
+              items={filterCommunes(parent, index)}
+              onSelectItem={(item) => setLocation(item)}
+              setPickerValue={(val) => {
+                const newState = [...pickersState];
+                newState.splice(index, newState.length - index);
+                newState[index] = val();
+                setPickersState(newState);
+                if (val) {
+                  handlePickCommune(val(), index);
+                }
+              }}
+            />
+          </View>
         ))}
         <View style={{ paddingHorizontal: 50 }}>
-          <Text style={styles.stepNote}>
-            {i18n.t("step_location_input_explanation")}
-          </Text>
+          <Text style={styles.stepNote}>{i18n.t('step_location_input_explanation')}</Text>
           <TextInput
             multiline
             numberOfLines={4}
@@ -155,14 +150,14 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
               styles.grmInput,
               {
                 height: 100,
-                justifyContent: "flex-start",
-                textAlignVertical: "top",
+                justifyContent: 'flex-start',
+                textAlignVertical: 'top',
               },
             ]}
-            placeholder={i18n.t("step_2_placeholder_3")}
-            outlineColor={"#f6f6f6"}
+            placeholder={i18n.t('step_2_placeholder_3')}
+            outlineColor="#f6f6f6"
             theme={theme}
-            mode={"outlined"}
+            mode="outlined"
             value={additionalDetails}
             onChangeText={(text) => setAdditionalDetails(text)}
             render={(innerProps) => (
@@ -185,24 +180,27 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes }) {
           <Button
             theme={theme}
             disabled={
-              commune1 === null || [commune1, ...pickersState].length === 0
+              (commune1 === null || [commune1, ...pickersState].length === 0) && !uniqueRegion
             }
-            style={{ alignSelf: "center", margin: 24 }}
-            labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
+            style={{ alignSelf: 'center', margin: 24 }}
+            labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
             mode="contained"
             onPress={() => {
-              navigation.navigate("CitizenReportStep3", {
+              navigation.navigate('CitizenReportStep3', {
                 stepOneParams,
                 stepTwoParams,
                 stepLocationParams: {
-                  issueLocation: { administrative_id: location?.administrative_id, name: location?.name },
+                  issueLocation: {
+                    administrative_id:
+                      uniqueRegion?.administrative_id ?? location?.administrative_id,
+                    name: uniqueRegion?.name ?? location?.name,
+                  },
                   locationDescription: additionalDetails,
                 },
-              })
-            }
-            }
+              });
+            }}
           >
-            {i18n.t("next")}
+            {i18n.t('next')}
           </Button>
         </View>
       </KeyboardAvoidingView>
