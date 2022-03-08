@@ -460,7 +460,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                         uploaded: false,
                         local_url: attachment?.uri,
                       }
-                    : {},
+                    : undefined,
                   recording: recordingURI
                     ? {
                         url: '',
@@ -469,7 +469,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                         local_url: recordingURI,
                         isAudio: true,
                       }
-                    : {},
+                    : undefined,
                   category: getCategory(pickerValue2),
                   additionalDetails,
                 },

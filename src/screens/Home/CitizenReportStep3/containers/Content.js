@@ -41,7 +41,10 @@ function Content({ issue, eadl }) {
       auto_increment_id: '',
       title: issue.issueSummary,
       description: issue.additionalDetails,
-      attachments: [issue?.attachment, issue?.recording],
+      attachments: [
+        ...(issue?.attachment ? issue.attachment : []),
+        ...(issue?.recording ? issue.recording : []),
+      ],
       status: {
         name: 'Open',
         id: 1,
