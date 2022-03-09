@@ -44,13 +44,13 @@ function Content() {
         >
             <SmallCard
                 image={require("../../../../../assets/BG_1.png")}
-                onCardPress={() => alert("Fonctionnalité à venir")}
+                onCardPress={() => alert("Upcoming feature")}
                 title={i18n.t("diagnostics")}
                 icon={<Chart />}
             />
             <SmallCard
                 image={require("../../../../../assets/BG_2.png")}
-                onCardPress={() => alert("Fonctionnalité à venir")}
+                onCardPress={() => alert("Upcoming feature")}
                 title={i18n.t("information")}
                 icon={<FileIcon />}
             />

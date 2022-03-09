@@ -31,7 +31,7 @@ function RegisterSubprojects() {
   const [loading, setLoading] = useState(false);
   const [bpProjects, setBpProjects] = useState(eadl.bp_projects || []);
   const [mandatoryError, setMandatoryError] = useState(false);
-  const [projectAmount, setProjectAmount] = useState(0);
+  const [projectAmount, setProjectAmount] = useState(0);e
   const [projectAmountFormatted, setProjectAmountFormatted] = useState(0);
   const [subProjectDesc, setSubProjectDesc] = useState("");
   const [selectedProjectIndex, setSelectedProjectIndex] = useState();

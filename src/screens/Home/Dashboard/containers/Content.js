@@ -47,13 +47,13 @@ function Content() {
       >
         <SmallCard
           image={require("../../../../../assets/BG_1.png")}
-          onCardPress={() => alert("Fonctionnalité à venir")}
+          onCardPress={() => alert("Upcoming feature")}
           title={"PAI"}
           icon={<Chart />}
         />
         <SmallCard
           image={require("../../../../../assets/BG_2.png")}
-          onCardPress={() => alert("Fonctionnalité à venir")}
+          onCardPress={() => alert("Upcoming feature")}
           title={"Apprendre \n" + "et actualités"}
           icon={<FileIcon />}
         />
