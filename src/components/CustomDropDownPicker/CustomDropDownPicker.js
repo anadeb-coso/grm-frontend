@@ -41,6 +41,7 @@ function CustomDropDownPicker({
     >
       <DropDownPicker
         zIndex={zIndex}
+        dropDownDirection="BOTTOM"
         zIndexInverse={zIndexInverse}
         schema={schema}
         disabled={disabled}
