@@ -47,8 +47,8 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const [isIssueAssignedToMe, setIsIssueAssignedToMe] = useState(false);
   const goToDetails = () => navigation.jumpTo('IssueDetail');
   const goToHistory = () => {
-    _hideRecordStepsDialog();
     setRecordedSteps(false);
+    _hideRecordStepsDialog();
     navigation.jumpTo('History');
   };
   const _showDialog = () => setAcceptDialog(true);
