@@ -21,7 +21,7 @@ function CitizenReportLocationStep({ route }) {
         .then((result) => {
           if (result.docs[0] && result.docs[0]?.unique_region === 1) {
             LocalCommunesDatabase.find({
-              selector: { id: result.docs[0].administrative_region },
+              selector: { administrative_id: result.docs[0].administrative_region },
             }).then((regions) => {
               setUniqueRegion(regions.docs[0]);
             });
