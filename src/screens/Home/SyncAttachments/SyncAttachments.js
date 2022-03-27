@@ -42,7 +42,7 @@ function SyncAttachments({ navigation }) {
             Platform.OS === 'android'
               ? file?.attachment?.local_url
               : file?.attachment?.local_url.replace('file://', ''),
-          name: `image 2.png`,
+          name: file?.attachment?.name,
           type: 'image/jpeg', // it may be necessary in Android.
         });
 
