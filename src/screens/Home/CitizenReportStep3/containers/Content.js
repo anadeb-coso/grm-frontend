@@ -22,11 +22,11 @@ const theme = {
 
 function Content({ issue, eadl }) {
   const navigation = useNavigation();
-  const incrementId = () => {
-    const last = eadl.bp_projects[eadl.bp_projects.length - 1];
-    if (!eadl.bp_projects[0]) return 1;
-    return parseInt(last.id.split('-')[1]) + 1;
-  };
+  // const incrementId = () => {
+  //   const last = eadl.bp_projects[eadl.bp_projects.length - 1];
+  //   if (!eadl.bp_projects[0]) return 1;
+  //   return parseInt(last.id.split('-')[1]) + 1;
+  // };
   const randomWord = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const submitIssue = () => {
     const isAssignee =
@@ -42,8 +42,8 @@ function Content({ issue, eadl }) {
       title: issue.issueSummary,
       description: issue.additionalDetails,
       attachments: [
-        issue?.attachment ? issue?.attachment : [],
-        issue?.recording ? issue?.recording : [],
+        ...(issue?.attachment ? [issue.attachment] : []),
+        ...(issue?.recording ? [issue.recording] : []),
       ],
       status: {
         name: 'Open',
