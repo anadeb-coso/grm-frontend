@@ -8,6 +8,7 @@ import { useNavigation } from "@react-navigation/native";
 import ThinkingSVG from "../../../../../assets/think.svg";
 import EADLLogo from "../../../../../assets/eadl-logo.svg";
 import MapBg from "../../../../../assets/map-bg.svg";
+import i18n from 'i18n-js';
 
 const Content = () => {
   // const { colors } = useTheme();
@@ -36,7 +37,7 @@ const Content = () => {
       </View>
       {/*<Title style={customStyles.upperTitle}>Welcome to EADL</Title>*/}
       <View>
-        <Title style={customStyles.title}>{titles[step]}</Title>
+        <Title style={customStyles.title}>{i18n.t('used_app_before')}</Title>
       </View>
 
       <View style={customStyles.buttonsView}>
@@ -47,7 +48,7 @@ const Content = () => {
             navigation.navigate("AuthStack", { screen: "Login" });
           }}
         >
-          YES
+          {i18n.t('yes')}
         </Button>
         <Button
           style={customStyles.button}
@@ -57,7 +58,7 @@ const Content = () => {
             navigation.navigate("AuthStack", { screen: "SignUp" });
           }}
         >
-          NO
+          {i18n.t('no')}
         </Button>
       </View>
     </View>

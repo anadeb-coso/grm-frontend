@@ -1,4 +1,19 @@
 {
+	//Onboarding
+	"used_app_before": "Have you use this app before?",
+	"yes": "YES",
+	"no": "NO",
+	"welcome_login": "Welcome! Log-in here.",
+	"email": "Email",
+	"password": "Password",
+	"login": "Login",
+	"email_provided": "Please enter the email provided by your supervisor and use a password of your preference.",
+	"choose_password": "Choose your password",
+	"enter_new_password":  "Enter your new password. Must contain at least 8 characters long",
+	"last_validation": "We need a last validation!",
+	"please_enter_code": "Please use the code provided by your supervisor",
+	"account_create_success": "Your account has been successfully created",
+	"logout": "logout",
 	//GRM
 	"diagnostics": "Isuzumabikorwa",
 
