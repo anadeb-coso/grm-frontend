@@ -76,38 +76,38 @@ function DashboardStackScreen() {
       <HomeStack.Screen
         name="CitizenReportIntro"
         component={CitizenReportIntro}
-        options={({ navigation, route }) => customHeaderOptions('Citizen Input')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReport"
         component={CitizenReport}
-        options={({ navigation, route }) => customHeaderOptions('Citizen Input')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportContactInfo"
         component={CitizenReportContactInfo}
-        options={({ navigation, route }) => customHeaderOptions('Citizen Input')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportStep2"
         component={CitizenReportStep2}
-        options={({ navigation, route }) => customHeaderOptions('Citizen Input')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportLocationStep"
         component={CitizenReportLocationStep}
-        options={({ navigation, route }) => customHeaderOptions('Citizen Input')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportStep3"
         component={CitizenReportStep3}
-        options={({ navigation, route }) => customHeaderOptions('Citizen Input')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportStep4"
         component={CitizenReportStep4}
         options={({ navigation, route }) => ({
-          ...customHeaderOptions('Citizen Input'),
+          ...customHeaderOptions(i18n.t('citizen_input_header')),
           headerLeft: () => null,
         })}
       />

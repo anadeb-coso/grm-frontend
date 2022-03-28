@@ -1,4 +1,6 @@
 {
+	//Headers
+	"citizen_input_header": "Kwinjiza ikibazo",
 	//Onboarding
 	"used_app_before": "Wigeze ukoresha iyi porogaramu mbere?",
 	"yes": "YEGO",
@@ -6,7 +8,7 @@
 	"welcome_login": "Murakaza Neza! Injirira hano.",
 	"email": "Imeri",
 	"password": "Ijambo ry'ibanga",
-	"login": "Innjira",
+	"login": "Injira",
 	"email_provided": "Shyiramo imeri wahawe n'ukuyobora kandi ukoreshe n'ijambo ry'ibanga uzajya wibuka",
 	"choose_password": "Hitamo ijambo ry'ibanga",
 	"enter_new_password": "Shyiramo Ijambo ry'ibanga.  Rigomba kuba rigizwe byibura n'inyuguti 8",

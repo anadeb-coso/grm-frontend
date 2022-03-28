@@ -1,4 +1,6 @@
 {
+  //Headers
+  "citizen_input_header": "Citizen Input",
   //Onboarding
   "used_app_before": "Have you use this app before?",
   "yes": "YES",
