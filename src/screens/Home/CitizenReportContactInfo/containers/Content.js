@@ -35,8 +35,8 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
   const [genders, setGenders] = useState([
     { label: i18n.t('male'), value: 'male' },
     { label: i18n.t('female'), value: 'female' },
-    { label: 'Other', value: 'other' },
-    { label: 'Rather not say', value: 'rather_not_say' },
+    { label: i18n.t('other'), value: 'other' },
+    { label: i18n.t('rather_not_say'), value: 'rather_not_say' },
   ]);
 
   useEffect(() => {
@@ -88,19 +88,19 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
             <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 5 }}>
               <RadioButton.Android value={1} uncheckedColor="#dedede" color={colors.primary} />
               <Text style={styles.radioLabel}>
-                Keep name confidential. Only the person resolving the issue will see the name.{' '}
+                {i18n.t('step_2_keep_name_confidential')}{' '}
               </Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 5 }}>
               <RadioButton.Android value={2} uncheckedColor="#dedede" color={colors.primary} />
               <Text style={styles.radioLabel}>
-                This is an individual filing on behalf of someone else.{' '}
+                {i18n.t('step_2_on_behalf_of_someone')}{' '}
               </Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 5 }}>
               <RadioButton.Android value={3} uncheckedColor="#dedede" color={colors.primary} />
               <Text style={styles.radioLabel}>
-                This is an organization filing on behalf of someone else.
+                {i18n.t('step_2_organization_behalf_someone')}{' '}
               </Text>
             </View>
           </RadioButton.Group>

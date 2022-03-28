@@ -26,6 +26,7 @@ import CitizenReportContactInfo from './CitizenReportContactInfo/CitizenReportCo
 import IssueDetail from './IssueDetail/IssueDetail';
 import CitizenReportIntro from './CitizenReportIntro/CitizenReportIntro';
 import { colors } from '../../utils/colors';
+import i18n from 'i18n-js';
 
 import CitizenReportLocationStep from './CitizenReportLocationStep/CitizenReportLocationStep';
 import IssueActions from './IssueActions/IssueActions';
@@ -208,19 +209,19 @@ function IssueDetailTabsStack(props) {
       <TopTab.Screen
         name="Actions"
         initialParams={{ item: temp }}
-        options={{ tabBarLabel: 'Actions' }}
+        options={{ tabBarLabel: i18n.t('actions') }}
         component={IssueActions}
       />
       <TopTab.Screen
         name="IssueDetail"
         initialParams={{ item: temp }}
-        options={{ tabBarLabel: 'Details' }}
+        options={{ tabBarLabel: i18n.t('details') }}
         component={IssueDetail}
       />
       <TopTab.Screen
         name="History"
         initialParams={{ item: temp }}
-        options={{ tabBarLabel: 'History' }}
+        options={{ tabBarLabel: i18n.t('history') }}
         component={IssueHistory}
       />
     </TopTab.Navigator>

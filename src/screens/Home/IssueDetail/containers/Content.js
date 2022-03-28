@@ -114,7 +114,7 @@ function Content({ issue }) {
                       {" "}
                       {issue.issue_date &&
                       moment(issue.issue_date).format("DD-MMM-YYYY")}   {issue.issue_date &&
-                  currentDate.diff(issue.issue_date, "days")} {"days ago"}
+                  currentDate.diff(issue.issue_date, "days")} {i18n.t('days_ago')}
                   </Text>
               </View>
           </View>
@@ -129,28 +129,28 @@ function Content({ issue }) {
               <View style={{ flex: 1 }}>
 
                   <Text style={styles.subtitle}>
-                      Lodged by:
+                      {i18n.t('lodged_by')}
                       <Text style={styles.text}> {citizenTypes[issue.citizen_type] ?? 'No information available'}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
-                      Name:
+                      {i18n.t('name')}
                       <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? "Confidential" : issue.citizen}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
-                      Age:{" "}
+                      {i18n.t('age')}{" "}
                       <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? 'Confidential' : issue.citizen_age_group?.name ?? "Information not available"}</Text>
                   </Text>
 
                   <Text style={styles.subtitle}>
-                      Location:{" "}
+                      {i18n.t('location')}{" "}
                       <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? 'Confidential' : issue.administrative_region?.name ?? "Information not available"}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
-                      Category:{" "}
+                      {i18n.t('category')}{" "}
                       <Text style={styles.text}> {issue.category?.name ?? "Information not available"}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
-                      Assigned to:{" "}
+                      {i18n.t('assigned_to')}{" "}
                       <Text style={styles.text}> {issue.assignee?.name ?? "Pending Assigment"}</Text>
                   </Text>
               </View>
@@ -191,7 +191,7 @@ function Content({ issue }) {
           <TouchableOpacity onPress={() => setIsDecisionCollapsed(!isDecisionCollapsed)}
                             style={styles.collapsibleTrigger}
           >
-              <Text style={styles.subtitle}>Decision</Text>
+              <Text style={styles.subtitle}>{i18n.t('decision')}</Text>
               <MaterialCommunityIcons
                   name={isDecisionCollapsed ? "chevron-down-circle" : "chevron-up-circle"}
                   size={24}
@@ -223,7 +223,7 @@ function Content({ issue }) {
           <TouchableOpacity onPress={() => setIsSatisfactionCollapsed(!isSatisfactionCollapsed)}
                             style={styles.collapsibleTrigger}
           >
-              <Text style={styles.subtitle}>Satisfaction</Text>
+              <Text style={styles.subtitle}>{i18n.t('satisfaction')}</Text>
               <MaterialCommunityIcons
                   name={isSatisfactionCollapsed ? "chevron-down-circle" : "chevron-up-circle"}
                   size={24}
@@ -255,7 +255,7 @@ function Content({ issue }) {
           <TouchableOpacity onPress={() => setIsAppealCollapsed(!isAppealCollapsed)}
                             style={styles.collapsibleTrigger}
           >
-              <Text style={styles.subtitle}>Appeal Reason</Text>
+              <Text style={styles.subtitle}>{i18n.t('appeal_reason')}</Text>
               <MaterialCommunityIcons
                   name={isAppealCollapsed ? "chevron-down-circle" : "chevron-up-circle"}
                   size={24}
@@ -341,7 +341,7 @@ function Content({ issue }) {
             mode="contained"
             onPress={onAddComment}
           >
-            Back
+            {i18n.t('back')}
           </Button>
       </View>
     </ScrollView>
