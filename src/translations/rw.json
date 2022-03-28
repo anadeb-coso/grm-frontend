@@ -1,0 +1,185 @@
+{
+	//GRM
+	"diagnostics": "Isuzumabikorwa",
+
+	"information": "Amakuru",
+
+	"collect_reports": "Gukusanya raporo z'abenegihugu",
+
+	"search_reports": "Shakisha raporo",
+
+	"sync_files": "Guhuza dosiye",
+
+	//GRM-Intro
+	"intro_text_0": "Icyitonderwa kubakangurambaga: ",
+
+	"intro_text_1": "Kuvuga ingingo zifasha abenegihugu gushyira mu ngiro. Mu gutangira, reka abantu bamenye ibi bikurikira:",
+
+	"intro_text_2": "Mbashimiye ibitekerezo muduhaye mutugaragariza  ibikorwa neza n'ibitagenda neza mu mushinga wacu.  uru rutonde rw'ibibazo rugizwe n'ibice 6. Biri bwihute kandi biraba byoroshye. Mbere yo gutangira hari ibintu bike mugomba kumenya.",
+
+	"intro_text_3": "Mwemerewe kudatanga umwirondoro wanyu niba mubishaka, Gusa kuduha amakuru ni ingenzi mu kubafasha gukemura ikibazo cyanyu",
+
+	"intro_text_4": "Amakuru yose muduha aradufasha kubasha kumva no gukemura ikibazo mufite. ariko ntibibahangayikishe niba ntacyo mwaba mwibuka.",
+
+	"intro_text_5": "Ikibazo cyawe kirabikwa muri sisiteme kandi kizakemurwa na komite ishinzwe gukemura ibibazo(GRC) mu minsi mike",
+
+	"intro_text_6": "Tugerageza gukemura ibibazo mwatugejejeho mugihe {x} cy’umunsi mwabitanzeho.",
+
+	//step 1
+	"welcome_citizen_input": "Murakaza neza!",
+
+	"step_1_subtitle": "Duha agaciro gakomeye ibyo mutugezaho, kandi twiuza gukorana mu gukemura ikibazo icyo aricyo cyose cyangwa mu kunoza umurimo wacu",
+
+	"step_1": "Intambwe ya 1",
+
+	"stay_touch_question": "Uburyo buhari  bw’itumanaho",
+
+	"step_1_hint_1": "Umukangurambaga:”Niba ubyifuza, dushobora kukugezahao amakuru ku kibazo cyanyu dukoresheje imeri cg ubutumwa bugufi kuri telephone. Ariko niba udashaka kugaragaza imyirondoro, turaguha kodi wakoresha ukurikirana ikibazo cyawe cyangwa se ukaba waza kundeba nkagufasha. Ushaka gukoresha ubuhe buryo?”",
+
+	"step_1_option_1": "Kutagaragaza imyirondoro",
+
+	"step_1_option_2": " Kwakira amakuru ku kibazo binyuze k'umukangurambaga",
+
+	"step_1_option_3": "Kohererezwa amakuru",
+
+	"step_1_method_1": " Ubutumwa bugufi (Text / SMS)",
+
+	"step_1_method_2": "WhatsApp",
+
+	"step_1_method_3": "Imeri",
+
+	"step_1_placeholder_1": "Uburyo bw’itumanaho",
+
+	"step_1_placeholder_2": " Injiza umwirondoro hano",
+
+	//contact step
+	"contact_step_title": "Imyirondoro",
+
+	"contact_step_subtitle": "Izina ry’umuntu cyangwa itsinda",
+
+	"contact_step_explanation": "Umukangurambaga ku muntu utifuza gutangaza imyirondoro ye: “Wifuje kudatangaza imyirondoro yawe, niyo mpamvu ngiye kwandika “Anonymous” hano” \n\n Umukangurambaga kubifuza ko imyirondoro yabo itangazwa: “Ngiye kwandika izina ryawe hano”",
+
+	"contact_step_placeholder_1": "Injiza izina ry’ufite ikibazo",
+
+	"contact_step_placeholder_2": "Injiza ikiciro cy'imyaka (Singombwa)",
+
+	"contact_step_placeholder_3": "Hitamo igitsina (Singombwa)",
+
+	"contact_step_placeholder_4": "Uyu muntu ari kuzuriza ikibazo undi muntu.",
+
+	//step 2//step 2
+	"step_2": "Intambwe ya 2",
+
+	"step_2_select_date": "Kanda hano uhitemo itariki",
+
+	"step_2_subtitle": "Ikibazo cyangwa ibisubizo muburyo burambuye",
+
+	"step_2_explanation": "Umukangurambaga: “Nshaka kwandika itariki ibi byabereye. Niba utibuka itariki neza ntuhangayike ikibazo cyawe kizakuriranwa”",
+
+	"step_2_ongoing_hint": "Ibi Biracyaba cg biba inshuro nyinshi zitandukanye?",
+
+	"step_2_set_today": "Itariki y'uyu munsi",
+
+	"step_2_placeholder_1": "Ni ayahe makuru uzanye?",
+
+	"step_2_placeholder_2": "Hitamo ubwoko bw'ikibazo",
+
+	"step_2_placeholder_3": "Andika ikibazo mu magambo make",
+
+	"step_2_placeholder_4": "Tanga andi makuru y'ingenzi kuri iki kibazo",
+
+	"step_2_share_photos": "Shyiraho video, amafoto yangwa amajwi nk'ibimemyetso cg ibisobanuro",
+
+	"step_2_upload_attachment": "Hitamo ifoto",
+
+	//step 3
+	"step_3": "Intambwe ya 3",
+
+	"step_3_confirmation": "Kwemeza amakuru",
+
+	"step_3_subtitle": "Genzura ko amakuru watanze ariyo maze ubyemeze.Niba ukeneye guhindura amakuru ayo ari yo yose, kanda buto yo guhindura.",
+
+	"step_3_field_title_1": "Itariki y'ikibazo:",
+
+	"step_3_field_title_2": "Iki ni:",
+
+	"step_3_field_title_3": "Iki kibazo kijyanye:",
+
+	"step_3_field_title_4": "Ubusobanuro ku kibazo:",
+
+	"step_3_attachments": "Umugereka:",
+
+	//location step
+	"step_4": "Intambwe ya 4",
+
+	"step_location_description": "Ibi byabereye he?",
+
+	"step_location_body": "Umukangurambaga: Ugomba gusobanura neza mu buryo bwumvikana aho ikibazo cyabereye\nMu gukemura ikibazo. Akarere, umudugudu, ubusobanuro ndetse n'ibiranga aho ikibazo cyabereye \nbirafasha cyane. Niba iki ari ikibazo cy'ibanga,\nhitamo kugeza ku mudugudu andi makuru uyihorere.",
+
+	"step_location_dropdown_placeholder": "Kanda kugirango uhitemo",
+
+	"step_location_input_explanation": "Injiza andi makuru yaho byabereye ashobora mu gufasha gukemura ikibazo(urugero: Munsi y'ikiraro, hirya y'inziri ku giti cy'umwembe,...).",
+
+	"step_4_subtitle": "Birarangiye!",
+
+	"step_4_description": "Ikibazo cyashyizwe muri sisiteme kandi cyagejejwe ku mukozi ubishinzwe. Kumenya aho ikibazo kigeze gikemuka, uzakoresha iyi code iri hano hepfo. (Umukangurambaga: Shishikariza Umwenegihugu kwandika iyi kode cyangwa kuyisubiramo akayifata)",
+
+	"step_4_issue_code": "Kode y'ikibazo:",
+
+	"step_4_short_code": "Kode ngufi",
+
+	"step_4_two_word_code": "Code y'amagambo abiri",
+
+	"step_4_back_text": "Subira ahabanza",
+
+	"step_en": "Step 5",
+	"step_5": "Intwambwe ya 5",
+
+	"step_6": "Intambwe ya 6",
+
+	//general
+	"save_button_text": "BIKA & UKOMEZE",
+
+	"next": "IBIKURIKIRA",
+
+	"submit_button_text": "OHEREZA",
+
+	"male": "Gabo",
+	"female": "Gore",
+
+	//issue detail
+	"description_label": "Ibisobanuro",
+
+	"reported_label": "Byatanzwe",
+
+	"status_label": "Aho bigeze",
+
+	"assigned_to_label": "Ugishinzwe",
+
+	"reporter_label": "Uwatanze amakuru",
+
+	"citizen_label": "Umwenegihugu",
+
+	"privacy_label": "Kugirirwa ibanga",
+
+	"category_label": "Icyiciro",
+
+	"issue_type_label": "Ubwoko bw'ikibazo",
+
+	"attachments_label": "Umugereka",
+
+	"comment_placeholder": "Andika igitekerezo...",
+
+	//issue search
+	"overdue_label": "Ibibazo byarengeje igihe",
+
+	"assigned_to_you_label": "Ibibazo wahawe",
+
+	"resolved_by_you_label": "Ibibazo byakemuwe nawe",
+
+	"average_days_label": "Impuzandengo y'iminsi yo gukemura ibibazo",
+
+	"average_satisfaction_label": "Impuzandengo yo kunyurwa",
+
+	"your_issues_label": "Ibibazo byawe bifunguye"
+}
