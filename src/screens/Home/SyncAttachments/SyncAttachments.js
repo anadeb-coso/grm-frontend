@@ -199,7 +199,7 @@ function SyncAttachments({ navigation }) {
               color: '#ffffff',
             }}
           >
-            TERMINÉ
+            DONE
           </CustomGreenButton>
         </View>
       </Modal>

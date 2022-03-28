@@ -15,7 +15,7 @@ export function Diagnostics() {
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.form}>
         <Text style={{ color: colors.primary, fontWeight: "bold" }}>
-          Fonctionnalité à venir.
+          Upcoming feature.
         </Text>
       </View>
     </SafeAreaView>

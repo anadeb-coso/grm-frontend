@@ -61,7 +61,7 @@ const Content = () => {
     <SafeAreaView style={{ flex: 1 }}>
       <View style={{ justifyContent: "center", alignItems: "center", flex: 1 }}>
         <Text style={{ color: colors.primary, fontWeight: "bold" }}>
-          Fonctionnalité à venir.
+          Upcoming feature.
         </Text>
       </View>
     </SafeAreaView>
