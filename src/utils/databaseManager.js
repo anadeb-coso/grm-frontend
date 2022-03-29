@@ -23,15 +23,15 @@ export const LocalCommunesDatabase = new PouchDB('commune', {
 });
 
 export const SyncToRemoteDatabase = async ({ username, password }, userEmail) => {
-  const remoteDB = new PouchDB('http://104.248.57.139:5984/eadls', {
+  const remoteDB = new PouchDB('http://206.81.23.161:5984/eadls', {
     skip_setup: true,
   });
 
-  const grmRemoteDB = new PouchDB('http://104.248.57.139:5984/grm', {
+  const grmRemoteDB = new PouchDB('http://206.81.23.161:5984:5984/grm', {
     skip_setup: true,
   });
 
-  const communesRemoteDB = new PouchDB('http://104.248.57.139:5984/eadls', {
+  const communesRemoteDB = new PouchDB('http://206.81.23.161:5984:5984/eadls', {
     skip_setup: true,
   });
 
