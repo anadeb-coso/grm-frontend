@@ -35,8 +35,8 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
   const [genders, setGenders] = useState([
     { label: i18n.t('male'), value: 'male' },
     { label: i18n.t('female'), value: 'female' },
-    { label: i18n.t('other'), value: 'other' },
-    { label: i18n.t('rather_not_say'), value: 'rather_not_say' },
+    // { label: i18n.t('other'), value: 'other' },
+    // { label: i18n.t('rather_not_say'), value: 'rather_not_say' },
   ]);
 
   useEffect(() => {
