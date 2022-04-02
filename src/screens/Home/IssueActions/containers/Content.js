@@ -94,11 +94,23 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
   const acceptIssue = () => {
     const newStatus = statuses.find((x) => x.open_status === true);
+    issue.comments?.push({
+      name: issue.reporter.name,
+      id: eadl._id,
+      comment: 'The issue was accepted',
+      due_at: moment(),
+    });
     saveIssueStatus(newStatus, 'accept');
   };
 
   const rejectIssue = () => {
     const newStatus = statuses.find((x) => x.rejected_status === true);
+    issue.comments?.push({
+      name: issue.reporter.name,
+      id: eadl._id,
+      comment: 'The issue was rejected',
+      due_at: moment(),
+    });
     saveIssueStatus(newStatus, 'reject');
   };
 
@@ -108,6 +120,12 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       id: eadl?._id,
       name: eadl?.representative?.name,
       comment: escalateComment,
+      due_at: moment(),
+    });
+    issue.comments?.push({
+      name: issue.reporter.name,
+      id: eadl._id,
+      comment: 'The issue was escalated',
       due_at: moment(),
     });
     saveIssueStatus();
@@ -133,6 +151,12 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const recordResolutionConfirmation = () => {
     issue.research_result = resolution;
     const newStatus = statuses.find((x) => x.final_status === true);
+    issue.comments?.push({
+      name: issue.reporter.name,
+      id: eadl._id,
+      comment: 'The issue was resolved',
+      due_at: moment(),
+    });
     saveIssueStatus(newStatus, 'record_resolution');
     _hideRecordResolutionDialog();
   };
