@@ -1,13 +1,47 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, FlatList, TouchableOpacity, Text, StatusBar, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import i18n from 'i18n-js';
+import { ToggleButton } from 'react-native-paper';
 import { colors } from '../../../../utils/colors';
+import ListHeader from '../components/ListHeader';
 
-function Content({ issues, eadl }) {
+function Content({ issues, eadl, statuses }) {
   const navigation = useNavigation();
   const [selectedId, setSelectedId] = useState(null);
+  const [status, setStatus] = useState('assigned');
+  const [_issues, setIssues] = useState([]);
+
+  useEffect(() => {
+    setIssues(issues);
+  }, []);
+
+  useEffect(() => {
+    let filteredIssues;
+    let foundStatus;
+    switch (status) {
+      case 'assigned':
+        filteredIssues = issues.filter((issue) => issue.assignee && issue.assignee.id === eadl._id);
+        break;
+      case 'open':
+        foundStatus = statuses.find((el) => el.final_status === false);
+        filteredIssues = issues.filter(
+          (issue) =>
+            issue.assignee && issue.assignee.id === eadl._id && issue.status.id === foundStatus.id
+        );
+        break;
+      case 'resolved':
+        foundStatus = statuses.find((el) => el.final_status === true);
+        filteredIssues = issues.filter(
+          (issue) =>
+            issue.assignee && issue.assignee.id === eadl._id && issue.status.id === foundStatus.id
+        );
+        break;
+      default:
+        filteredIssues = _issues.map((issue) => issue);
+    }
+    setIssues(filteredIssues);
+  }, [status]);
 
   function Item({ item, onPress, backgroundColor, textColor }) {
     return (
@@ -48,78 +82,52 @@ function Content({ issues, eadl }) {
   };
 
   const renderHeader = () => (
-    <View>
-      <View
-        style={{
-          borderRadius: 10,
-          backgroundColor: '#ffffff',
-          shadowColor: 'rgba(0, 0, 0, 0.05)',
-          shadowOffset: {
-            width: 0,
-            height: 3,
-          },
-          shadowRadius: 15,
-          shadowOpacity: 1,
-          margin: 23,
-          padding: 15,
-        }}
-      >
-        <Text
-          style={{
-            fontFamily: 'Poppins_700Bold',
-            fontSize: 14,
-            fontWeight: 'bold',
-            fontStyle: 'normal',
-            letterSpacing: 0,
-            textAlign: 'left',
-            color: '#707070',
-          }}
-        >
-          {i18n.t('overdue_label')}:{' '}
-          {issues.overdue ? <Text style={{ color: '#ef6a78' }}>{issues.overdue}</Text> : '--'}
-        </Text>
-        <Text style={styles.statisticsText}>
-          {i18n.t('assigned_to_you_label')}: {issues.length}
-        </Text>
-        <Text style={styles.statisticsText}>
-          {i18n.t('resolved_by_you_label')}:{' '}
-          {issues.average ? <Text style>issues.average</Text> : '--'}
-        </Text>
-        <Text style={styles.statisticsText}>
-          {i18n.t('average_days_label')}:{' '}
-          {issues.average ? <Text style>issues.average</Text> : '--'}
-        </Text>
-        <Text style={styles.statisticsText}>
-          {i18n.t('average_satisfaction_label')}:{' '}
-          {issues.average ? <Text style>issues.average</Text> : '--'}
-        </Text>
-      </View>
-      <View style={{ padding: 15 }}>
-        <Text
-          style={{
-            fontSize: 17,
-            fontWeight: 'bold',
-            fontStyle: 'normal',
-            lineHeight: 18,
-            letterSpacing: 0,
-            textAlign: 'left',
-            color: '#707070',
-          }}
-        >
-          {i18n.t('your_issues_label')}:
-        </Text>
-      </View>
-    </View>
+    <ListHeader overdue={issues.overdue} length={issues.length} average={issues.average} />
   );
   return (
-    <FlatList
-      style={{ flex: 1 }}
-      data={issues}
-      renderItem={renderItem}
-      ListHeaderComponent={renderHeader}
-      keyExtractor={(item) => item._id}
-      extraData={selectedId}
-    />
+    <>
+      <ToggleButton.Row
+        style={{ justifyContent: 'space-between' }}
+        onValueChange={(value) => setStatus(value)}
+        value={status}
+      >
+        <ToggleButton
+          style={{ flex: 1 }}
+          icon={() => (
+            <View>
+              <Text style={{ color: colors.primary }}>Assigned</Text>
+            </View>
+          )}
+          value="assigned"
+        />
+        <ToggleButton
+          style={{ flex: 1 }}
+          icon={() => (
+            <View>
+              <Text style={{ color: colors.primary }}>Open</Text>
+            </View>
+          )}
+          value="open"
+        />
+        <ToggleButton
+          style={{ flex: 1 }}
+          icon={() => (
+            <View>
+              <Text style={{ color: colors.primary }}>Resolved</Text>
+            </View>
+          )}
+          value="resolved"
+        />
+      </ToggleButton.Row>
+      <FlatList
+        style={{ flex: 1 }}
+        data={_issues}
+        renderItem={renderItem}
+        ListHeaderComponent={renderHeader}
+        keyExtractor={(item) => item._id}
+        extraData={selectedId}
+      />
+    </>
   );
 }
 
