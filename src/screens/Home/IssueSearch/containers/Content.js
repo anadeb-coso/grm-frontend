@@ -25,16 +25,21 @@ function Content({ issues, eadl, statuses }) {
         break;
       case 'open':
         foundStatus = statuses.find((el) => el.final_status === false);
+        foundStatus = statuses.find((el) => el.final_status === false);
         filteredIssues = issues.filter(
           (issue) =>
-            issue.assignee && issue.assignee.id === eadl._id && issue.status.id === foundStatus.id
+            ((issue.assignee && issue.assignee.id === eadl._id) ||
+              (issue.reporter && issue.reporter.id === eadl._id)) &&
+            issue.status.id === foundStatus.id
         );
         break;
       case 'resolved':
         foundStatus = statuses.find((el) => el.final_status === true);
         filteredIssues = issues.filter(
           (issue) =>
-            issue.assignee && issue.assignee.id === eadl._id && issue.status.id === foundStatus.id
+            ((issue.assignee && issue.assignee.id === eadl._id) ||
+              (issue.reporter && issue.reporter.id === eadl._id)) &&
+            issue.status.id === foundStatus.id
         );
         break;
       default:
