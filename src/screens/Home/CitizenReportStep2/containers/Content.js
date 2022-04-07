@@ -273,6 +273,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         <DateTimePickerModal
           isVisible={isDatePickerVisible}
           mode="date"
+          maximumDate={new Date()}
           onConfirm={handleConfirm}
           onCancel={hideDatePicker}
         />
@@ -459,7 +460,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                         id: new Date(),
                         uploaded: false,
                         local_url: attachment?.uri,
-                        name: attachment?.uri.split('/').pop()
+                        name: attachment?.uri.split('/').pop(),
                       }
                     : undefined,
                   recording: recordingURI
@@ -469,7 +470,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                         uploaded: false,
                         local_url: recordingURI,
                         isAudio: true,
-                        name: recordingURI.split('/').pop()
+                        name: recordingURI.split('/').pop(),
                       }
                     : undefined,
                   category: getCategory(pickerValue2),
