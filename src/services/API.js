@@ -1,4 +1,4 @@
-const baseURL = 'https://kisip.e3grm.org';
+const baseURL = 'https://rtda.e3grm.org/';
 export { baseURL };
 function handleErrors(response) {
   if (response.non_field_errors) {
