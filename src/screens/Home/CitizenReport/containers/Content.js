@@ -31,7 +31,7 @@ function Content() {
   const [contactInfo, setContactInfo] = React.useState("");
   const [pickerValue, setPickerValue] = useState("email");
   const [items, setItems] = useState([
-    { label: i18n.t("step_1_method_1"), value: "text-sms" },
+    { label: i18n.t("step_1_method_1"), value: "phone_number" },
     { label: i18n.t("step_1_method_2"), value: "whatsapp" },
     { label: i18n.t("step_1_method_3"), value: "email" },
   ]);
