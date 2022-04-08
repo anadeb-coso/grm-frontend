@@ -34,6 +34,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const [acceptedDialog, setAcceptedDialog] = useState(false);
   const [rejectedDialog, setRejectedDialog] = useState(false);
   const [escalatedDialog, setEscalatedDialog] = useState(false);
+  const [disableEscalation, setDisableEscalation] = useState(false);
   const [recordedSteps, setRecordedSteps] = useState(false);
   const [recordedResolution, setRecordedResolution] = useState(false);
   const [currentDate, setCurrentDate] = useState(moment());
@@ -94,11 +95,23 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
   const acceptIssue = () => {
     const newStatus = statuses.find((x) => x.open_status === true);
+    issue.comments?.push({
+      name: issue.reporter.name,
+      id: eadl._id,
+      comment: 'The issue was accepted',
+      due_at: moment(),
+    });
     saveIssueStatus(newStatus, 'accept');
   };
 
   const rejectIssue = () => {
     const newStatus = statuses.find((x) => x.rejected_status === true);
+    issue.comments?.push({
+      name: issue.reporter.name,
+      id: eadl._id,
+      comment: 'The issue was rejected',
+      due_at: moment(),
+    });
     saveIssueStatus(newStatus, 'reject');
   };
 
@@ -110,7 +123,14 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       comment: escalateComment,
       due_at: moment(),
     });
+    issue.comments?.push({
+      name: issue.reporter.name,
+      id: eadl._id,
+      comment: 'The issue was escalated',
+      due_at: moment(),
+    });
     saveIssueStatus();
+    setDisableEscalation(true);
     setEscalatedDialog(true);
   };
 
@@ -132,6 +152,12 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const recordResolutionConfirmation = () => {
     issue.research_result = resolution;
     const newStatus = statuses.find((x) => x.final_status === true);
+    issue.comments?.push({
+      name: issue.reporter.name,
+      id: eadl._id,
+      comment: 'The issue was resolved',
+      due_at: moment(),
+    });
     saveIssueStatus(newStatus, 'record_resolution');
     _hideRecordResolutionDialog();
   };
@@ -299,7 +325,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           </View>
           <TouchableOpacity
             onPress={_showEscalateDialog}
-            disabled={!isRecordResolutionEnabled}
+            disabled={disableEscalation || !isRecordResolutionEnabled}
             style={{
               alignItems: 'center',
               flexDirection: 'row',
@@ -314,7 +340,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 style={{ marginRight: 5 }}
                 name="rightsquare"
                 size={35}
-                color={isRecordResolutionEnabled ? colors.primary : colors.disabled}
+                color={
+                  !disableEscalation && isRecordResolutionEnabled ? colors.primary : colors.disabled
+                }
               />
               <Feather name="help-circle" size={24} color="gray" />
             </View>
