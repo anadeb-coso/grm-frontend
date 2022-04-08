@@ -98,7 +98,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     issue.comments?.push({
       name: issue.reporter.name,
       id: eadl._id,
-      comment: 'The issue was accepted',
+      comment: i18n.t('issue_was_accepted'),
       due_at: moment(),
     });
     saveIssueStatus(newStatus, 'accept');
@@ -109,7 +109,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     issue.comments?.push({
       name: issue.reporter.name,
       id: eadl._id,
-      comment: 'The issue was rejected',
+      comment: i18n.t('issue_was_rejected'),
       due_at: moment(),
     });
     saveIssueStatus(newStatus, 'reject');
@@ -126,7 +126,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     issue.comments?.push({
       name: issue.reporter.name,
       id: eadl._id,
-      comment: 'The issue was escalated',
+      comment: i18n.t('issue_was_escalated'),
       due_at: moment(),
     });
     saveIssueStatus();
@@ -155,7 +155,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     issue.comments?.push({
       name: issue.reporter.name,
       id: eadl._id,
-      comment: 'The issue was resolved',
+      comment: i18n.t('issue_was_resolved'),
       due_at: moment(),
     });
     saveIssueStatus(newStatus, 'record_resolution');

@@ -132,6 +132,13 @@
   "average_days_label": "Average days to resolve",
   "average_satisfaction_label": "Average Satisfaction",
   "your_issues_label": "Your Open Issues",
+  "open": "Open",
+  "assigned": "Assigned",
+  "resolved": "Resolved",
+  "issue_was_accepted": "The issue was accepted",
+  "issue_was_rejected": "The issue was rejected",
+  "issue_was_escalated": "The issue was escalated",
+  "issue_was_resolved": "The issue was resolved",
 
   // issue detail
   "are_you_accepting": "Are you accepting this is a grievance relevant to the project? Or are you rejecting\n because it is not relevant?",

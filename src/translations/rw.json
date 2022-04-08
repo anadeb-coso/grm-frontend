@@ -205,6 +205,13 @@
 	"average_satisfaction_label": "Impuzandengo yo kunyurwa",
 
 	"your_issues_label": "Ibibazo byawe bifunguye",
+	"open": "Ibitrakemuka",
+	"assigned": "Ibyo nshinzwe",
+	"resolved": "Ibyakemutse",
+	"issue_was_accepted": "Ikibazo cyemewe",
+	"issue_was_rejected": "The issue was rejected",
+	"issue_was_escalated": "kibazo cyameshejwe inzego zo hejuru",
+	"issue_was_resolved": "Ikibazo cyakemutse",
 
 	// issue detail
 	"are_you_accepting": "Uremera ko iki kibazo kijyanye n'uyu mushinga? cyangwa ntikemewe kuberako ntaho gihuriye n'umushinga?",

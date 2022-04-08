@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ToggleButton } from 'react-native-paper';
 import { colors } from '../../../../utils/colors';
+import i18n from 'i18n-js';
 import ListHeader from '../components/ListHeader';
 
 function Content({ issues, eadl, statuses }) {
@@ -100,7 +101,7 @@ function Content({ issues, eadl, statuses }) {
           style={{ flex: 1 }}
           icon={() => (
             <View>
-              <Text style={{ color: colors.primary }}>Assigned</Text>
+              <Text style={{ color: colors.primary }}>{i18n.t('assigned')}</Text>
             </View>
           )}
           value="assigned"
@@ -109,7 +110,7 @@ function Content({ issues, eadl, statuses }) {
           style={{ flex: 1 }}
           icon={() => (
             <View>
-              <Text style={{ color: colors.primary }}>Open</Text>
+              <Text style={{ color: colors.primary }}>{i18n.t('open')}</Text>
             </View>
           )}
           value="open"
@@ -118,7 +119,7 @@ function Content({ issues, eadl, statuses }) {
           style={{ flex: 1 }}
           icon={() => (
             <View>
-              <Text style={{ color: colors.primary }}>Resolved</Text>
+              <Text style={{ color: colors.primary }}>{i18n.t('resolved')}</Text>
             </View>
           )}
           value="resolved"
