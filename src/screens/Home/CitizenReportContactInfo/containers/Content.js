@@ -70,7 +70,6 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
             value={name}
             error={contactMethodError}
             onChangeText={(text) => {
-              setContactMethodError();
               setName(text);
             }}
           />
@@ -166,22 +165,18 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
                 labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
                 mode="contained"
                 onPress={() => {
-                  if (name) {
-                    navigation.navigate('CitizenReportStep2', {
-                      stepOneParams: {
-                        ...stepOneParams,
-                        name,
-                        ageGroup: selectedAge,
-                        citizen_type: confidentialValue,
-                        citizen_group_1: selectedCitizenGroupI,
-                        citizen_group_2: selectedCitizenGroupII,
-                        gender: pickerGenderValue,
-                        filledOnSomebodyElseBehalf: checked,
-                      },
-                    });
-                  } else {
-                    setContactMethodError('Please insert a valid method of contact');
-                  }
+                  navigation.navigate('CitizenReportStep2', {
+                    stepOneParams: {
+                      ...stepOneParams,
+                      name,
+                      ageGroup: selectedAge,
+                      citizen_type: confidentialValue,
+                      citizen_group_1: selectedCitizenGroupI,
+                      citizen_group_2: selectedCitizenGroupII,
+                      gender: pickerGenderValue,
+                      filledOnSomebodyElseBehalf: checked,
+                    },
+                  });
                 }}
               >
                 {i18n.t('next')}

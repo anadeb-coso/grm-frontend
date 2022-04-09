@@ -111,10 +111,10 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
 
   const stopRecording = async () => {
     // console.log("Stopping recording..");
-    setRecording(undefined);
     await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
     setRecordingURI(uri);
+    setRecording(undefined);
     // console.log("Recording stopped and stored at", uri);
   };
 
@@ -152,7 +152,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         [{ resize: { width: 1000, height: 1000 } }],
         { compress: 1, format: ImageManipulator.SaveFormat.PNG }
       );
-      setAttachment(manipResult);
+      setAttachment({ ...manipResult, id: new Date() });
     }
   };
 
@@ -169,7 +169,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         [{ resize: { width: 1000, height: 1000 } }],
         { compress: 1, format: ImageManipulator.SaveFormat.PNG }
       );
-      setAttachment(manipResult);
+      setAttachment({ ...manipResult, id: new Date() });
     }
   };
 
@@ -457,7 +457,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                   attachment: attachment.uri
                     ? {
                         url: '',
-                        id: new Date(),
+                        id: attachment?.id,
                         uploaded: false,
                         local_url: attachment?.uri,
                         name: attachment?.uri.split('/').pop(),
@@ -466,7 +466,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                   recording: recordingURI
                     ? {
                         url: '',
-                        id: new Date(),
+                        id: recordingURI.split('/').pop(),
                         uploaded: false,
                         local_url: recordingURI,
                         isAudio: true,

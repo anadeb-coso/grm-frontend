@@ -30,7 +30,6 @@ function SyncAttachments({ navigation }) {
       const tmp = await getInfoAsync(file?.attachment?.local_url);
       if (tmp.exists) {
         const formData = new FormData();
-
         formData.append('username', dbConfig?.username);
         formData.append('password', dbConfig?.password);
         formData.append('doc_id', file?.docId);
@@ -43,7 +42,7 @@ function SyncAttachments({ navigation }) {
               ? file?.attachment?.local_url
               : file?.attachment?.local_url.replace('file://', ''),
           name: file?.attachment?.name,
-          type: 'image/jpeg', // it may be necessary in Android.
+          type: file.attachment?.isAudio ? 'audio/m4a' : 'image/jpeg', // it may be necessary in Android.
         });
 
         await axios.post(
