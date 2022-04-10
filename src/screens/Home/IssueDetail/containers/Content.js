@@ -134,16 +134,16 @@ function Content({ issue }) {
                   </Text>
                   <Text style={styles.subtitle}>
                       {i18n.t('name')}
-                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? "Confidential" : issue.citizen}</Text>
+                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? i18n.t('confidential') : issue.citizen}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
                       {i18n.t('age')}{" "}
-                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? 'Confidential' : issue.citizen_age_group?.name ?? "Information not available"}</Text>
+                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? i18n.t('confidential') : issue.citizen_age_group?.name ?? i18n.t('information_not_available')}</Text>
                   </Text>
 
                   <Text style={styles.subtitle}>
                       {i18n.t('location')}{" "}
-                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? 'Confidential' : issue.administrative_region?.name ?? "Information not available"}</Text>
+                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? i18n.t('confidential') : issue.administrative_region?.name ?? i18n.t('information_not_available')}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
                       {i18n.t('category')}{" "}
@@ -215,7 +215,7 @@ function Content({ issue }) {
                           color: "#707070",
                       }}
                   >
-                      {issue.research_result ?? "Information not Available"}
+                      {issue.research_result ?? i18n.t('information_not_available')}
                   </Text>
               </View>
           </Collapsible>
@@ -247,7 +247,7 @@ function Content({ issue }) {
                           color: "#707070",
                       }}
                   >
-                      {" Information not available "}
+                      {i18n.t('information_not_available')}
                   </Text>
               </View>
           </Collapsible>
@@ -279,7 +279,7 @@ function Content({ issue }) {
                           color: "#707070",
                       }}
                   >
-                      {" Information not available "}
+                      {i18n.t('information_not_available')}
                   </Text>
               </View>
           </Collapsible>
