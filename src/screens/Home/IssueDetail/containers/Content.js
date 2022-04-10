@@ -130,7 +130,7 @@ function Content({ issue }) {
 
                   <Text style={styles.subtitle}>
                       {i18n.t('lodged_by')}
-                      <Text style={styles.text}> {citizenTypes[issue.citizen_type] ?? 'No information available'}</Text>
+                      <Text style={styles.text}> {citizenTypes[issue.citizen_type] ?? i18n.t('information_not_available')}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
                       {i18n.t('name')}
@@ -147,7 +147,7 @@ function Content({ issue }) {
                   </Text>
                   <Text style={styles.subtitle}>
                       {i18n.t('category')}{" "}
-                      <Text style={styles.text}> {issue.category?.name ?? "Information not available"}</Text>
+                      <Text style={styles.text}> {issue.category?.name ?? i18n.t('information_not_available')}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
                       {i18n.t('assigned_to')}{" "}

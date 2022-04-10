@@ -124,6 +124,8 @@
   "issue_type_label": "Issue Type",
   "attachments_label": "Attachments",
   "comment_placeholder": "Write a comment...",
+  "information_not_available": "information not available",
+  "confidential": "Confidential",
 
   //issue search
   "overdue_label": "Overdue Issues",
