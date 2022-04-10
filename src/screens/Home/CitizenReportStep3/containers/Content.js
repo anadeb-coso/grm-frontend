@@ -46,7 +46,7 @@ function Content({ issue, eadl }) {
         ...(issue?.recording ? [issue.recording] : []),
       ],
       status: {
-        name: 'Open',
+        name: i18n.t('open'),
         id: 1,
       },
       confirmed: true,
