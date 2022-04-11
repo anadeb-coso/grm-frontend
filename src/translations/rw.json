@@ -1,4 +1,21 @@
 {
+	//Headers
+	"citizen_input_header": "Kwinjiza ikibazo",
+	//Onboarding
+	"used_app_before": "Wigeze ukoresha iyi porogaramu mbere?",
+	"yes": "YEGO",
+	"no": "OYA",
+	"welcome_login": "Murakaza Neza! Injirira hano.",
+	"email": "Imeri",
+	"password": "Ijambo ry'ibanga",
+	"login": "Injira",
+	"email_provided": "Shyiramo imeri wahawe n'ukuyobora kandi ukoreshe n'ijambo ry'ibanga uzajya wibuka",
+	"choose_password": "Hitamo ijambo ry'ibanga",
+	"enter_new_password": "Shyiramo Ijambo ry'ibanga.  Rigomba kuba rigizwe byibura n'inyuguti 8",
+	"last_validation": "Igenzura rya nyuma!",
+	"please_enter_code": "Shyiramo imibare wahawe n'umukoresha",
+	"account_create_success": "Konti yawe yafunguwe neza!",
+	"logout": "sohoka",
 	//GRM
 	"diagnostics": "Isuzumabikorwa",
 
@@ -92,6 +109,10 @@
 
 	"step_2_upload_attachment": "Hitamo ifoto",
 
+	"step_2_keep_name_confidential": "Hisha amazina yanjye. Keretse umuntu uzakemura iki kibazo niwe gusa uzabona amazina.",
+	"step_2_on_behalf_of_someone": "Ikibazo gitanzwe n'umuntu uhagarariye undi.",
+	"step_2_organization_behalf_someone": "Ni itsinda ritanze ikibazo rihagarariye undi muntu.",
+
 	//step 3
 	"step_3": "Intambwe ya 3",
 
@@ -146,6 +167,8 @@
 
 	"male": "Gabo",
 	"female": "Gore",
+	"other": "Ikindi",
+	"rather_not_say":  "Ahubwo ntukavuge",
 
 	//issue detail
 	"description_label": "Ibisobanuro",
@@ -170,6 +193,10 @@
 
 	"comment_placeholder": "Andika igitekerezo...",
 
+	"information_not_available": "Nta makuru ahari",
+
+	"confidential": "Ibanga",
+
 	//issue search
 	"overdue_label": "Ibibazo byarengeje igihe",
 
@@ -181,5 +208,51 @@
 
 	"average_satisfaction_label": "Impuzandengo yo kunyurwa",
 
-	"your_issues_label": "Ibibazo byawe bifunguye"
+	"your_issues_label": "Ibibazo byawe bifunguye",
+	"open": "Ibitrakemuka",
+	"assigned": "Ibyo nshinzwe",
+	"resolved": "Ibyakemutse",
+	"issue_was_accepted": "Ikibazo cyemewe",
+	"issue_was_rejected": "Ikibazo ntikemewe",
+	"issue_was_escalated": "kibazo cyameshejwe inzego zo hejuru",
+	"issue_was_resolved": "Ikibazo cyakemutse",
+
+	// issue detail
+	"are_you_accepting": "Uremera ko iki kibazo kijyanye n'uyu mushinga? cyangwa ntikemewe kuberako ntaho gihuriye n'umushinga?",
+	"you_have_accepted": "Wemeye Iki kibazo muri porogaramu. Ubutumwa bwohererejwe umuturage bdetse nuwashyize ikibazo muri porogaramu.",
+	"finished": "Byarangiye",
+	"actions": "IBIKORWA",
+	"details": "BIRAMBUYE",
+	"history": "AMATEKA",
+	"days_ago": "iminsi",
+	"view_details": "Reba birambuye",
+	"accept_issue": "Emera Ikibazo",
+	"record_steps_taken": "Shyiraho Ibyakozwe",
+	"record_resolution": "Shyiraho imyanzuro",
+	"rate_appeal": "Igipimo & kujurira",
+	"escalate": "Inzego zikurikiyeho",
+	"lodged_by": "Cyashyizwemo na:",
+	"name": "Amazina:",
+	"age": "Imyaka:",
+	"location": "Aho aherereye:",
+	"category": "Ikiciro:",
+	"assigned_to": "Cyashinzwe:",
+	"decision": "Icyemezo",
+	"satisfaction": "Kunyurwa",
+	"appeal_reason": "Impamvu yo kujurira",
+	"back": "Subira Inyuma",
+	"record_steps_text": "Sibanura igikorwa hano hepfo. Hano wavuga ku bwumvikane cyangwa amasezerano yabayeho, Ibikorwa by'igenzura cyangwa iperereza, cyangwa se andi makuru yabonetse ku kibazo. Wibuke gushyiraho amatiki yingenzi. Ubu busobanuro buzabonwa n'ikipe mukorana, umuturage nyiri ikibazo, ndetse n'uwagishyize muri porogaramu.",
+	"recorded_comment": "Igitekerezo cyawe cyanditswe ndetse cyashyizwe no muro porogaramu.",
+	"cancel": "Hagarika",
+	"submit": "Ohereza",
+	"view_history": "Reba ibyahise",
+	"summarize_resolution": "Andika mu magambo make umwanzuro wafashwe ndetse nibyavuyemo.",
+	"please_confirm_resolution": "Emeza ko iki kibazo cyakemutse.",
+	"confirm": "Emeza",
+	"you_are_escalating": "Iki kibazo ugiye kugishinga inzego zo hejuru. SObanura neza impamvu itumye ucyohereza mu nzego zigukuriye",
+	"escalated_text": "Iki kibazo cyoherejwe ku nzego zo hejuru. NUbutumwa burohererezwa uwagishyize muri porogaramu ndetse no ku muturage.",
+	"accept": "Cyemere",
+	"reject": "Cyange",
+	"you_are_rejecting": "Wanze iki kibazo ngo ntikazakemurwe muri uyu mushinga.\nSobanura neza impamvu.",
+	"complaint_rejected": "Iki kibazo ntabwo cyemewe. Ubutumwa burohererezwa uwagishyize muri porogaramu ndetse n'umuturage."
 }

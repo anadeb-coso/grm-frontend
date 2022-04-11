@@ -28,6 +28,7 @@ import SuccessLogo from "../../../../assets/success_logo.svg";
 import BigCheck from "../../../../assets/big-check.svg";
 import API from "../../../services/API";
 import { colors } from "../../../utils/colors";
+import i18n from 'i18n-js';
 
 function SignUp({ route }) {
   const dispatch = useDispatch();
@@ -100,7 +101,7 @@ function SignUp({ route }) {
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={"position"}>
             <CodeLogo />
             <Text style={modalStyles.title}>
-              {"We need a last validation!"}
+              {i18n.t('last_validation')}
             </Text>
             <Text
               style={{
@@ -116,7 +117,7 @@ function SignUp({ route }) {
                 color: "#707070",
               }}
             >
-              {"Please use the code provided by your supervisor"}
+              {i18n.t('please_enter_code')}
             </Text>
             <CodeInput
               // secureTextEntry
@@ -163,7 +164,8 @@ function SignUp({ route }) {
               color: "#707070",
             }}
           >
-              Your account has been successfully created
+
+            {i18n.t('account_create_success')}
           </Text>
         </View>
       </Modal>
@@ -199,7 +201,7 @@ function SignUp({ route }) {
                     letterSpacing: 0,
                     textAlign: "center",
                     color: "#707070",
-                }}>Please enter the email provided by your supervisor and use a password of your preference.</Text>
+                }}>{i18n.t('email_provided')}</Text>
             </View>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.loginScreenContainer}>
@@ -217,7 +219,7 @@ function SignUp({ route }) {
                           },
                         }}
                         mode={"outlined"}
-                        label="Email"
+                        label={i18n.t('email')}
                         labelColor="#dedede"
                         style={styles.loginFormTextInput}
                         left={
@@ -256,7 +258,7 @@ function SignUp({ route }) {
                           },
                         }}
                         mode={"outlined"}
-                        label="Choose your password"
+                        label={i18n.t('choose_password')}
                         placeholderColor={"#dedede"}
                         style={styles.loginFormTextInput}
                         left={
@@ -302,8 +304,7 @@ function SignUp({ route }) {
 
                 <View style={styles.hintContainer}>
                   <Text style={styles.textHint}>
-                      Enter your new password. Must contain at least 8
-                      characters long
+                    {i18n.t('enter_new_password')}
                   </Text>
                 </View>
               </View>
@@ -318,7 +319,7 @@ function SignUp({ route }) {
                 onPress={handleSubmit(onPressSignUp)}
                 color={"white"}
               >
-                NEXT
+                {i18n.t('next')}
               </Button>
             </View>
           </TouchableWithoutFeedback>

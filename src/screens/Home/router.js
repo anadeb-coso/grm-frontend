@@ -26,6 +26,7 @@ import CitizenReportContactInfo from './CitizenReportContactInfo/CitizenReportCo
 import IssueDetail from './IssueDetail/IssueDetail';
 import CitizenReportIntro from './CitizenReportIntro/CitizenReportIntro';
 import { colors } from '../../utils/colors';
+import i18n from 'i18n-js';
 
 import CitizenReportLocationStep from './CitizenReportLocationStep/CitizenReportLocationStep';
 import IssueActions from './IssueActions/IssueActions';
@@ -75,38 +76,38 @@ function DashboardStackScreen() {
       <HomeStack.Screen
         name="CitizenReportIntro"
         component={CitizenReportIntro}
-        options={({ navigation, route }) => customHeaderOptions('Citizen Input')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReport"
         component={CitizenReport}
-        options={({ navigation, route }) => customHeaderOptions('Citizen Input')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportContactInfo"
         component={CitizenReportContactInfo}
-        options={({ navigation, route }) => customHeaderOptions('Citizen Input')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportStep2"
         component={CitizenReportStep2}
-        options={({ navigation, route }) => customHeaderOptions('Citizen Input')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportLocationStep"
         component={CitizenReportLocationStep}
-        options={({ navigation, route }) => customHeaderOptions('Citizen Input')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportStep3"
         component={CitizenReportStep3}
-        options={({ navigation, route }) => customHeaderOptions('Citizen Input')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportStep4"
         component={CitizenReportStep4}
         options={({ navigation, route }) => ({
-          ...customHeaderOptions('Citizen Input'),
+          ...customHeaderOptions(i18n.t('citizen_input_header')),
           headerLeft: () => null,
         })}
       />
@@ -208,19 +209,19 @@ function IssueDetailTabsStack(props) {
       <TopTab.Screen
         name="Actions"
         initialParams={{ item: temp }}
-        options={{ tabBarLabel: 'Actions' }}
+        options={{ tabBarLabel: i18n.t('actions') }}
         component={IssueActions}
       />
       <TopTab.Screen
         name="IssueDetail"
         initialParams={{ item: temp }}
-        options={{ tabBarLabel: 'Details' }}
+        options={{ tabBarLabel: i18n.t('details') }}
         component={IssueDetail}
       />
       <TopTab.Screen
         name="History"
         initialParams={{ item: temp }}
-        options={{ tabBarLabel: 'History' }}
+        options={{ tabBarLabel: i18n.t('history') }}
         component={IssueHistory}
       />
     </TopTab.Navigator>
