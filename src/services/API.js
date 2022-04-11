@@ -1,4 +1,4 @@
-const baseURL = 'https://grm-togo-c3xv4.ondigitalocean.app';
+const baseURL = 'https://anadeb.e3grm.org';
 export { baseURL };
 function handleErrors(response) {
   if (response.non_field_errors) {
