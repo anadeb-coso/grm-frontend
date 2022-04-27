@@ -114,7 +114,7 @@ function Content({ issue }) {
                       {" "}
                       {issue.issue_date &&
                       moment(issue.issue_date).format("DD-MMM-YYYY")}   {issue.issue_date &&
-                  currentDate.diff(issue.issue_date, "days")} {"days ago"}
+                  currentDate.diff(issue.issue_date, "days")} {i18n.t('days_ago')}
                   </Text>
               </View>
           </View>
@@ -129,28 +129,28 @@ function Content({ issue }) {
               <View style={{ flex: 1 }}>
 
                   <Text style={styles.subtitle}>
-                      Lodged by:
-                      <Text style={styles.text}> {citizenTypes[issue.citizen_type] ?? 'No information available'}</Text>
+                      {i18n.t('lodged_by')}
+                      <Text style={styles.text}> {citizenTypes[issue.citizen_type] ?? i18n.t('information_not_available')}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
-                      Name:
-                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? "Confidential" : issue.citizen}</Text>
+                      {i18n.t('name')}
+                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? i18n.t('confidential') : issue.citizen}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
-                      Age:{" "}
-                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? 'Confidential' : issue.citizen_age_group?.name ?? "Information not available"}</Text>
+                      {i18n.t('age')}{" "}
+                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? i18n.t('confidential') : issue.citizen_age_group?.name ?? i18n.t('information_not_available')}</Text>
                   </Text>
 
                   <Text style={styles.subtitle}>
-                      Location:{" "}
-                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? 'Confidential' : issue.administrative_region?.name ?? "Information not available"}</Text>
+                      {i18n.t('location')}{" "}
+                      <Text style={styles.text}> {issue.citizen_type === 1 && !isIssueAssignedToMe ? i18n.t('confidential') : issue.administrative_region?.name ?? i18n.t('information_not_available')}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
-                      Category:{" "}
-                      <Text style={styles.text}> {issue.category?.name ?? "Information not available"}</Text>
+                      {i18n.t('category')}{" "}
+                      <Text style={styles.text}> {issue.category?.name ?? i18n.t('information_not_available')}</Text>
                   </Text>
                   <Text style={styles.subtitle}>
-                      Assigned to:{" "}
+                      {i18n.t('assigned_to')}{" "}
                       <Text style={styles.text}> {issue.assignee?.name ?? "Pending Assigment"}</Text>
                   </Text>
               </View>
@@ -191,7 +191,7 @@ function Content({ issue }) {
           <TouchableOpacity onPress={() => setIsDecisionCollapsed(!isDecisionCollapsed)}
                             style={styles.collapsibleTrigger}
           >
-              <Text style={styles.subtitle}>Decision</Text>
+              <Text style={styles.subtitle}>{i18n.t('decision')}</Text>
               <MaterialCommunityIcons
                   name={isDecisionCollapsed ? "chevron-down-circle" : "chevron-up-circle"}
                   size={24}
@@ -215,7 +215,7 @@ function Content({ issue }) {
                           color: "#707070",
                       }}
                   >
-                      {issue.research_result ?? "Information not Available"}
+                      {issue.research_result ?? i18n.t('information_not_available')}
                   </Text>
               </View>
           </Collapsible>
@@ -223,7 +223,7 @@ function Content({ issue }) {
           <TouchableOpacity onPress={() => setIsSatisfactionCollapsed(!isSatisfactionCollapsed)}
                             style={styles.collapsibleTrigger}
           >
-              <Text style={styles.subtitle}>Satisfaction</Text>
+              <Text style={styles.subtitle}>{i18n.t('satisfaction')}</Text>
               <MaterialCommunityIcons
                   name={isSatisfactionCollapsed ? "chevron-down-circle" : "chevron-up-circle"}
                   size={24}
@@ -247,7 +247,7 @@ function Content({ issue }) {
                           color: "#707070",
                       }}
                   >
-                      {" Information not available "}
+                      {i18n.t('information_not_available')}
                   </Text>
               </View>
           </Collapsible>
@@ -255,7 +255,7 @@ function Content({ issue }) {
           <TouchableOpacity onPress={() => setIsAppealCollapsed(!isAppealCollapsed)}
                             style={styles.collapsibleTrigger}
           >
-              <Text style={styles.subtitle}>Appeal Reason</Text>
+              <Text style={styles.subtitle}>{i18n.t('appeal_reason')}</Text>
               <MaterialCommunityIcons
                   name={isAppealCollapsed ? "chevron-down-circle" : "chevron-up-circle"}
                   size={24}
@@ -279,7 +279,7 @@ function Content({ issue }) {
                           color: "#707070",
                       }}
                   >
-                      {" Information not available "}
+                      {i18n.t('information_not_available')}
                   </Text>
               </View>
           </Collapsible>
@@ -341,7 +341,7 @@ function Content({ issue }) {
             mode="contained"
             onPress={onAddComment}
           >
-            Back
+            {i18n.t('back')}
           </Button>
       </View>
     </ScrollView>

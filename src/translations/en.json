@@ -1,4 +1,21 @@
 {
+  //Headers
+  "citizen_input_header": "Citizen Input",
+  //Onboarding
+  "used_app_before": "Have you use this app before?",
+  "yes": "YES",
+  "no": "NO",
+  "welcome_login": "Welcome! Log-in here.",
+  "email": "Email",
+  "password": "Password",
+  "login": "Login",
+  "email_provided": "Please enter the email provided by your supervisor and use a password of your preference.",
+  "choose_password": "Choose your password",
+  "enter_new_password":  "Enter your new password. Must contain at least 8 characters long",
+  "last_validation": "We need a last validation!",
+  "please_enter_code": "Please use the code provided by your supervisor",
+  "account_create_success": "Your account has been successfully created",
+  "logout": "logout",
   //GRM
   "diagnostics": "Diagnostics",
   "information": "Information",
@@ -54,6 +71,9 @@
   "step_2_placeholder_4": "Please provide any additional details.",
   "step_2_share_photos": "Share any supporting video, photos or audio as evidence or clarification",
   "step_2_upload_attachment": "Select image",
+  "step_2_keep_name_confidential": "Keep name confidential. Only the person resolving the issue will see the name.",
+  "step_2_on_behalf_of_someone": "This is an individual filing on behalf of someone else.",
+  "step_2_organization_behalf_someone": "This is an organization filing on behalf of someone else.",
 
   //step 3
   "step_3": "Step 3",
@@ -89,6 +109,8 @@
   "submit_button_text": "SUBMIT",
   "male": "Male",
   "female": "Female",
+  "other": "Other",
+  "rather_not_say":  "Rather not say",
 
   //issue detail
   "description_label": "Description",
@@ -102,6 +124,8 @@
   "issue_type_label": "Issue Type",
   "attachments_label": "Attachments",
   "comment_placeholder": "Write a comment...",
+  "information_not_available": "information not available",
+  "confidential": "Confidential",
 
   //issue search
   "overdue_label": "Overdue Issues",
@@ -109,5 +133,53 @@
   "resolved_by_you_label": "Issues resolved by you",
   "average_days_label": "Average days to resolve",
   "average_satisfaction_label": "Average Satisfaction",
-  "your_issues_label": "Your Open Issues"
+  "your_issues_label": "Your Open Issues",
+  "open": "Open",
+  "assigned": "Assigned",
+  "resolved": "Resolved",
+  "issue_was_accepted": "The issue was accepted",
+  "issue_was_rejected": "The issue was rejected",
+  "issue_was_escalated": "The issue was escalated",
+  "issue_was_resolved": "The issue was resolved",
+
+  // issue detail
+  "are_you_accepting": "Are you accepting this is a grievance relevant to the project? Or are you rejecting\n because it is not relevant?",
+  "you_have_accepted": "You have accepted this complaint into the system. Notifications have been sent to\n the citizen and the original recorder of the complaint.",
+  "finished": "FINISHED",
+  "actions": "ACTIONS",
+  "details": "DETAILS",
+  "history": "HISTORY",
+  "days_ago": "days ago",
+  "view_details": "VIEW DETAILS",
+  "accept_issue": "Accept Issue",
+  "record_steps_taken": "Record Steps Taken",
+  "record_resolution": "Record Resolution",
+  "rate_appeal": "Rate & Appeal",
+  "escalate": "Escalate",
+  "lodged_by": "Lodged by:",
+  "name": "Name:",
+  "age": "Age:",
+  "location": "Location:",
+  "category": "Category:",
+  "assigned_to": "Assigned to:",
+  "decision": "Desicion",
+  "satisfaction": "Satisfaction",
+  "appeal_reason": "Appeal Reason",
+  "back": "Back",
+  "record_steps_text": "Describe the activity below. This includes agreements, actions for investigation, or additional findings. Remember to include dates where relevant. These comments are viewable by the team, the complainant and the original recorder.",
+  "recorded_comment": "Your comment has been recorded and added to the record.",
+  "cancel": "Cancel",
+  "submit": "Submit",
+  "view_history": "View History",
+  "summarize_resolution": "Please summarize the resolution and outcome.",
+  "please_confirm_resolution": "Please confirm that you are marking this complaint as resolved.",
+  "confirm": "Confirm",
+  "you_are_escalating": "You are escalating this complaint to a higher level. Please explain the reason for escalation.",
+  "escalated_text": "This complaint has been escalated. Notifications will be sent to the original recorder and the citizen.",
+  "accept": "ACCEPT",
+  "reject": "REJECT",
+  "you_are_rejecting": "You are rejecting this complaint for consideration. Please enter a reason for consideration.",
+  "complaint_rejected": "This complaint has been rejected. Notifications will be sent to the original recorder and the citizen."
+
+
 }

@@ -21,6 +21,7 @@ import { emailRegex, passwordRegex } from '../../../utils/formUtils';
 import API from '../../../services/API';
 import { getEncryptedData } from '../../../utils/storageManager';
 import { titles } from '../../Onboarding/containers/Content/utils';
+import i18n from 'i18n-js';
 
 function Login() {
   const dispatch = useDispatch();
@@ -91,8 +92,8 @@ function Login() {
               color: '#707070',
             }}
           >
-            Welcome! Log-in here.
-          </Text>
+          {i18n.t('welcome_login')}
+        </Text>
         </View>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.loginScreenContainer}>
@@ -111,8 +112,8 @@ function Login() {
                           },
                         }}
                         autoCapitalize="none"
+                        label={i18n.t('email')}
                         mode="outlined"
-                        label="Email"
                         labelColor="#dedede"
                         style={styles.loginFormTextInput}
                         left={<TextInput.Icon name="account" color="#24c38b" />}
@@ -147,8 +148,8 @@ function Login() {
                           },
                         }}
                         mode="outlined"
-                        label="Password"
                         placeholderColor="#dedede"
+                        label={i18n.t('password')}
                         style={styles.loginFormTextInput}
                         left={
                           <TextInput.Icon
@@ -208,7 +209,7 @@ function Login() {
                 onPress={handleSubmit(onLoginPress)}
                 color="white"
               >
-                LOGIN
+                {i18n.t('login')}
               </Button>
             )}
           </View>

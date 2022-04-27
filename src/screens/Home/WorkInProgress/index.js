@@ -3,6 +3,7 @@ import { SafeAreaView, Text } from "react-native";
 import { Button } from "react-native-paper";
 import { logout } from "../../../store/ducks/authentication.duck";
 import { useDispatch } from "react-redux";
+import i18n from 'i18n-js';
 
 export function WorkInProgress() {
   const dispatch = useDispatch();
@@ -12,7 +13,7 @@ export function WorkInProgress() {
     >
       <Text>Work in Progress </Text>
       <Button color={"#24c38b"} onPress={() => dispatch(logout())}>
-        Logout
+        {i18n.t('logout')}
       </Button>
     </SafeAreaView>
   );

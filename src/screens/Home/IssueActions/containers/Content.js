@@ -13,6 +13,7 @@ import { AntDesign, Feather } from '@expo/vector-icons';
 import { colors } from '../../../../utils/colors';
 import { styles } from './Content.styles';
 import { LocalGRMDatabase } from '../../../../utils/databaseManager';
+import i18n from 'i18n-js';
 
 const theme = {
   roundness: 12,
@@ -97,7 +98,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     issue.comments?.push({
       name: issue.reporter.name,
       id: eadl._id,
-      comment: 'The issue was accepted',
+      comment: i18n.t('issue_was_accepted'),
       due_at: moment(),
     });
     saveIssueStatus(newStatus, 'accept');
@@ -108,7 +109,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     issue.comments?.push({
       name: issue.reporter.name,
       id: eadl._id,
-      comment: 'The issue was rejected',
+      comment: i18n.t('issue_was_rejected'),
       due_at: moment(),
     });
     saveIssueStatus(newStatus, 'reject');
@@ -125,7 +126,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     issue.comments?.push({
       name: issue.reporter.name,
       id: eadl._id,
-      comment: 'The issue was escalated',
+      comment: i18n.t('issue_was_escalated'),
       due_at: moment(),
     });
     saveIssueStatus();
@@ -154,7 +155,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     issue.comments?.push({
       name: issue.reporter.name,
       id: eadl._id,
-      comment: 'The issue was resolved',
+      comment: i18n.t('issue_was_resolved'),
       due_at: moment(),
     });
     saveIssueStatus(newStatus, 'record_resolution');
@@ -216,10 +217,10 @@ function Content({ issue, navigation, statuses = [], eadl }) {
         <View style={{ padding: 23 }}>
           <Text style={styles.stepDescription}>
             {citizenName}, {issue.intake_date && moment(issue.intake_date).format('DD-MMM-YYYY')}{' '}
-            {issue.intake_date && currentDate.diff(issue.intake_date, 'days')} days ago
+            {issue.intake_date && currentDate.diff(issue.intake_date, 'days')} {i18n.t('days_ago')}
           </Text>
           <Text style={styles.stepDescription}>
-            Status: <Text style={{ color: colors.primary }}>{issue.status?.name}</Text>
+            {i18n.t('status_label')} <Text style={{ color: colors.primary }}>{issue.status?.name}</Text>
           </Text>
           <Text style={styles.stepNote}>{issue.description?.substring(0, 170)}</Text>
           <View style={{ paddingHorizontal: 50 }}>
@@ -230,7 +231,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
               mode="contained"
               onPress={goToDetails}
             >
-              VIEW DETAILS
+              {i18n.t('view_details')}
             </Button>
           </View>
 
@@ -248,7 +249,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 marginVertical: 10,
               }}
             >
-              <Text style={styles.subtitle}>Accept Issue</Text>
+              <Text style={styles.subtitle}>{i18n.t('accept_issue')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <AntDesign
                   style={{ marginRight: 5 }}
@@ -269,7 +270,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 marginVertical: 10,
               }}
             >
-              <Text style={styles.subtitle}>Record Steps Taken</Text>
+              <Text style={styles.subtitle}>{i18n.t('record_steps_taken')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <AntDesign
                   style={{ marginRight: 5 }}
@@ -290,7 +291,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 marginVertical: 10,
               }}
             >
-              <Text style={styles.subtitle}>Record Resolution</Text>
+              <Text style={styles.subtitle}>{i18n.t('record_resolution')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <AntDesign
                   style={{ marginRight: 5 }}
@@ -310,7 +311,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 marginVertical: 10,
               }}
             >
-              <Text style={styles.subtitle}>Rate & Appeal</Text>
+              <Text style={styles.subtitle}>{i18n.t('rate_appeal')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <AntDesign
                   style={{ marginRight: 5 }}
@@ -333,7 +334,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
               padding: 15,
             }}
           >
-            <Text style={styles.subtitle}>Escalate</Text>
+            <Text style={styles.subtitle}>{i18n.t('escalate')}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <AntDesign
                 style={{ marginRight: 5 }}
@@ -355,13 +356,11 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           <Dialog.Content>
             {!rejectedDialog ? (
               <Paragraph>
-                You are rejecting this complaint for consideration. Please enter a reason for
-                consideration.
+                {i18n.t('you_are_rejecting')}
               </Paragraph>
             ) : (
               <Paragraph>
-                This complaint has been rejected. Notifications will be sent to the original
-                recorder and the citizen.
+                {i18n.t('complaint_rejected')}
               </Paragraph>
             )}
             {!rejectedDialog && (
@@ -383,7 +382,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={_hideRejectDialog}
               >
-                CANCEL
+                {i18n.t('cancel')}
               </Button>
               <Button
                 disabled={reason === ''}
@@ -393,7 +392,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={rejectIssue}
               >
-                SUBMIT
+                {i18n.t('submit')}
               </Button>
             </Dialog.Actions>
           ) : (
@@ -405,7 +404,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={_hideRejectDialog}
               >
-                FINISHED
+                {i18n.t('finished')}
               </Button>
             </Dialog.Actions>
           )}
@@ -415,17 +414,15 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       {/* ACCEPT MODAL */}
       <Portal>
         <Dialog visible={acceptDialog} onDismiss={_hideDialog}>
-          {!acceptedDialog && <Dialog.Title>Accept Issue?</Dialog.Title>}
+          {!acceptedDialog && <Dialog.Title>{i18n.t('accept_issue')}?</Dialog.Title>}
           <Dialog.Content>
             {!acceptedDialog ? (
               <Paragraph>
-                Are you accepting this is a grievance relevant to the project? Or are you rejecting
-                because it is not relevant?
+                {i18n.t('are_you_accepting')}
               </Paragraph>
             ) : (
               <Paragraph>
-                You have accepted this complaint into the system. Notifications have been sent to
-                the citizen and the original recorder of the complaint.
+                {i18n.t('you_have_accepted')}
               </Paragraph>
             )}
           </Dialog.Content>
@@ -438,7 +435,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={_showRejectDialog}
               >
-                REJECT
+                {i18n.t('reject')}
               </Button>
               <Button
                 theme={theme}
@@ -447,7 +444,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={acceptIssue}
               >
-                ACCEPT
+                {i18n.t('accept')}
               </Button>
             </Dialog.Actions>
           ) : (
@@ -459,7 +456,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={_hideDialog}
               >
-                FINISHED
+                {i18n.t('finished')}
               </Button>
             </Dialog.Actions>
           )}
@@ -472,13 +469,11 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           <Dialog.Content>
             {!escalatedDialog ? (
               <Paragraph>
-                You are escalating this complaint to a higher level. Please explain the reason for
-                escalation.
+                {i18n.t('you_are_escalating')}
               </Paragraph>
             ) : (
               <Paragraph>
-                This complaint has been escalated. Notifications will be sent to the original
-                recorder and the citizen.
+                {i18n.t('escalated_text')}
               </Paragraph>
             )}
             {!escalatedDialog && (
@@ -500,7 +495,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={_hideEscalateDialog}
               >
-                CANCEL
+                {i18n.t('cancel')}
               </Button>
               <Button
                 disabled={escalateComment === ''}
@@ -510,7 +505,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={escalateIssue}
               >
-                SUBMIT
+                {i18n.t('submit')}
               </Button>
             </Dialog.Actions>
           ) : (
@@ -525,7 +520,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   setEscalatedDialog(false);
                 }}
               >
-                FINISHED
+                {i18n.t('finished')}
               </Button>
             </Dialog.Actions>
           )}
@@ -538,12 +533,12 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           <Dialog.Content>
             {!recordedSteps ? (
               <Paragraph>
-                Describe the activity below. This includes agreements, actions for investigation, or
-                additional findings. Remember to include dates where relevant. These comments are
-                viewable by the team, the complainant and the original recorder.
+                {i18n.t('record_steps_text')}
               </Paragraph>
             ) : (
-              <Paragraph>Your comment has been recorded and added to the record.</Paragraph>
+              <Paragraph>
+                {i18n.t('recorded_comment')}
+              </Paragraph>
             )}
             {!recordedSteps && (
               <TextInput
@@ -564,7 +559,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={_hideRecordStepsDialog}
               >
-                CANCEL
+                {i18n.t('cancel')}
               </Button>
               <Button
                 disabled={comment === ''}
@@ -574,7 +569,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={recordStep}
               >
-                SUBMIT
+                {i18n.t('submit')}
               </Button>
             </Dialog.Actions>
           ) : (
@@ -589,7 +584,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   setRecordedSteps(false);
                 }}
               >
-                FINISHED
+                {i18n.t('finished')}
               </Button>
               <Button
                 theme={theme}
@@ -598,7 +593,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={goToHistory}
               >
-                VIEW HISTORY
+                {i18n.t('view_history')}
               </Button>
             </Dialog.Actions>
           )}
@@ -609,9 +604,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
         <Dialog visible={recordResolutionDialog} onDismiss={_hideRecordResolutionDialog}>
           <Dialog.Content>
             {!recordedResolution ? (
-              <Paragraph>Please summarize the resolution and outcome.</Paragraph>
+              <Paragraph>{i18n.t('summarize_resolution')}</Paragraph>
             ) : (
-              <Paragraph>Please confirm that you are marking this complaint as resolved.</Paragraph>
+              <Paragraph>{i18n.t('please_confirm_resolution')}</Paragraph>
             )}
             {!recordedResolution ? (
               <TextInput
@@ -636,7 +631,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={_hideRecordStepsDialog}
               >
-                CANCEL
+                {i18n.t('cancel')}
               </Button>
               <Button
                 disabled={resolution === ''}
@@ -646,7 +641,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={recordResolution}
               >
-                SUBMIT
+                {i18n.t('submit')}
               </Button>
             </Dialog.Actions>
           ) : (
@@ -658,7 +653,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={() => setRecordedResolution(false)}
               >
-                CANCEL
+                {i18n.t('cancel')}
               </Button>
               <Button
                 theme={theme}
@@ -667,7 +662,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={recordResolutionConfirmation}
               >
-                CONFIRM
+                {i18n.t('confirm')}
               </Button>
             </Dialog.Actions>
           )}
