@@ -45,6 +45,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const [recordingURI, setRecordingURI] = useState();
   const [items2, setItems2] = useState(issueCategories ?? []);
   const [sound, setSound] = React.useState();
+  const [selectedIssueType, setSelectedIssueType] = useState(null);
 
   useEffect(() => {
     if (issueTypes) {
@@ -288,6 +289,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             items={items}
             setPickerValue={setPickerValue}
             setItems={setItems}
+            onSelectItem={(item) => setSelectedIssueType(item)}
           />
         </View>
         <View style={{ zIndex: 1000 }}>
@@ -452,7 +454,9 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                 stepOneParams,
                 stepTwoParams: {
                   date: date ? date.toISOString() : undefined,
-                  issueType: pickerValue,
+                  issueType: selectedIssueType
+                    ? { id: selectedIssueType.id, name: selectedIssueType.name }
+                    : null,
                   ongoingEvent: checked,
                   attachment: attachment.uri
                     ? {
