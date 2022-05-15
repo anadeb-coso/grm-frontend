@@ -149,7 +149,7 @@ function Content({ issue, eadl }) {
           {issue.date !== 'null' && !!issue.date ? moment(issue.date).format('DD-MMMM-YYYY') : '--'}
         </Text>
         <Text style={styles.stepSubtitle}>{i18n.t('step_3_field_title_2')}</Text>
-        <Text style={styles.stepDescription}>{issue.issueType ?? '--'}</Text>
+        <Text style={styles.stepDescription}>{issue.issueType.name ?? '--'}</Text>
         <Text style={styles.stepSubtitle}>{i18n.t('step_3_field_title_3')}</Text>
         <Text style={styles.stepDescription}>{issue.category?.name ?? '--'}</Text>
 
