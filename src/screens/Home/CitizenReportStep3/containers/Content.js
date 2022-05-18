@@ -9,7 +9,7 @@ import { LocalGRMDatabase } from '../../../../utils/databaseManager';
 import { colors } from '../../../../utils/colors';
 import { styles } from './Content.styles';
 
-const SAMPLE_WORDS = ['ibyishimo', 'amahoro', 'umunezero', 'icyizere', 'nezerwa'];
+const SAMPLE_WORDS = ['car', 'house', 'tree', 'ball'];
 const theme = {
   roundness: 12,
   colors: {
