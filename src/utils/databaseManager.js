@@ -27,11 +27,11 @@ export const SyncToRemoteDatabase = async ({ username, password }, userEmail) =>
     skip_setup: true,
   });
 
-  const grmRemoteDB = new PouchDB('http://164.92.193.60:5984:5984/grm', {
+  const grmRemoteDB = new PouchDB('http://164.92.193.60:5984/grm', {
     skip_setup: true,
   });
 
-  const communesRemoteDB = new PouchDB('http://164.92.193.60:5984:5984/eadls', {
+  const communesRemoteDB = new PouchDB('http://164.92.193.60:5984/eadls', {
     skip_setup: true,
   });
 
