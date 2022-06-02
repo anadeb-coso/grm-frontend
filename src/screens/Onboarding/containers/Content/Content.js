@@ -61,6 +61,9 @@ const Content = () => {
           {i18n.t('no')}
         </Button>
       </View>
+      <View>
+        <Text>V:1.0.0</Text>
+      </View>
     </View>
   );
 };
