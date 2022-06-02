@@ -24,7 +24,7 @@
   "sync_files": "Sync Files",
 
   //GRM-Intro
-  "intro_text_0": "Note to Facilitators: ",
+  "intro_text_0": "Tell the citizen: ",
   "intro_text_1": "We have included talking points to help guide citizens throughout the process. To start the session, please consider letting people know the following:",
   "intro_text_2": "I appreciate you sharing your feedback or complaints regarding  the project. It is a six step process that should be quick and easy.  Before you start, there are a few things you should know.",
   "intro_text_3": "You have the option to submit your feedback anonymously if you prefer.  Of course, the more information we have the better we can help you.",
@@ -37,8 +37,8 @@
   "step_1_subtitle": "We value your input and hope to work with you to solve any issues or make our work better.",
   "step_1": "Step 1",
   "stay_touch_question": "Preferred Method of Contact",
-  "step_1_hint_1": "Facilitator: “If you wish, we can update you on the progress by text or email. But if you want to stay anonymous, we can give you a code, or you can come back to me to follow up. Which one do you want?”",
-  "step_1_option_1": "Remain Anonymous",
+  "step_1_hint_1": "Tell the citizen: “If you wish, we can update you on the progress by text or email. But if you want to stay anonymous, we can give you a code, or you can come back to me to follow up. Which one do you want?”",
+  "step_1_option_1": "Do not receive updates",
   "step_1_option_2": "Receive updates from facilitator",
   "step_1_option_3": "Receive alerts directly",
   "step_1_method_1": "Text / SMS",
@@ -50,7 +50,7 @@
   //contact step
   "contact_step_title": "Contact Information",
   "contact_step_subtitle": "Name of Person or Group",
-  "contact_step_explanation": "Facilitator to Anonymous Complaint: “You have asked to be anonymous, so I’m typing “Anonymous” here” \n\nFacilitator to Non-Anonymous Complaint: “I’m going to type your name in here”",
+  "contact_step_explanation": "Tell the citizen: “It is optional to provide your name. If you don't want me to record it, I will leave it blank.”",
   "contact_step_placeholder_1": "Enter complainant name here",
   "contact_step_placeholder_2": "Enter Age Group (Optional)",
   "contact_step_placeholder_3": "Choose Gender (Optional)",
@@ -62,7 +62,7 @@
   "step_2": "Step 2",
   "step_2_select_date": "Tap to select the date",
   "step_2_subtitle": "Details of Issue or Feedback",
-  "step_2_explanation": "Facilitator: “I want to record the dates of the events you report. If you can’t remember the exact dates, do your best and I’ll make a special note of it. Don’t worry if you can’t remember every detail. ”",
+  "step_2_explanation": "Tell the citizen: “I want to record the dates of the events you report. If you can’t remember the exact dates, do your best and I’ll make a special note of it. Don’t worry if you can’t remember every detail. ”",
   "step_2_ongoing_hint": "Current event or multiple occurrences",
   "step_2_set_today": "Set for Today",
   "step_2_placeholder_1": "What are you reporting?",
@@ -88,7 +88,7 @@
   //location step
   "step_4": "Step 4",
   "step_location_description": "Where did this occur?",
-  "step_location_body": "Facilitator: You should try to get as specific a location as needed\nto solve the issue. Addresses, street corners, descriptions of the\narea can all be helpful. If this is a confidential or sensitive issue,\nsimply select the locale and collect no further detalls.",
+  "step_location_body": "Tell the citizen: You should try to get as specific a location as needed\nto solve the issue. Addresses, street corners, descriptions of the\narea can all be helpful. If this is a confidential or sensitive issue,\nsimply select the locale and collect no further detalls.",
   "step_location_dropdown_placeholder": "Tap to select",
   "step_location_input_explanation": "Please enter additional details about the location\nthat might help resolve the issue (e.g. street\naddress, street corner, or description of location).",
 
