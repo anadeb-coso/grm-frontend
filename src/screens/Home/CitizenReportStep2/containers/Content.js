@@ -176,13 +176,17 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
 
   const getCategory = (value) => {
     const result = issueCategories.filter((obj) => obj.name === value);
-    const _category = {
-      id: result[0].id,
-      name: result[0].name,
-      confidentiality_level: result[0].confidentiality_level,
-      assigned_department: result[0].assigned_department?.id,
-      administrative_level: result[0].assigned_department?.administrative_level,
-    };
+    let _category;
+    if(result[0]) {
+      _category = {
+        id: result[0].id,
+        name: result[0].name,
+        confidentiality_level: result[0].confidentiality_level,
+        assigned_department: result[0].assigned_department?.id,
+        administrative_level: result[0].assigned_department?.administrative_level,
+      };
+
+    }
     return _category;
   };
 

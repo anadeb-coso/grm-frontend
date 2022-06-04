@@ -270,7 +270,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 marginVertical: 10,
               }}
             >
-              <Text style={styles.subtitle}>{i18n.t('record_steps_taken')}</Text>
+              <Text ellipsizeMode='tail' numberOfLines={1} style={styles.subtitle}>{i18n.t('record_steps_taken').substring(0, 28)}...</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <AntDesign
                   style={{ marginRight: 5 }}
