@@ -45,6 +45,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const [recordingURI, setRecordingURI] = useState();
   const [items2, setItems2] = useState(issueCategories ?? []);
   const [sound, setSound] = React.useState();
+  const [issueTypeCategoryError, setIssueTypeCategoryError] = React.useState(false);
   const [selectedIssueType, setSelectedIssueType] = useState(null);
 
   useEffect(() => {
@@ -190,6 +191,46 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     return _category;
   };
 
+  const goToNextStep = () => {
+      if (pickerValue2 !== null && selectedIssueType !== null) {
+        setIssueTypeCategoryError(false)
+        navigation.navigate('CitizenReportLocationStep', {
+          stepOneParams,
+          stepTwoParams: {
+            date: date ? date.toISOString() : undefined,
+            issueType: selectedIssueType
+              ? { id: selectedIssueType.id, name: selectedIssueType.name }
+              : null,
+            ongoingEvent: checked,
+            attachment: attachment.uri
+              ? {
+                url: '',
+                id: attachment?.id,
+                uploaded: false,
+                local_url: attachment?.uri,
+                name: attachment?.uri.split('/').pop(),
+              }
+              : undefined,
+            recording: recordingURI
+              ? {
+                url: '',
+                id: recordingURI.split('/').pop(),
+                uploaded: false,
+                local_url: recordingURI,
+                isAudio: true,
+                name: recordingURI.split('/').pop(),
+              }
+              : undefined,
+            category: getCategory(pickerValue2),
+            additionalDetails,
+          },
+        });
+      } else {
+        setIssueTypeCategoryError(true)
+      }
+    };
+
+
   return (
     <ScrollView>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : null}>
@@ -312,6 +353,8 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             setItems={setItems2}
           />
         </View>
+        {issueTypeCategoryError && <Text style={styles.errorText}>Please select an option</Text>}
+
         <View style={{ paddingHorizontal: 50 }}>
           <TextInput
             multiline
@@ -453,39 +496,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             style={{ alignSelf: 'center', margin: 24 }}
             labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
             mode="contained"
-            onPress={() => {
-              navigation.navigate('CitizenReportLocationStep', {
-                stepOneParams,
-                stepTwoParams: {
-                  date: date ? date.toISOString() : undefined,
-                  issueType: selectedIssueType
-                    ? { id: selectedIssueType.id, name: selectedIssueType.name }
-                    : null,
-                  ongoingEvent: checked,
-                  attachment: attachment.uri
-                    ? {
-                        url: '',
-                        id: attachment?.id,
-                        uploaded: false,
-                        local_url: attachment?.uri,
-                        name: attachment?.uri.split('/').pop(),
-                      }
-                    : undefined,
-                  recording: recordingURI
-                    ? {
-                        url: '',
-                        id: recordingURI.split('/').pop(),
-                        uploaded: false,
-                        local_url: recordingURI,
-                        isAudio: true,
-                        name: recordingURI.split('/').pop(),
-                      }
-                    : undefined,
-                  category: getCategory(pickerValue2),
-                  additionalDetails,
-                },
-              });
-            }}
+            onPress={goToNextStep}
           >
             {i18n.t('next')}
           </Button>
