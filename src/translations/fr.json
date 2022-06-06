@@ -1,6 +1,7 @@
 {
   //Headers
   "citizen_input_header": "Citizen Input",
+  "summary_of_your_work": "Résumé de Votre Travail",
   //Onboarding
   "used_app_before": "Avez-vous déjà utilisé cette application ?",
   "yes": "OUI",
