@@ -179,7 +179,8 @@
   "accept": "ACCEPT",
   "reject": "REJECT",
   "you_are_rejecting": "You are rejecting this complaint for consideration. Please enter a reason for consideration.",
-  "complaint_rejected": "This complaint has been rejected. Notifications will be sent to the original recorder and the citizen."
+  "complaint_rejected": "This complaint has been rejected. Notifications will be sent to the original recorder and the citizen.",
+  "please_select_option": "Please select an option"
 
 
 }
