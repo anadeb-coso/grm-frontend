@@ -143,7 +143,6 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const openCamera = async () => {
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
@@ -161,7 +160,6 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
       // aspect: [4, 3],
       quality: 1,
     });
@@ -353,7 +351,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             setItems={setItems2}
           />
         </View>
-        {issueTypeCategoryError && <Text style={styles.errorText}>Please select an option</Text>}
+        {issueTypeCategoryError && <Text style={styles.errorText}>{i18n.t('please_select_option')}</Text>}
 
         <View style={{ paddingHorizontal: 50 }}>
           <TextInput
