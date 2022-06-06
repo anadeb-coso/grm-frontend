@@ -325,7 +325,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           </View>
           <TouchableOpacity
             onPress={_showEscalateDialog}
-            disabled={disableEscalation || !isRecordResolutionEnabled}
+            disabled={disableEscalation || !isRecordResolutionEnabled || issue.escalate_flag}
             style={{
               alignItems: 'center',
               flexDirection: 'row',
