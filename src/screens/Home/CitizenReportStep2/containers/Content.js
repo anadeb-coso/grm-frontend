@@ -143,7 +143,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const openCamera = async () => {
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
-      aspect: [4, 3],
+      allowsEditing: false,
       quality: 1,
     });
 
@@ -160,7 +160,8 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
-      // aspect: [4, 3],
+      allowsEditing: false,
+
       quality: 1,
     });
     if (!result.cancelled) {
