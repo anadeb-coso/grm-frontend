@@ -45,6 +45,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const [recordingURI, setRecordingURI] = useState();
   const [items2, setItems2] = useState(issueCategories ?? []);
   const [sound, setSound] = React.useState();
+  const [issueTypeCategoryError, setIssueTypeCategoryError] = React.useState(false);
   const [selectedIssueType, setSelectedIssueType] = useState(null);
 
   useEffect(() => {
@@ -142,8 +143,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const openCamera = async () => {
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
+      allowsEditing: false,
       quality: 1,
     });
 
@@ -160,8 +160,8 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      // aspect: [4, 3],
+      allowsEditing: false,
+
       quality: 1,
     });
     if (!result.cancelled) {
@@ -176,15 +176,59 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
 
   const getCategory = (value) => {
     const result = issueCategories.filter((obj) => obj.name === value);
-    const _category = {
-      id: result[0].id,
-      name: result[0].name,
-      confidentiality_level: result[0].confidentiality_level,
-      assigned_department: result[0].assigned_department?.id,
-      administrative_level: result[0].assigned_department?.administrative_level,
-    };
+    let _category;
+    if(result[0]) {
+      _category = {
+        id: result[0].id,
+        name: result[0].name,
+        confidentiality_level: result[0].confidentiality_level,
+        assigned_department: result[0].assigned_department?.id,
+        administrative_level: result[0].assigned_department?.administrative_level,
+      };
+
+    }
     return _category;
   };
+
+  const goToNextStep = () => {
+      if (pickerValue2 !== null && selectedIssueType !== null) {
+        setIssueTypeCategoryError(false)
+        navigation.navigate('CitizenReportLocationStep', {
+          stepOneParams,
+          stepTwoParams: {
+            date: date ? date.toISOString() : undefined,
+            issueType: selectedIssueType
+              ? { id: selectedIssueType.id, name: selectedIssueType.name }
+              : null,
+            ongoingEvent: checked,
+            attachment: attachment.uri
+              ? {
+                url: '',
+                id: attachment?.id,
+                uploaded: false,
+                local_url: attachment?.uri,
+                name: attachment?.uri.split('/').pop(),
+              }
+              : undefined,
+            recording: recordingURI
+              ? {
+                url: '',
+                id: recordingURI.split('/').pop(),
+                uploaded: false,
+                local_url: recordingURI,
+                isAudio: true,
+                name: recordingURI.split('/').pop(),
+              }
+              : undefined,
+            category: getCategory(pickerValue2),
+            additionalDetails,
+          },
+        });
+      } else {
+        setIssueTypeCategoryError(true)
+      }
+    };
+
 
   return (
     <ScrollView>
@@ -308,6 +352,8 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             setItems={setItems2}
           />
         </View>
+        {issueTypeCategoryError && <Text style={styles.errorText}>{i18n.t('please_select_option')}</Text>}
+
         <View style={{ paddingHorizontal: 50 }}>
           <TextInput
             multiline
@@ -449,39 +495,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             style={{ alignSelf: 'center', margin: 24 }}
             labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
             mode="contained"
-            onPress={() => {
-              navigation.navigate('CitizenReportLocationStep', {
-                stepOneParams,
-                stepTwoParams: {
-                  date: date ? date.toISOString() : undefined,
-                  issueType: selectedIssueType
-                    ? { id: selectedIssueType.id, name: selectedIssueType.name }
-                    : null,
-                  ongoingEvent: checked,
-                  attachment: attachment.uri
-                    ? {
-                        url: '',
-                        id: attachment?.id,
-                        uploaded: false,
-                        local_url: attachment?.uri,
-                        name: attachment?.uri.split('/').pop(),
-                      }
-                    : undefined,
-                  recording: recordingURI
-                    ? {
-                        url: '',
-                        id: recordingURI.split('/').pop(),
-                        uploaded: false,
-                        local_url: recordingURI,
-                        isAudio: true,
-                        name: recordingURI.split('/').pop(),
-                      }
-                    : undefined,
-                  category: getCategory(pickerValue2),
-                  additionalDetails,
-                },
-              });
-            }}
+            onPress={goToNextStep}
           >
             {i18n.t('next')}
           </Button>

@@ -1,6 +1,7 @@
 {
   //Headers
   "citizen_input_header": "Citizen Input",
+  "summary_of_your_work": "Résumé de Votre Travail",
   //Onboarding
   "used_app_before": "Avez-vous déjà utilisé cette application ?",
   "yes": "OUI",
@@ -179,5 +180,6 @@
   "accept": "ACCEPTER",
   "reject": "REJETER",
   "you_are_rejecting": "Vous rejetez cette plainte pour examen. Veuillez indiquer la raison.",
-  "complaint_rejected": "Cette plainte a été rejetée. Les notification seront envoyées à la personne qui l'a enregistrée et au citoyen."
+  "complaint_rejected": "Cette plainte a été rejetée. Les notification seront envoyées à la personne qui l'a enregistrée et au citoyen.",
+  "please_select_option": "Veuillez sélectionner une option"
 }

@@ -115,7 +115,7 @@ function DashboardStackScreen() {
       <HomeStack.Screen
         name="IssueSearch"
         component={IssueSearch}
-        options={({ navigation, route }) => customHeaderOptions('Summary of Your Work')}
+        options={({ navigation, route }) => customHeaderOptions(i18n.t('summary_of_your_work'))}
       />
 
       {/* <HomeStack.Screen */}

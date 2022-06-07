@@ -1,13 +1,14 @@
-import React, { useEffect } from 'react';
-import { View, ScrollView, Text, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, ScrollView, Text, Platform, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Button } from 'react-native-paper';
+import { Button, IconButton } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import moment from 'moment';
 import i18n from 'i18n-js';
 import { LocalGRMDatabase } from '../../../../utils/databaseManager';
 import { colors } from '../../../../utils/colors';
 import { styles } from './Content.styles';
+import { Audio } from 'expo-av';
 
 const SAMPLE_WORDS = ['car', 'house', 'tree', 'ball'];
 const theme = {
@@ -28,6 +29,8 @@ function Content({ issue, eadl }) {
   //   return parseInt(last.id.split('-')[1]) + 1;
   // };
   const randomWord = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const [sound, setSound] = useState();
+  const [playing, setPlaying] = useState(false);
   const submitIssue = () => {
     const isAssignee =
       issue.category?.assigned_department === eadl?.department &&
@@ -109,6 +112,38 @@ function Content({ issue, eadl }) {
       });
   };
 
+  const playSound = async (recordingUri) => {
+    if(playing === false) {
+      setPlaying(true)
+      // console.log("Loading Sound");
+      const { sound } = await Audio.Sound.createAsync({ uri: recordingUri });
+      setSound(sound);
+      // console.log("Playing Sound");
+      await sound.playAsync();
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if(status.didJustFinish) {
+          setPlaying(false)
+        }
+      })
+    }
+    // setPlaying(false)
+  };
+
+  React.useEffect(
+    () =>
+      sound
+        ? () => {
+          // console.log("Unloading Sound");
+          sound.unloadAsync();
+
+        }
+        : undefined,
+    [sound]
+  );
+
+
+
   useEffect(() => {
     (async () => {
       if (Platform.OS !== 'web') {
@@ -149,22 +184,50 @@ function Content({ issue, eadl }) {
           {issue.date !== 'null' && !!issue.date ? moment(issue.date).format('DD-MMMM-YYYY') : '--'}
         </Text>
         <Text style={styles.stepSubtitle}>{i18n.t('step_3_field_title_2')}</Text>
-        <Text style={styles.stepDescription}>{issue.issueType.name ?? '--'}</Text>
+        <Text style={styles.stepDescription}>{issue.issueType?.name ?? '--'}</Text>
         <Text style={styles.stepSubtitle}>{i18n.t('step_3_field_title_3')}</Text>
         <Text style={styles.stepDescription}>{issue.category?.name ?? '--'}</Text>
 
         <Text style={styles.stepSubtitle}>{i18n.t('step_3_field_title_4')}</Text>
         <Text style={styles.stepDescription}>{issue.additionalDetails ?? '--'}</Text>
         <Text style={styles.stepSubtitle}>{i18n.t('step_3_attachments')}</Text>
-        {issue.attachment && (
-          <Text style={styles.stepDescription}>
-            Image: {JSON.stringify(issue?.attachment?.id) ?? '--'}
-          </Text>
-        )}
         {issue.recording && (
-          <Text style={styles.stepDescription}>
-            Audio: {JSON.stringify(issue?.recording?.id) ?? '--'}
-          </Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              // justifyContent: 'center',
+            }}
+          >
+            <IconButton icon="play" color={playing ? colors.disabled : colors.primary} size={24} onPress={() => playSound(issue.recording.local_url)} />
+            <Text
+              style={{
+                fontFamily: 'Poppins_400Regular',
+                fontSize: 12,
+                fontWeight: 'normal',
+                fontStyle: 'normal',
+                lineHeight: 18,
+                letterSpacing: 0,
+                textAlign: 'left',
+                color: '#707070',
+                marginVertical: 13,
+              }}
+            >
+              Play Recorded Audio
+            </Text>
+          </View>
+        )}
+        {issue.attachment?.local_url && (
+          <Image
+            source={{ uri: issue.attachment.local_url }}
+            style={{
+              height: 80,
+              width: 80,
+              justifyContent: 'flex-end',
+              marginVertical: 20,
+              marginLeft: 20
+            }}
+          />
         )}
       </View>
       <View style={{ paddingHorizontal: 50 }}>

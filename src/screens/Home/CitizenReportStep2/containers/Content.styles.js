@@ -10,6 +10,12 @@ export const styles = StyleSheet.create({
     letterSpacing: 0,
     color: "#24c38b",
   },
+  errorText: {
+    color: "red",
+    // paddingLeft: 15,
+    marginBottom: 10,
+    textAlign: 'center'
+  },
   subtitle: {
     fontFamily: "Poppins_400Regular",
     fontSize: 10,
