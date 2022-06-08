@@ -37,6 +37,10 @@ function Content({ issue }) {
         <Text style={styles.stepText}>{i18n.t('step_6')}</Text>
         <Text style={styles.stepSubtitle}>{i18n.t('step_4_subtitle')}</Text>
         <Text style={styles.stepDescription}>{i18n.t('step_4_description')}</Text>
+        <Text style={styles.stepDescription}></Text>
+        <Text style={styles.stepDescription}>{i18n.t('step_5_description')}</Text>
+        <Text style={styles.stepDescription}></Text>
+        <Text style={styles.stepDescription}>{i18n.t('step_6_description')}</Text>
       </View>
 
       <LockImage
