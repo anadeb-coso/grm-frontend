@@ -1,4 +1,4 @@
-const baseURL = 'https://prolac-niger.e3grm.org';
+const baseURL = 'http://anadeb.e3grm.org/';
 export { baseURL };
 function handleErrors(response) {
   if (response.non_field_errors) {

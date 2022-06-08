@@ -25,7 +25,7 @@
   "sync_files": "Synchroniser les Fichiers",
 
   //GRM-Intro
-  "intro_text_0": "Facilitateurs : ",
+  "intro_text_0": "Communique avec le citoyen : ",
   "intro_text_1": "Nous avons inclus des points de discussion pour vous aider à guider les citoyens tout au long du processus. Pour commencer la session, veuillez envisager d’informer les gens de ce qui suit :  ",
   "intro_text_2": "J’apprécie que vous soyez venu nous faire part de vos problèmes concernant le projet. Ce sera rapide - quelques minutes - et facile. Avant de commencer, vous devez savoir certaines choses.”",
   "intro_text_3": "Tout peut être aussi privé et confidentiel que vous le souhaitez. Plus nous avons d’informations, mieux nous pouvons vous aider, mais vous ne devez nous dire que ce que vous êtes à l’aise de partager.",
@@ -37,8 +37,8 @@
   "welcome_citizen_input": "Bienvenue sur le portail du MGP numérique!",
   "step_1": "Étape 1",
   "stay_touch_question": "Méthode préférée de contact",
-  "step_1_hint_1": "Facilitateur : “Si vous le souhaitez, nous pouvons vous informer de l’avancement par SMS ou par e-mail. Mais si vous voulez rester anonyme, nous pouvons vous donner un code, ou vous pouvez revenir vers moi pour faire le suivi. Lequel veux-tu?”",
-  "step_1_option_1": "Rester anonyme",
+  "step_1_hint_1": "Communique avec le citoyen : “Si vous le souhaitez, nous pouvons vous informer de l’avancement par SMS ou par e-mail. Mais si vous voulez rester anonyme, nous pouvons vous donner un code, ou vous pouvez revenir vers moi pour faire le suivi. Lequel veux-tu?”",
+  "step_1_option_1": "Je ne souhaite pas être contacté(e)",
   "step_1_option_2": "Recevoir des mises à jour via le facilitateur",
   "step_1_option_3": "Recevoir des alertes directement",
   "step_1_method_1": "Texte / SMS",
@@ -50,7 +50,7 @@
   //contact step
   "contact_step_title": "Information de contact",
   "contact_step_subtitle": "Nom du Plaignant.",
-  "contact_step_explanation": "Facilitateur au plaignant anonyme : “Vous avez demandé à rester anonyme, alors je tape  ”Anonyme” ici”\n\nFacilitateur au plaignant non-anonyme : “Je vais saisir votre nom ici.”",
+  "contact_step_explanation": "Communique avec le citoyen : “Il est facultatif de fournir votre nom. Si vous ne voulez pas que je l'enregistre, je le laisserai vide.”",
   "contact_step_placeholder_1": "Entrez le nom du plaignant ici",
   "contact_step_placeholder_2": "Entrez le groupe d’âge (facultatif)",
   "contact_step_placeholder_3": "Choisissez le sexe (facultatif)",
@@ -61,7 +61,7 @@
   //step 2
   "step_2": "Étape 2",
   "step_2_subtitle": "Détails de la plainte",
-  "step_2_explanation": "Facilitateur: “Je souhaite enregistrer les dates des événements que vous signalez. Si vous ne vous souvenez pas des dates exactes, faites de votre mieux et j’en ferai une note spéciale. Ne vous inquiétez pas si vous ne vous souvenez pas de chaque détail.”",
+  "step_2_explanation": "Communique avec le citoyen : “Je souhaite enregistrer les dates des événements que vous signalez. Si vous ne vous souvenez pas des dates exactes, faites de votre mieux et j’en ferai une note spéciale. Ne vous inquiétez pas si vous ne vous souvenez pas de chaque détail.”",
   "step_2_ongoing_hint": "Événement en cours ou occurrences multiples",
   "step_2_select_date": "Tapez pour sélectionner la date",
   "step_2_set_today": "Aujourd’hui",
@@ -78,7 +78,7 @@
   //step 3
   "step_3": "Étape 3",
   "step_3_confirmation": "Confirmez les détails et soumettez",
-  "step_3_subtitle": "Facilitateur : “Nous avons presque terminé. Je veux prendre un moment et revoir ce que nous avons capturé. Nous pouvons modifier les informations ou les soumettre.”",
+  "step_3_subtitle": "Communique avec le citoyen : “Nous avons presque terminé. Je veux prendre un moment et revoir ce que nous avons capturé. Nous pouvons modifier les informations ou les soumettre.”",
   "step_3_field_title_1": "Date de la plainte:",
   "step_3_field_title_2": "Type de problème:",
   "step_3_field_title_3": "Sujet:",
@@ -88,14 +88,14 @@
   //location step
   "step_4": "Étape 4",
   "step_location_description": "Où cela s’est-il produit ?",
-  "step_location_body": "Facilitateur : vous devez essayer d’obtenir un lieu aussi précis que nécessaire pour résoudre le problème. Les adresses, les coins de rue, les descriptions du quartier peuvent tous être utiles. S’il s’agit d’un problème confidentiel ou sensible, sélectionnez simplement les paramètres régionaux et ne collectez aucun autre détail.",
+  "step_location_body": "Communique avec le citoyen : vous devez essayer d’obtenir un lieu aussi précis que nécessaire pour résoudre le problème. Les adresses, les coins de rue, les descriptions du quartier peuvent tous être utiles. S’il s’agit d’un problème confidentiel ou sensible, sélectionnez simplement les paramètres régionaux et ne collectez aucun autre détail.",
   "step_location_dropdown_placeholder": "Tapez pour sélectionner",
   "step_location_input_explanation": "Veuillez entrer des détails supplémentaires sur\nLe lieu qui pourraient aider à résoudre\nle problème (par exemple, adresse, coin de rue\nou description de l’emplacement).",
 
 
   //step 4
   "step_4_subtitle": "Vous avez terminé ! N’oubliez pas ce code!",
-  "step_4_description": "Facilitateur : “Le problème a été capturé et sera attribué à un représentant du gouvernement. Pour suivre les progrès sur ce problème, veuillez utiliser le code ci-dessous. (Facilitateurs : encouragez le citoyen à écrire ou à répéter le code ci-dessous.”\n\nRappelez au plaignant combien de temps il lui faudra pour obtenir une confirmation et une résolution.",
+  "step_4_description": "Communique avec le citoyen : “Le problème a été capturé et sera attribué à un représentant du gouvernement. Pour suivre les progrès sur ce problème, veuillez utiliser le code ci-dessous. (Facilitateurs : encouragez le citoyen à écrire ou à répéter le code ci-dessous.”\n\nRappelez au plaignant combien de temps il lui faudra pour obtenir une confirmation et une résolution.",
   "step_4_issue_code": "Code d’accès du problème:",
   "step_4_short_code": "SHORT CODE",
   "step_4_two_word_code": "2-WORD CODE",
