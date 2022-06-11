@@ -62,7 +62,7 @@ const Content = () => {
         </Button>
       </View>
       <View>
-        <Text>V:1.0.0</Text>
+        <Text>V:1.0.1</Text>
       </View>
     </View>
   );
