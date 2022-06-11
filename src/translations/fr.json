@@ -95,11 +95,13 @@
 
   //step 4
   "step_4_subtitle": "Vous avez terminé ! N’oubliez pas ce code!",
-  "step_4_description": "Communique avec le citoyen : “Le problème a été capturé et sera attribué à un représentant du gouvernement. Pour suivre les progrès sur ce problème, veuillez utiliser le code ci-dessous. (Facilitateurs : encouragez le citoyen à écrire ou à répéter le code ci-dessous.”\n\nRappelez au plaignant combien de temps il lui faudra pour obtenir une confirmation et une résolution.",
-  "step_4_issue_code": "Code d’accès du problème:",
+  "step_4_description": "Communique avec le citoyen : \"Votre soumission a été enregistrée avec succès et sera affectée à l'examen. Vous pouvez utiliser le code ci-dessous pour suivre la progression de cette soumission.\"",
+  "step_5_description": "Encouragez le citoyen à se souvenir de ce code. Il peut également l'écrire mais demandez-lui de le garder en sécurité.",
+  "step_6_description": "Rappelez au citoyen le nombre maximum de jours ouvrables requis pour l'acceptation de sa soumission et sa résolution.",
+  "step_4_issue_code": "Code d'accès pour la soumission:",
   "step_4_short_code": "SHORT CODE",
   "step_4_two_word_code": "2-WORD CODE",
-  "step_4_back_text": "Retour à l’accueil du GRM",
+  "step_4_back_text": "Retour à l’accueil du eMGP",
   "step_5": "Étape 5",
   "step_6": "Étape 6",
 
