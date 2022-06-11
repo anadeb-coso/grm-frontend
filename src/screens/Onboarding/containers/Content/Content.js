@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View } from "react-native";
+import { View, Text } from "react-native";
 import { styles } from "./Content.style";
 import { titles } from "./utils";
 import { Button, Title } from "react-native-paper";
@@ -60,6 +60,9 @@ const Content = () => {
         >
           {i18n.t('no')}
         </Button>
+      </View>
+      <View>
+        <Text>V:1.0.1</Text>
       </View>
     </View>
   );
