@@ -36,6 +36,7 @@ function Content({ issue }) {
   const [isSatisfactionCollapsed, setIsSatisfactionCollapsed] = useState(true);
   const [isAppealCollapsed, setIsAppealCollapsed] = useState(true);
   const [_sound, setSound] = useState();
+  const [imageError, setImageError] = useState(false);
 
   const [playing, setPlaying] = useState(false);
 
@@ -86,21 +87,40 @@ function Content({ issue }) {
     [_sound]
   );
 
-  const playSound = async (recordingUri) => {
-    if(playing === false) {
-      setPlaying(true)
-      // console.log("Loading Sound");
-      const { sound } = await Audio.Sound.createAsync({ uri: recordingUri });
-      setSound(sound);
-      // console.log("Playing Sound");
-      await sound.playAsync();
+  const playSound = async (recordingUri, remoteUrl) => {
+      if(playing === false) {
+        setPlaying(true)
+        try{
+            // console.log("Loading Sound");
+            const { sound } = await Audio.Sound.createAsync({ uri: recordingUri });
+            setSound(sound);
+            // console.log("Playing Sound");
+            await sound.playAsync();
 
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if(status.didJustFinish) {
-          setPlaying(false)
+            sound.setOnPlaybackStatusUpdate((status) => {
+              if(status.didJustFinish) {
+                setPlaying(false)
+              }
+            })
+
+        } catch (e) {
+          console.log(e)
+          try {
+            const { sound } = await Audio.Sound.createAsync({ uri: `${baseURL}${remoteUrl}` });
+            setSound(sound);
+            // console.log("Playing Sound");
+            await sound.playAsync();
+
+            sound.setOnPlaybackStatusUpdate((status) => {
+              if(status.didJustFinish) {
+                setPlaying(false)
+              }
+            })
+          } catch (_e) {
+            console.log(_e)
+          }
         }
-      })
-    }
+      }
     // setPlaying(false)
   };
 
@@ -131,6 +151,7 @@ function Content({ issue }) {
     }
     upsertNewComment();
   };
+
 
   return (
     <ScrollView
@@ -198,7 +219,7 @@ function Content({ issue }) {
                         // justifyContent: 'center',
                       }}
                     >
-                      <IconButton icon="play" color={playing ? colors.disabled : colors.primary} size={24} onPress={() => playSound(item.local_url)} />
+                      <IconButton icon="play" color={playing ? colors.disabled : colors.primary} size={24} onPress={() => playSound(item.local_url, item.url)} />
                       <Text
                         style={{
                           fontFamily: 'Poppins_400Regular',
@@ -216,16 +237,32 @@ function Content({ issue }) {
                       </Text>
                     </View>
                       :
-                      <Image
-                        source={{ uri: item.local_url }}
-                        style={{
-                          height: 80,
-                          width: 80,
-                          justifyContent: 'flex-end',
-                          marginVertical: 20,
-                          marginLeft: 20
-                        }}
-                      />
+                      <View>
+                        {imageError ?
+                          <Image
+                            source={{ uri: item.url }}
+                            onError={() => setImageError(true)}
+                            style={{
+                              height: 80,
+                              width: 80,
+                              justifyContent: 'flex-end',
+                              marginVertical: 20,
+                              marginLeft: 20,
+                            }}
+                          />
+                          :
+                          <Image
+                            source={{ uri: item.local_url }}
+                            onError={() => setImageError(true)}
+                            style={{
+                              height: 80,
+                              width: 80,
+                              justifyContent: 'flex-end',
+                              marginVertical: 20,
+                              marginLeft: 20,
+                            }}
+                          />}
+                      </View>
                     }
                    </View>
                   ))}
