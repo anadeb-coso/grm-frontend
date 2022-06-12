@@ -1,17 +1,19 @@
 import React, { useEffect, useState, useRef } from "react";
-import { View, ScrollView, Text, Platform, TouchableOpacity } from "react-native";
-import { styles } from "./Content.styles";
+import { View, ScrollView, Text, Platform, TouchableOpacity, Image } from 'react-native';
 import * as ImagePicker from "expo-image-picker";
 import moment from "moment";
-import { colors } from "../../../../utils/colors";
 import { useBackHandler } from "@react-native-community/hooks";
-import CustomSeparator from "../../../../components/CustomSeparator/CustomSeparator";
 import i18n from "i18n-js";
-import { Button } from "react-native-paper";
-import { LocalGRMDatabase } from "../../../../utils/databaseManager";
-import {citizenTypes} from "../../../../utils/utils";
+import { Button, IconButton } from 'react-native-paper';
 import Collapsible from 'react-native-collapsible';
 import {MaterialCommunityIcons} from "@expo/vector-icons";
+import { LocalGRMDatabase } from "../../../../utils/databaseManager";
+import {citizenTypes} from "../../../../utils/utils";
+import CustomSeparator from "../../../../components/CustomSeparator/CustomSeparator";
+import { colors } from "../../../../utils/colors";
+import { styles } from "./Content.styles";
+import { Audio } from 'expo-av';
+import { baseURL } from '../../../../services/API';
 
 
 const theme = {
@@ -33,13 +35,17 @@ function Content({ issue }) {
   const [isDecisionCollapsed, setIsDecisionCollapsed] = useState(true);
   const [isSatisfactionCollapsed, setIsSatisfactionCollapsed] = useState(true);
   const [isAppealCollapsed, setIsAppealCollapsed] = useState(true);
+  const [_sound, setSound] = useState();
+
+  const [playing, setPlaying] = useState(false);
+
   const scrollViewRef = useRef();
 
-  useBackHandler(() => {
+  useBackHandler(() =>
     // navigation.navigate("GRM")
     // handle it
-    return true;
-  });
+     true
+  );
 
   useEffect(() => {
     (async () => {
@@ -68,6 +74,36 @@ function Content({ issue }) {
       return doc;
     });
   };
+  React.useEffect(
+    () =>
+      _sound
+        ? () => {
+          // console.log("Unloading Sound");
+          _sound.unloadAsync();
+
+        }
+        : undefined,
+    [_sound]
+  );
+
+  const playSound = async (recordingUri) => {
+    if(playing === false) {
+      setPlaying(true)
+      // console.log("Loading Sound");
+      const { sound } = await Audio.Sound.createAsync({ uri: recordingUri });
+      setSound(sound);
+      // console.log("Playing Sound");
+      await sound.playAsync();
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if(status.didJustFinish) {
+          setPlaying(false)
+        }
+      })
+    }
+    // setPlaying(false)
+  };
+
 
   const onAddComment = () => {
     if (newComment) {
@@ -153,6 +189,47 @@ function Content({ issue }) {
                       {i18n.t('assigned_to')}{" "}
                       <Text style={styles.text}> {issue.assignee?.name ?? "Pending Assigment"}</Text>
                   </Text>
+                {issue.attachments?.length > 0 && issue.attachments.map((item, index) => (<View>
+
+                    {item.isAudio ? <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        // justifyContent: 'center',
+                      }}
+                    >
+                      <IconButton icon="play" color={playing ? colors.disabled : colors.primary} size={24} onPress={() => playSound(item.local_url)} />
+                      <Text
+                        style={{
+                          fontFamily: 'Poppins_400Regular',
+                          fontSize: 12,
+                          fontWeight: 'normal',
+                          fontStyle: 'normal',
+                          lineHeight: 18,
+                          letterSpacing: 0,
+                          textAlign: 'left',
+                          color: '#707070',
+                          marginVertical: 13,
+                        }}
+                      >
+                        Play Recorded Audio
+                      </Text>
+                    </View>
+                      :
+                      <Image
+                        source={{ uri: item.local_url }}
+                        style={{
+                          height: 80,
+                          width: 80,
+                          justifyContent: 'flex-end',
+                          marginVertical: 20,
+                          marginLeft: 20
+                        }}
+                      />
+                    }
+                   </View>
+                  ))}
+
               </View>
           </View>
           <CustomSeparator/>
@@ -283,56 +360,56 @@ function Content({ issue }) {
                   </Text>
               </View>
           </Collapsible>
-        {/*<CustomSeparator />*/}
-        {/*<Text style={styles.title}>{i18n.t("attachments_label")}</Text>*/}
-        {/*{issue?.attachments.map((item) => (*/}
-        {/*  <Text style={[styles.text, { marginBottom: 10 }]}>{item.uri}</Text>*/}
-        {/*))}*/}
-        {/*<CustomSeparator />*/}
-        {/*<Text style={styles.title}>Activity</Text>*/}
-        {/*{comments?.map((item) => (*/}
-        {/*  <View style={{ flex: 1 }}>*/}
-        {/*    <View style={{ flexDirection: "row", marginVertical: 10, flex: 1 }}>*/}
-        {/*      <View*/}
-        {/*        style={{*/}
-        {/*          width: 32,*/}
-        {/*          height: 32,*/}
-        {/*          backgroundColor: "#f5ba74",*/}
-        {/*          borderRadius: 16,*/}
-        {/*        }}*/}
-        {/*      />*/}
-        {/*      <View style={{ marginLeft: 10 }}>*/}
-        {/*        <Text style={styles.text}>{item.name}</Text>*/}
-        {/*        <Text style={styles.text}>*/}
-        {/*          {moment(item.due_at).format("DD-MMM-YYYY")}*/}
-        {/*        </Text>*/}
-        {/*      </View>*/}
-        {/*    </View>*/}
-        {/*    <Text style={styles.text}>{item.comment}</Text>*/}
-        {/*  </View>*/}
-        {/*))}*/}
+        {/* <CustomSeparator /> */}
+        {/* <Text style={styles.title}>{i18n.t("attachments_label")}</Text> */}
+        {/* {issue?.attachments.map((item) => ( */}
+        {/*  <Text style={[styles.text, { marginBottom: 10 }]}>{item.uri}</Text> */}
+        {/* ))} */}
+        {/* <CustomSeparator /> */}
+        {/* <Text style={styles.title}>Activity</Text> */}
+        {/* {comments?.map((item) => ( */}
+        {/*  <View style={{ flex: 1 }}> */}
+        {/*    <View style={{ flexDirection: "row", marginVertical: 10, flex: 1 }}> */}
+        {/*      <View */}
+        {/*        style={{ */}
+        {/*          width: 32, */}
+        {/*          height: 32, */}
+        {/*          backgroundColor: "#f5ba74", */}
+        {/*          borderRadius: 16, */}
+        {/*        }} */}
+        {/*      /> */}
+        {/*      <View style={{ marginLeft: 10 }}> */}
+        {/*        <Text style={styles.text}>{item.name}</Text> */}
+        {/*        <Text style={styles.text}> */}
+        {/*          {moment(item.due_at).format("DD-MMM-YYYY")} */}
+        {/*        </Text> */}
+        {/*      </View> */}
+        {/*    </View> */}
+        {/*    <Text style={styles.text}>{item.comment}</Text> */}
+        {/*  </View> */}
+        {/* ))} */}
 
-        {/*<TextInput*/}
-        {/*  multiline*/}
-        {/*  numberOfLines={4}*/}
-        {/*  style={[styles.grmInput, { height: 80 }]}*/}
-        {/*  placeholder={i18n.t("comment_placeholder")}*/}
-        {/*  outlineColor={"#f6f6f6"}*/}
-        {/*  theme={theme}*/}
-        {/*  mode={"outlined"}*/}
-        {/*  value={newComment}*/}
-        {/*  onChangeText={(text) => setNewComment(text)}*/}
-        {/*/>*/}
+        {/* <TextInput */}
+        {/*  multiline */}
+        {/*  numberOfLines={4} */}
+        {/*  style={[styles.grmInput, { height: 80 }]} */}
+        {/*  placeholder={i18n.t("comment_placeholder")} */}
+        {/*  outlineColor={"#f6f6f6"} */}
+        {/*  theme={theme} */}
+        {/*  mode={"outlined"} */}
+        {/*  value={newComment} */}
+        {/*  onChangeText={(text) => setNewComment(text)} */}
+        {/* /> */}
 
-        {/*<Button*/}
-        {/*  theme={theme}*/}
-        {/*  style={{ alignSelf: "center", margin: 24 }}*/}
-        {/*  labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}*/}
-        {/*  mode="contained"*/}
-        {/*  onPress={onAddComment}*/}
-        {/*>*/}
-        {/*  Add comment*/}
-        {/*</Button>*/}
+        {/* <Button */}
+        {/*  theme={theme} */}
+        {/*  style={{ alignSelf: "center", margin: 24 }} */}
+        {/*  labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }} */}
+        {/*  mode="contained" */}
+        {/*  onPress={onAddComment} */}
+        {/* > */}
+        {/*  Add comment */}
+        {/* </Button> */}
         <CustomSeparator/>
           <Button
             theme={theme}
