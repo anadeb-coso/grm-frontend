@@ -255,5 +255,6 @@
 	"accept": "Cyemere",
 	"reject": "Cyange",
 	"you_are_rejecting": "Wanze iki kibazo ngo ntikazakemurwe muri uyu mushinga.\nSobanura neza impamvu.",
-	"complaint_rejected": "Iki kibazo ntabwo cyemewe. Ubutumwa burohererezwa uwagishyize muri porogaramu ndetse n'umuturage."
+	"complaint_rejected": "Iki kibazo ntabwo cyemewe. Ubutumwa burohererezwa uwagishyize muri porogaramu ndetse n'umuturage.",
+	"play_recorded_audio": "Play Recorded Audio",
 }
