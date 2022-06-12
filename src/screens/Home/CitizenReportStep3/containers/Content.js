@@ -213,7 +213,7 @@ function Content({ issue, eadl }) {
                 marginVertical: 13,
               }}
             >
-              Play Recorded Audio
+              {i18n.t('play_recorded_audio')}
             </Text>
           </View>
         )}

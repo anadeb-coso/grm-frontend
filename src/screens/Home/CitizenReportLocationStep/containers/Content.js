@@ -154,7 +154,7 @@ export function Content({ stepOneParams, stepTwoParams, issueCommunes, uniqueReg
                 textAlignVertical: 'top',
               },
             ]}
-            placeholder={i18n.t('step_2_placeholder_3')}
+            placeholder={i18n.t('step_2_placeholder_4')}
             outlineColor="#f6f6f6"
             theme={theme}
             mode="outlined"
