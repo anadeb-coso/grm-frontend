@@ -71,7 +71,7 @@ function DashboardStackScreen() {
       <HomeStack.Screen
         name="GRM"
         component={GRM}
-        options={({ navigation, route }) => customHeaderOptions('MGR')}
+        options={({ navigation, route }) => customHeaderOptions('MGP')}
       />
       <HomeStack.Screen
         name="CitizenReportIntro"

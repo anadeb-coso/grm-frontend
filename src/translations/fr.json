@@ -1,6 +1,6 @@
 {
   //Headers
-  "citizen_input_header": "Citizen Input",
+  "citizen_input_header": "Mécanisme de Gestion de Plainte",
   "summary_of_your_work": "Résumé de Votre Travail",
   //Onboarding
   "used_app_before": "Avez-vous déjà utilisé cette application ?",
@@ -9,7 +9,7 @@
   "welcome_login": "Bienvenu! Accédez à votre compte ici",
   "email": "Email",
   "password": "Mot de passe",
-  "login": "Nom d'utilisateur",
+  "login": "Se connecter",
   "email_provided": "Veuillez entrer l'adresse email fournie par votre superviseur et utiliser un mot de passe de votre choix.",
   "choose_password": "Choisissez votre mot de passe",
   "enter_new_password":  "Entrez votre nouveau mot de passe. Il doit contenir au moins 8 caractères.",
