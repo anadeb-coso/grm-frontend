@@ -146,7 +146,7 @@
   "issue_was_resolved": "La plainte a été résolue",
 
   // issue detail
-  "are_you_accepting": "Accepter une plainte / demande ? Acceptez-vous qu'il s'agisse d'une plainte / demande liée au projet ? ou la rejetez-vous car elle n'est pas pertinente ?",
+  "are_you_accepting": "Acceptez-vous qu'il s'agisse d'une plainte / demande liée au projet ? ou la rejetez-vous car elle n'est pas pertinente ?",
   "you_have_accepted": "Vous avez accepté la plainte ou la demande. Les notifications seront envoyées au citoyen et/ou à la personne qui l'a enregistrée au nom du citoyen.",
   "finished": "OK",
   "actions": "ACTIONS",
