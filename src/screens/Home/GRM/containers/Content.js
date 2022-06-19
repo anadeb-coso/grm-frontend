@@ -1,13 +1,14 @@
 import React from "react";
 import { View, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import i18n from "i18n-js";
 import SmallCard from "../components/SmallCard";
 import BigCard from "../components/BigCard";
 import Chart from "../../../../../assets/chart_line_solid.svg";
 import FileIcon from "../../../../../assets/file_alt_regular.svg";
 import TeamWorkIcon from "../../../../../assets/team-work.svg";
 import SyncIcon from "../../../../../assets/sync_alt_solid.svg";
-import i18n from "i18n-js";
+import SearchIcon from "../../../../../assets/magnifying-glass-solid.svg";
 
 function Content() {
   const navigation = useNavigation();
@@ -24,7 +25,7 @@ function Content() {
           image={require("../../../../../assets/purpleBg.png")}
           onCardPress={() => navigation.navigate("IssueSearch")}
           title={i18n.t("search_reports")}
-          icon={<SyncIcon />}
+          icon={<View style={{ padding: 15}}><SearchIcon /></View>}
         />
       </View>
         <BigCard
