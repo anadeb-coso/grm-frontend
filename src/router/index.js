@@ -11,6 +11,8 @@ import {
   Poppins_500Medium,
   Poppins_700Bold,
   Poppins_400Regular_Italic,
+  Poppins_300Light,
+  Poppins_200ExtraLight,
   useFonts,
 } from "@expo-google-fonts/poppins";
 
@@ -45,6 +47,8 @@ const Router = ({ theme }) => {
     Poppins_500Medium,
     Poppins_700Bold,
     Poppins_400Regular_Italic,
+    Poppins_300Light,
+    Poppins_200ExtraLight
   });
 
   if (loading || !fontsLoaded) return <View />;

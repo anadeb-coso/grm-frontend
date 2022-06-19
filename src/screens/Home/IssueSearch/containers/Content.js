@@ -52,6 +52,8 @@ function Content({ issues, eadl, statuses }) {
   function Item({ item, onPress, backgroundColor, textColor }) {
     return (
       <TouchableOpacity onPress={onPress} style={[styles.item]}>
+        <Text style={[styles.title, { flexShrink: 1 }]}>{item.category?.name?.length > 40 ? `${item.category.name.substring(0, 40)}...` : item.category?.name}</Text>
+        <Text style={[styles.subTitle, { flexShrink: 1 }]}>{item.description?.length > 40 ? `${item.description.substring(0, 40)}...` : item.description}</Text>
         <View
           style={{
             flexDirection: 'row',
@@ -59,8 +61,7 @@ function Content({ issues, eadl, statuses }) {
             justifyContent: 'space-between',
           }}
         >
-          <Text style={[styles.title]}>{item.tracking_code}</Text>
-          <Text style={[styles.title, { flexShrink: 1, marginHorizontal: 20 }]}>{item.title}</Text>
+          <Text style={[styles.subTitle]}>Code: {item.tracking_code}</Text>
           <MaterialCommunityIcons name="chevron-right-circle" size={24} color={colors.primary} />
         </View>
         {/* <Text style={[styles.title]}>{item.description}</Text> */}
@@ -69,6 +70,7 @@ function Content({ issues, eadl, statuses }) {
   }
 
   const renderItem = ({ item }) => {
+    console.log(item)
     const backgroundColor = item.id === selectedId ? '#6e3b6e' : '#f9c2ff';
     const color = item.id === selectedId ? 'white' : 'black';
 
@@ -151,8 +153,18 @@ const styles = StyleSheet.create({
     borderColor: '#f6f6f6',
   },
   title: {
-    fontFamily: 'Poppins_400Regular',
+    fontFamily: 'Poppins_500Medium',
     // fontSize: 12,
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    // lineHeight: 10,
+    letterSpacing: 0,
+    // textAlign: "left",
+    color: '#707070',
+  },
+  subTitle: {
+    fontFamily: 'Poppins_300Light',
+    fontSize: 12,
     fontWeight: 'normal',
     fontStyle: 'normal',
     // lineHeight: 10,
