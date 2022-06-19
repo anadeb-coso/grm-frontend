@@ -33,14 +33,14 @@ function Content() {
             </View>
           </View>
           <Text style={styles.stepNote}>{i18n.t('intro_text_0')}</Text>
-          <Text style={[styles.stepNote, { fontFamily: 'Poppins_400Regular_Italic' }]}>
+          <Text style={[styles.stepNote]}>
             {i18n.t('intro_text_1')}
           </Text>
-          <Text style={styles.stepNote}>"{i18n.t('intro_text_2')}"</Text>
-          <Text style={styles.stepNote}>"{i18n.t('intro_text_3')}"</Text>
-          <Text style={styles.stepNote}>"{i18n.t('intro_text_4')}"</Text>
-          <Text style={styles.stepNote}>"{i18n.t('intro_text_5')}"</Text>
-          <Text style={styles.stepNote}>"{i18n.t('intro_text_6')}"</Text>
+          <Text style={styles.stepNote}>{i18n.t('intro_text_2')}</Text>
+          <Text style={styles.stepNote}>{i18n.t('intro_text_3')}</Text>
+          <Text style={styles.stepNote}>{i18n.t('intro_text_4')}</Text>
+          <Text style={styles.stepNote}>{i18n.t('intro_text_5')}</Text>
+          <Text style={styles.stepNote}>{i18n.t('intro_text_6')}</Text>
         </View>
 
         <View style={{ paddingHorizontal: 50 }}>
