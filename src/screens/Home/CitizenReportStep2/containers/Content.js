@@ -38,7 +38,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const [checked, setChecked] = useState(false);
   const [additionalDetails, setAdditionalDetails] = useState(null);
   const [date, setDate] = useState(null);
-  const [attachment, setAttachment] = useState({});
+  const [attachments, setAttachments] = useState([]);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [recording, setRecording] = useState();
   const [items, setItems] = useState(issueTypes ?? []);
@@ -153,24 +153,28 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         [{ resize: { width: 1000, height: 1000 } }],
         { compress: 1, format: ImageManipulator.SaveFormat.PNG }
       );
-      setAttachment({ ...manipResult, id: new Date() });
+      setAttachments([...attachments, { ...manipResult, id: new Date() }]);
     }
   };
 
   const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: false,
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: false,
 
-      quality: 1,
-    });
-    if (!result.cancelled) {
-      const manipResult = await ImageManipulator.manipulateAsync(
-        result.localUri || result.uri,
-        [{ resize: { width: 1000, height: 1000 } }],
-        { compress: 1, format: ImageManipulator.SaveFormat.PNG }
-      );
-      setAttachment({ ...manipResult, id: new Date() });
+        quality: 1,
+      });
+      if (!result.cancelled) {
+        const manipResult = await ImageManipulator.manipulateAsync(
+          result.localUri || result.uri,
+          [{ resize: { width: 1000, height: 1000 } }],
+          { compress: 1, format: ImageManipulator.SaveFormat.PNG },
+        );
+        setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+      }
+    } catch (e) {
+      console.log(e)
     }
   };
 
@@ -201,14 +205,14 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
               ? { id: selectedIssueType.id, name: selectedIssueType.name }
               : null,
             ongoingEvent: checked,
-            attachment: attachment.uri
-              ? {
-                url: '',
-                id: attachment?.id,
-                uploaded: false,
-                local_url: attachment?.uri,
-                name: attachment?.uri.split('/').pop(),
-              }
+            attachments: attachments.length > 0
+              ? attachments.map((attachment) => ({
+                  url: '',
+                  id: attachment?.id,
+                  uploaded: false,
+                  local_url: attachment?.uri,
+                  name: attachment?.uri.split('/').pop(),
+                }))
               : undefined,
             recording: recordingURI
               ? {
@@ -404,29 +408,31 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             {i18n.t('step_2_share_photos')}
           </Text>
           <View>
-            {attachment.uri && (
-              <ImageBackground
-                source={{ uri: attachment.uri }}
-                style={{
-                  height: 80,
-                  width: 80,
-                  alignSelf: 'center',
-                  justifyContent: 'flex-end',
-                  marginVertical: 20,
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() => setAttachment({})}
-                  style={{
-                    alignItems: 'center',
-                    padding: 5,
-                    backgroundColor: 'rgba(36, 195, 139, 1)',
-                  }}
-                >
-                  <Text style={{ color: 'white' }}>X</Text>
-                </TouchableOpacity>
-              </ImageBackground>
-            )}
+            {attachments.length > 0 && attachments.map((attachment) => (
+                  <ImageBackground
+                    source={{ uri: attachment.uri }}
+                    style={{
+                      height: 80,
+                      width: 80,
+                      alignSelf: 'center',
+                      justifyContent: 'flex-end',
+                      marginVertical: 20,
+                    }}
+                  >
+                    <TouchableOpacity
+                      onPress={() => setAttachments([])}
+                      style={{
+                        alignItems: 'center',
+                        padding: 5,
+                        backgroundColor: 'rgba(36, 195, 139, 1)',
+                      }}
+                    >
+                      <Text style={{ color: 'white' }}>X</Text>
+                    </TouchableOpacity>
+                  </ImageBackground>
+                )
+            )
+            }
           </View>
           <View
             style={{

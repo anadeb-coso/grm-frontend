@@ -45,7 +45,7 @@ function Content({ issue, eadl }) {
       title: issue.issueSummary,
       description: issue.additionalDetails,
       attachments: [
-        ...(issue?.attachment ? [issue.attachment] : []),
+        ...(issue?.attachments ? issue.attachments : []),
         ...(issue?.recording ? [issue.recording] : []),
       ],
       status: {
