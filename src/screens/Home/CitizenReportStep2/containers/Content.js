@@ -141,37 +141,42 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   }, []);
 
   const openCamera = async () => {
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: false,
-      quality: 1,
-    });
+    if (attachments.length < 3) {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: false,
+        quality: 1,
+      });
 
-    if (!result.cancelled) {
-      const manipResult = await ImageManipulator.manipulateAsync(
-        result.localUri || result.uri,
-        [{ resize: { width: 1000, height: 1000 } }],
-        { compress: 1, format: ImageManipulator.SaveFormat.PNG }
-      );
-      setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+      if (!result.cancelled) {
+        const manipResult = await ImageManipulator.manipulateAsync(
+          result.localUri || result.uri,
+          [{ resize: { width: 1000, height: 1000 } }],
+          { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+        );
+        setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+      }
+
     }
   };
 
   const pickImage = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
-        allowsEditing: false,
+      if(attachments.length < 3){
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.All,
+          allowsEditing: false,
 
-        quality: 1,
-      });
-      if (!result.cancelled) {
-        const manipResult = await ImageManipulator.manipulateAsync(
-          result.localUri || result.uri,
-          [{ resize: { width: 1000, height: 1000 } }],
-          { compress: 1, format: ImageManipulator.SaveFormat.PNG },
-        );
-        setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+          quality: 1,
+        });
+        if (!result.cancelled) {
+          const manipResult = await ImageManipulator.manipulateAsync(
+            result.localUri || result.uri,
+            [{ resize: { width: 1000, height: 1000 } }],
+            { compress: 1, format: ImageManipulator.SaveFormat.PNG },
+          );
+          setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+        }
       }
     } catch (e) {
       console.log(e)
