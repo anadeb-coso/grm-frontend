@@ -217,9 +217,10 @@ function Content({ issue, eadl }) {
             </Text>
           </View>
         )}
-        {issue.attachment?.local_url && (
+        {issue.attachments && issue.attachments.length > 0 && issue.attachments.map((attachment) => (
+
           <Image
-            source={{ uri: issue.attachment.local_url }}
+            source={{ uri: attachment.local_url }}
             style={{
               height: 80,
               width: 80,
@@ -228,7 +229,7 @@ function Content({ issue, eadl }) {
               marginLeft: 20
             }}
           />
-        )}
+        ))}
       </View>
       <View style={{ paddingHorizontal: 50 }}>
         <Button

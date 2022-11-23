@@ -2,10 +2,11 @@ import { Map } from "immutable";
 import { createActions, handleActions } from "redux-actions";
 import { SyncToRemoteDatabase } from "../../utils/databaseManager";
 import {
+  clearEncryptedValues,
   getEncryptedData,
   removeEncryptedValue,
   storeEncryptedData,
-} from "../../utils/storageManager";
+} from '../../utils/storageManager';
 
 const defaultState = Map({
   userPassword: null,
@@ -50,8 +51,7 @@ export const { init, login, signUp, logout } = createActions({
     return { password: credentials.password, username: credentials.email };
   },
   LOGOUT: () => {
-    removeEncryptedValue("userPassword");
-    removeEncryptedValue("username");
+    clearEncryptedValues()
     return { password: null, username: null };
   },
 });

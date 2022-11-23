@@ -164,6 +164,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     try {
       if(attachments.length < 3){
         const result = await ImagePicker.launchImageLibraryAsync({
+          presentationStyle: 0,
           mediaTypes: ImagePicker.MediaTypeOptions.All,
           allowsEditing: false,
 
@@ -239,8 +240,14 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     };
 
 
+  function removeAttachment(index) {
+    const array = [...attachments];
+    array.splice(index, 1);
+    setAttachments(array);
+  }
+
   return (
-    <ScrollView>
+    <ScrollView showsVerticalScrollIndicator={false}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : null}>
         <View style={{ padding: 23 }}>
           <Text style={styles.stepText}>{i18n.t('step_3')}</Text>
@@ -396,7 +403,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             )}
           />
         </View>
-        <View style={{ paddingHorizontal: 50 }}>
+        <View style={{ paddingHorizontal: 40 }}>
           <Text
             style={{
               fontFamily: 'Poppins_400Regular',
@@ -412,20 +419,21 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
           >
             {i18n.t('step_2_share_photos')}
           </Text>
-          <View>
-            {attachments.length > 0 && attachments.map((attachment) => (
+          <View style={{flexDirection: 'row'}}>
+            {attachments.length > 0 && attachments.map((attachment, index) => (
                   <ImageBackground
                     source={{ uri: attachment.uri }}
                     style={{
                       height: 80,
                       width: 80,
+                      marginHorizontal: 1,
                       alignSelf: 'center',
                       justifyContent: 'flex-end',
                       marginVertical: 20,
                     }}
                   >
                     <TouchableOpacity
-                      onPress={() => setAttachments([])}
+                      onPress={() => removeAttachment(index)}
                       style={{
                         alignItems: 'center',
                         padding: 5,

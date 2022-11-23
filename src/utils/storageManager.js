@@ -52,3 +52,18 @@ export const removeEncryptedValue = async (key) => {
     // remove error
   }
 };
+
+export const clearEncryptedValues = async () => {
+  try {
+    const password = await getEncryptedData("userPassword")
+    const email = await getEncryptedData("username")
+    await removeEncryptedValue(`dbCredentials_${password}_${email.replace(
+      "@",
+      ""
+    )}`)
+    await removeEncryptedValue("userPassword");
+    await removeEncryptedValue("username");
+  } catch (e) {
+    // remove error
+  }
+};
