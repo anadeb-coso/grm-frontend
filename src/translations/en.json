@@ -183,4 +183,7 @@
   "complaint_rejected": "This complaint has been rejected. Notifications will be sent to the original recorder and the citizen.",
   "please_select_option": "Please select an option",
   "play_recorded_audio": "Play Recorded Audio",
+
+  //login page
+  "error_message_for_code": "Please fill in all cells"
 }

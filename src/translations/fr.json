@@ -184,5 +184,8 @@
   "you_are_rejecting": "Vous devez rejeter cette plainte ou demande. Veuillez fournir la justification.",
   "complaint_rejected": "Cette plainte ou demande a été rejetée car elle a été déterminée comme n'étant pas liée au projet. Une notification sera envoyée au citoyen et à la personne qui l'a enregistrée.",
   "please_select_option": "Veuillez sélectionner une option",
-  "play_recorded_audio": "Écoutez l'audio enregistré"
+  "play_recorded_audio": "Écoutez l'audio enregistré",
+  
+  //login page
+  "error_message_for_code": "Veuillez renseigner toutes les cellules"
 }
