@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 
 import styles from "./SignUp.style";
 import {
@@ -11,6 +11,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ToastAndroid,
 } from "react-native";
 import { ActivityIndicator, Button, Provider } from "react-native-paper";
 
@@ -20,7 +21,14 @@ import MapBg from "../../../../assets/map-bg.svg";
 import EADLLogo from "../../../../assets/eadl-logo.svg";
 import { TextInput } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
-import CodeInput from "react-native-code-input";
+// import CodeInput from "react-native-code-input";
+import {
+  CodeField,
+  Cursor,
+  useBlurOnFulfill,
+  useClearByFocusCell,
+} from 'react-native-confirmation-code-field';
+
 import MESSAGES from "../../../utils/formErrorMessages";
 import { emailRegex, passwordRegex } from "../../../utils/formUtils";
 import CodeLogo from "../../../../assets/code_logo.svg";
@@ -29,6 +37,9 @@ import BigCheck from "../../../../assets/big-check.svg";
 import API from "../../../services/API";
 import { colors } from "../../../utils/colors";
 import i18n from 'i18n-js';
+
+
+const CELL_COUNT = 6;
 
 function SignUp({ route }) {
   const dispatch = useDispatch();
@@ -42,6 +53,10 @@ function SignUp({ route }) {
   });
   const password = React.useRef({});
   password.current = watch("password", "");
+
+  const [value, setValue] = React.useState('');
+  const ref = useBlurOnFulfill({value, cellCount: CELL_COUNT});
+  const [props, getCellOnLayoutHandler] = useClearByFocusCell({value, setValue});
 
   const hideModal = () => setCodeModal(false);
   const hideSuccessModal = (response) => {
@@ -119,7 +134,7 @@ function SignUp({ route }) {
             >
               {i18n.t('please_enter_code')}
             </Text>
-            <CodeInput
+            {/* <CodeInput
               // secureTextEntry
               space={15}
               activeColor="#008a57"
@@ -138,7 +153,49 @@ function SignUp({ route }) {
               containerStyle={{ flex: 0.3 }}
               inputPosition="center"
               onFulfill={(code) => onSignUp(code)}
-            />
+            /> */}
+            <CodeField
+        ref={ref}
+        {...props}
+        // caretHidden={false}
+        value={value}
+        onChangeText={setValue}
+        cellCount={CELL_COUNT}
+        rootStyle={codeStyles.codeFieldRoot}
+        keyboardType="number-pad"
+        textContentType="oneTimeCode"
+        renderCell={({index, symbol, isFocused}) => (
+          <Text
+            key={index}
+            style={[codeStyles.cell, isFocused && codeStyles.focusCell]}
+            onLayout={getCellOnLayoutHandler(index)}>
+            {symbol || (isFocused ? <Cursor /> : null)}
+          </Text>
+        )}
+      />
+
+        <Button
+          style={[
+            styles.loginButton,
+            {
+              backgroundColor: errors ? "#24c38b" : "#dedede",
+              marginTop: "40%",
+            },
+          ]}
+          onPress={() => {
+              if(value.length === 6){
+                onSignUp(value);
+              }else{
+                ToastAndroid.show(`${i18n.t('error_message_for_code')}`, ToastAndroid.SHORT);
+              }
+            }
+          }
+          color={"white"}
+        >
+          {i18n.t('next')}
+        </Button>
+
+
           </KeyboardAvoidingView>
         </ScrollView>
       </Modal>
@@ -342,5 +399,23 @@ const modalStyles = StyleSheet.create({
     letterSpacing: 0,
     textAlign: "center",
     color: "#707070",
+  },
+});
+
+const codeStyles = StyleSheet.create({
+  root: {flex: 1, padding: 20},
+  title: {textAlign: 'center', fontSize: 30},
+  codeFieldRoot: {marginTop: 20},
+  cell: {
+    width: 40,
+    height: 40,
+    lineHeight: 38,
+    fontSize: 24,
+    borderWidth: 2,
+    borderColor: '#00000030',
+    textAlign: 'center',
+  },
+  focusCell: {
+    borderColor: '#000',
   },
 });
