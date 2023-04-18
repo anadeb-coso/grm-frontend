@@ -1,23 +1,26 @@
-import { Map } from "immutable";
-import { createActions, handleActions } from "redux-actions";
+import { Map } from 'immutable';
+import { createActions, handleActions } from 'redux-actions';
 
 const defaultState = Map({
   userDocument: null,
+  userCommune: null,
 });
 
-export const { setDocument } = createActions({
-  SET_DOCUMENT: (doc) => {
-    return { doc };
-  },
+export const { setDocument, setCommune } = createActions({
+  SET_DOCUMENT: (doc) => ({ doc }),
+  SET_COMMUNE: (doc) => ({ doc }),
 });
 
 const userDocument = handleActions(
   {
-    [setDocument]: (draft, { payload: { doc } }) => {
-      return draft.withMutations((state) => {
-        state.set("userDocument", doc);
-      });
-    },
+    [setDocument]: (draft, { payload: { doc } }) =>
+      draft.withMutations((state) => {
+        state.set('userDocument', doc);
+      }),
+    [setCommune]: (draft, { payload: { doc } }) =>
+      draft.withMutations((state) => {
+        state.set('userCommune', doc);
+      }),
   },
   defaultState
 );

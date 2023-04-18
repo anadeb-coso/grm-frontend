@@ -1,4 +1,4 @@
-const baseURL = 'https://senegal.e3grm.org';
+const baseURL = 'http://197.243.104.5/webapp';
 export { baseURL };
 function handleErrors(response) {
   if (response.non_field_errors) {

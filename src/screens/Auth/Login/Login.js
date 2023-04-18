@@ -1,27 +1,26 @@
 import React, { useState } from 'react';
 
+import i18n from 'i18n-js';
+import { Controller, useForm } from 'react-hook-form';
 import {
   Keyboard,
-  Text,
-  View,
-  TouchableWithoutFeedback,
   KeyboardAvoidingView,
-  TouchableOpacity,
   ScrollView,
+  Text,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
-import { ActivityIndicator, Button, Title, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Button, TextInput } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
-import { Controller, useForm } from 'react-hook-form';
+import API from '../../../services/API';
 import { login } from '../../../store/ducks/authentication.duck';
-import MapBg from '../../../../assets/map-bg.svg';
-import EADLLogo from '../../../../assets/eadl-logo.svg';
-import styles from './Login.style';
+import { setCommune, setDocument } from '../../../store/ducks/userDocument.duck';
+
+import { getUserDocs } from '../../../utils/databaseManager';
 import MESSAGES from '../../../utils/formErrorMessages';
 import { emailRegex, passwordRegex } from '../../../utils/formUtils';
-import API from '../../../services/API';
 import { getEncryptedData } from '../../../utils/storageManager';
-import { titles } from '../../Onboarding/containers/Content/utils';
-import i18n from 'i18n-js';
+import styles from './Login.style';
 
 function Login() {
   const dispatch = useDispatch();
@@ -34,16 +33,33 @@ function Login() {
       `dbCredentials_${data?.password}_${data?.email.replace('@', '')}`
     );
     if (dbConfig) {
+      console.log('<<<<<<>UUUUUUUUUUU>>>', data?.email);
+      const { userDoc, userCommune } = await getUserDocs(data?.email);
+      if (userDoc) {
+        dispatch(setDocument(userDoc)); // Dispatch setDocument action
+      }
+      if (userCommune) {
+        dispatch(setCommune(userCommune)); // Dispatch setCommune action
+      }
       dispatch(login(dbConfig, { email: data?.email, password: data?.password }));
     } else {
       new API()
         .login({ email: data?.email, password: data?.password })
-        .then((response) => {
-          setLoading(false);
+        .then(async (response) => {
           if (response.error) {
             return;
           }
+          console.log('<<<<<<>TTTTTTTTTTTTTTT>>>', data?.email);
+          const { userDoc, userCommune } = await getUserDocs(data?.email);
+          if (userDoc) {
+            dispatch(setDocument(userDoc)); // Dispatch setDocument action
+          }
+          if (userCommune) {
+            dispatch(setCommune(userCommune)); // Dispatch setCommune action
+          }
           dispatch(login(response, data));
+
+          setLoading(false);
         })
         .catch((error) => {
           setLoading(false);
@@ -92,8 +108,8 @@ function Login() {
               color: '#707070',
             }}
           >
-          {i18n.t('welcome_login')}
-        </Text>
+            {i18n.t('welcome_login')}
+          </Text>
         </View>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.loginScreenContainer}>

@@ -1,48 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { SafeAreaView } from 'react-native';
-import { useSelector } from 'react-redux';
-import Content from './containers/Content';
+import { useDispatch, useSelector } from 'react-redux';
+import { setCommune, setDocument } from '../../../store/ducks/userDocument.duck';
+import { getUserDocs } from '../../../utils/databaseManager';
 import { styles } from './CitizenReportLocationStep.styles';
-import LocalDatabase, { LocalCommunesDatabase } from '../../../utils/databaseManager';
+import Content from './containers/Content';
 
 function CitizenReportLocationStep({ route }) {
   const { params } = route;
-  const [issueCommunes, setIssueCommunes] = useState();
-  const [uniqueRegion, setUniqueRegion] = useState();
+  const dispatch = useDispatch();
+  //   const [issueCommunes, setIssueCommunes] = useState();
+  //   const [uniqueRegion, setUniqueRegion] = useState();
 
   const { username } = useSelector((state) => state.get('authentication').toObject());
+  const { userCommune } = useSelector((state) => state.get('userDocument').toObject());
+
+  console.log('>>>>>>>><<<<<TYR', { userCommune });
 
   useEffect(() => {
-    if (username) {
-      LocalDatabase.find({
-        selector: { 'representative.email': username },
-        // fields: ["_id", "commune", "phases"],
-      })
-        .then((result) => {
-          if (result.docs[0] && result.docs[0]?.unique_region === 1) {
-            LocalCommunesDatabase.find({
-              selector: { administrative_id: result.docs[0].administrative_region },
-            }).then((regions) => {
-              setUniqueRegion(regions.docs[0]);
-            });
-          }
+    const fetchUserCommune = async () => {
+      if (!userCommune) {
+        const { userDoc, userCommune: usrC } = await getUserDocs(username);
+        if (userDoc) {
+          dispatch(setDocument(userDoc)); // Dispatch setDocument action
+        }
+        if (usrC) {
+          dispatch(setCommune(usrC)); // Dispatch setCommune action
+        }
+      }
+    };
 
-          // handle result
-        })
-        .catch((err) => {
-          console.log('ERROR FETCHING EADL', err);
-        });
-    }
-  }, [username]);
-
-  useEffect(() => {
-    // FETCH LOCATIONS
-    LocalCommunesDatabase.find({
-      selector: { type: 'administrative_level' },
-    }).then((result) => {
-      setIssueCommunes(result?.docs);
-    });
-  }, []);
+    fetchUserCommune(); // Call the fetch userCommune data function
+  }, [dispatch, userCommune]); // Empty array as dependencies to run the effect only once on mount
 
   const customStyles = styles();
   return (
@@ -50,8 +39,8 @@ function CitizenReportLocationStep({ route }) {
       <Content
         stepOneParams={params.stepOneParams}
         stepTwoParams={params.stepTwoParams}
-        issueCommunes={issueCommunes}
-        uniqueRegion={uniqueRegion}
+        // issueCommunes={issueCommunes}
+        uniqueRegion={userCommune}
       />
     </SafeAreaView>
   );

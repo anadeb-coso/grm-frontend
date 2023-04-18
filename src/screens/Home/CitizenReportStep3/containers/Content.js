@@ -22,6 +22,7 @@ const theme = {
 };
 
 function Content({ issue, eadl }) {
+	console.log('>>>>',eadl)
   const navigation = useNavigation();
   // const incrementId = () => {
   //   const last = eadl.bp_projects[eadl.bp_projects.length - 1];
@@ -56,7 +57,7 @@ function Content({ issue, eadl }) {
       assignee: isAssignee ? { id: eadl._id, name: eadl.representative?.name } : '',
       reporter: {
         id: eadl._id,
-        name: eadl.representative.name,
+        name: eadl.representative?.name,
       },
       citizen_age_group: issue.ageGroup,
       citizen: issue.name ?? '',

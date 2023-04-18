@@ -1,6 +1,6 @@
 import * as Localization from "expo-localization";
 import i18n from "i18n-js";
-import en from './fr.json'; //TODO FIX THIS!!!
+import en from './rw.json'; //TODO FIX THIS!!!
 import fr from './fr.json';
 import rw from './rw.json';
 
