@@ -1,16 +1,16 @@
-import React, { useState } from "react";
-import { View, Text } from "react-native";
-import { styles } from "./Content.style";
-import { titles } from "./utils";
-import { Button, Title } from "react-native-paper";
+import { useNavigation } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Text, View } from 'react-native';
+import { Button, Title } from 'react-native-paper';
+import { styles } from './Content.style';
 // import { PreferencesContext } from "@providers/PreferencesProvider/PreferencesContext";
-import { useNavigation } from "@react-navigation/native";
-import ThinkingSVG from "../../../../../assets/think.svg";
-import EADLLogo from "../../../../../assets/eadl-logo.svg";
-import MapBg from "../../../../../assets/map-bg.svg";
-import i18n from 'i18n-js';
+import ThinkingSVG from '../../../../../assets/think.svg';
+import LanguageSelector from '../../../../translations/LanguageComponent';
 
-const Content = () => {
+function Content() {
+  const { t } = useTranslation();
+
   // const { colors } = useTheme();
   const [step, setStep] = useState(2);
   const customStyles = styles();
@@ -18,54 +18,53 @@ const Content = () => {
 
   return (
     <View style={customStyles.content}>
-      {/*<MapBg*/}
-      {/*  width={320}*/}
-      {/*  style={{*/}
-      {/*    position: "absolute",*/}
-      {/*    top: -10,*/}
-      {/*    left: 20,*/}
-      {/*    bottom: 0,*/}
-      {/*  }}*/}
-      {/*/>*/}
+      {/* <MapBg */}
+      {/*  width={320} */}
+      {/*  style={{ */}
+      {/*    position: "absolute", */}
+      {/*    top: -10, */}
+      {/*    left: 20, */}
+      {/*    bottom: 0, */}
+      {/*  }} */}
+      {/* /> */}
 
-      <View>
-        {/*<EADLLogo height={90} width={180} style={{ marginTop: 100 }} />*/}
-      </View>
-      {/*</ImageBackground>*/}
+      <View>{/* <EADLLogo height={90} width={180} style={{ marginTop: 100 }} /> */}</View>
+      {/* </ImageBackground> */}
       <View>
         <ThinkingSVG />
       </View>
-      {/*<Title style={customStyles.upperTitle}>Welcome to EADL</Title>*/}
+      {/* <Title style={customStyles.upperTitle}>Welcome to EADL</Title> */}
       <View>
-        <Title style={customStyles.title}>{i18n.t('used_app_before')}</Title>
+        <Title style={customStyles.title}>{t('used_app_before')}</Title>
       </View>
 
       <View style={customStyles.buttonsView}>
         <Button
-          style={[customStyles.button, { backgroundColor: "#24c38b" }]}
+          style={[customStyles.button, { backgroundColor: '#24c38b' }]}
           mode="contained"
           onPress={() => {
-            navigation.navigate("AuthStack", { screen: "Login" });
+            navigation.navigate('AuthStack', { screen: 'Login' });
           }}
         >
-          {i18n.t('yes')}
+          {t('yes')}
         </Button>
         <Button
           style={customStyles.button}
-          color={"white"}
+          color="white"
           mode="contained"
           onPress={() => {
-            navigation.navigate("AuthStack", { screen: "SignUp" });
+            navigation.navigate('AuthStack', { screen: 'SignUp' });
           }}
         >
-          {i18n.t('no')}
+          {t('no')}
         </Button>
       </View>
       <View>
         <Text>V:1.0.1</Text>
       </View>
+      <LanguageSelector />
     </View>
   );
-};
+}
 
 export default Content;

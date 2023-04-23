@@ -1,11 +1,11 @@
-import React from 'react';
-import { View, ScrollView, Text, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Dimensions, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { Button } from 'react-native-paper';
-import i18n from 'i18n-js';
 import CrowdImage from '../../../../../assets/crowd.svg';
-import { styles } from './Content.styles';
 import { colors } from '../../../../utils/colors';
+import { styles } from './Content.styles';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -20,6 +20,8 @@ const theme = {
 };
 
 function Content() {
+  const { t } = useTranslation();
+
   const navigation = useNavigation();
 
   return (
@@ -29,18 +31,16 @@ function Content() {
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
             <CrowdImage height={90} width={screenWidth * 0.3} />
             <View style={{ marginLeft: 10, flex: 1 }}>
-              <Text style={styles.title}>{i18n.t('welcome_citizen_input')}</Text>
+              <Text style={styles.title}>{t('welcome_citizen_input')}</Text>
             </View>
           </View>
-          <Text style={styles.stepNote}>{i18n.t('intro_text_0')}</Text>
-          <Text style={[styles.stepNote]}>
-            {i18n.t('intro_text_1')}
-          </Text>
-          <Text style={styles.stepNote}>{i18n.t('intro_text_2')}</Text>
-          <Text style={styles.stepNote}>{i18n.t('intro_text_3')}</Text>
-          <Text style={styles.stepNote}>{i18n.t('intro_text_4')}</Text>
-          <Text style={styles.stepNote}>{i18n.t('intro_text_5')}</Text>
-          <Text style={styles.stepNote}>{i18n.t('intro_text_6')}</Text>
+          <Text style={styles.stepNote}>{t('intro_text_0')}</Text>
+          <Text style={[styles.stepNote]}>{t('intro_text_1')}</Text>
+          <Text style={styles.stepNote}>{t('intro_text_2')}</Text>
+          <Text style={styles.stepNote}>{t('intro_text_3')}</Text>
+          <Text style={styles.stepNote}>{t('intro_text_4')}</Text>
+          <Text style={styles.stepNote}>{t('intro_text_5')}</Text>
+          <Text style={styles.stepNote}>{t('intro_text_6')}</Text>
         </View>
 
         <View style={{ paddingHorizontal: 50 }}>
@@ -53,7 +53,7 @@ function Content() {
               navigation.navigate('CitizenReport');
             }}
           >
-            {i18n.t('next')}
+            {t('next')}
           </Button>
         </View>
       </KeyboardAvoidingView>

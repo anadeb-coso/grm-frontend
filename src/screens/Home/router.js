@@ -1,32 +1,32 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
-import posed from 'react-native-pose';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import WorkInProgress from './WorkInProgress';
+import { createStackNavigator } from '@react-navigation/stack';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import posed from 'react-native-pose';
 import BottomTabNavigator from '../../components/Navigation/BottomTabNavigator';
-import Notifications from './Notifications';
-import ParticipatoryBudgetingList from './ParticipatoryBudgeting/ParticipatoryBudgetingList';
-import PhaseTasks from './PhaseTasks/PhaseTasks';
-import DocumentTask from './DocumentTask/DocumentTask';
-import Diagnostics from './Diagnostics';
-import SyncAttachments from './SyncAttachments/SyncAttachments';
-import RegisterSubprojects from './RegisterSubprojects/RegisterSubprojects';
-import RegisterVotesActivity from './RegisterVotesActivity/RegisterVotesActivity';
+import { colors } from '../../utils/colors';
 import BudgetAllocation from './BudgetAllocation/BudgetAllocation';
 import BudgetLog from './BudgetLog/BudgetLog';
-import GRM from './GRM/GRM';
 import CitizenReport from './CitizenReport/CitizenReport';
+import CitizenReportContactInfo from './CitizenReportContactInfo/CitizenReportContactInfo';
+import CitizenReportIntro from './CitizenReportIntro/CitizenReportIntro';
 import CitizenReportStep2 from './CitizenReportStep2/CitizenReportStep2';
 import CitizenReportStep3 from './CitizenReportStep3/CitizenReportStep3';
 import CitizenReportStep4 from './CitizenReportStep4/CitizenReportStep4';
-import IssueSearch from './IssueSearch/IssueSearch';
-import CitizenReportContactInfo from './CitizenReportContactInfo/CitizenReportContactInfo';
+import Diagnostics from './Diagnostics';
+import DocumentTask from './DocumentTask/DocumentTask';
+import GRM from './GRM/GRM';
 import IssueDetail from './IssueDetail/IssueDetail';
-import CitizenReportIntro from './CitizenReportIntro/CitizenReportIntro';
-import { colors } from '../../utils/colors';
-import i18n from 'i18n-js';
+import IssueSearch from './IssueSearch/IssueSearch';
+import Notifications from './Notifications';
+import ParticipatoryBudgetingList from './ParticipatoryBudgeting/ParticipatoryBudgetingList';
+import PhaseTasks from './PhaseTasks/PhaseTasks';
+import RegisterSubprojects from './RegisterSubprojects/RegisterSubprojects';
+import RegisterVotesActivity from './RegisterVotesActivity/RegisterVotesActivity';
+import SyncAttachments from './SyncAttachments/SyncAttachments';
+import WorkInProgress from './WorkInProgress';
 
 import CitizenReportLocationStep from './CitizenReportLocationStep/CitizenReportLocationStep';
 import IssueActions from './IssueActions/IssueActions';
@@ -65,6 +65,8 @@ const AnimatedIonicons = posed(Ionicons)(iconConfig);
 const HomeStack = createStackNavigator();
 const NotificationsStack = createStackNavigator();
 function DashboardStackScreen() {
+  const { t } = useTranslation();
+
   return (
     <HomeStack.Navigator>
       {/* GRM Module */}
@@ -76,38 +78,38 @@ function DashboardStackScreen() {
       <HomeStack.Screen
         name="CitizenReportIntro"
         component={CitizenReportIntro}
-        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
+        options={({ navigation, route }) => customHeaderOptions(t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReport"
         component={CitizenReport}
-        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
+        options={({ navigation, route }) => customHeaderOptions(t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportContactInfo"
         component={CitizenReportContactInfo}
-        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
+        options={({ navigation, route }) => customHeaderOptions(t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportStep2"
         component={CitizenReportStep2}
-        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
+        options={({ navigation, route }) => customHeaderOptions(t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportLocationStep"
         component={CitizenReportLocationStep}
-        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
+        options={({ navigation, route }) => customHeaderOptions(t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportStep3"
         component={CitizenReportStep3}
-        options={({ navigation, route }) => customHeaderOptions(i18n.t('citizen_input_header'))}
+        options={({ navigation, route }) => customHeaderOptions(t('citizen_input_header'))}
       />
       <HomeStack.Screen
         name="CitizenReportStep4"
         component={CitizenReportStep4}
         options={({ navigation, route }) => ({
-          ...customHeaderOptions(i18n.t('citizen_input_header')),
+          ...customHeaderOptions(t('citizen_input_header')),
           headerLeft: () => null,
         })}
       />
@@ -115,7 +117,7 @@ function DashboardStackScreen() {
       <HomeStack.Screen
         name="IssueSearch"
         component={IssueSearch}
-        options={({ navigation, route }) => customHeaderOptions(i18n.t('summary_of_your_work'))}
+        options={({ navigation, route }) => customHeaderOptions(t('summary_of_your_work'))}
       />
 
       {/* <HomeStack.Screen */}
@@ -197,6 +199,8 @@ function NotificationsStackScreen() {
 }
 
 function IssueDetailTabsStack(props) {
+  const { t } = useTranslation();
+
   const temp = props.route.params.item;
   return (
     <TopTab.Navigator
@@ -209,19 +213,19 @@ function IssueDetailTabsStack(props) {
       <TopTab.Screen
         name="Actions"
         initialParams={{ item: temp }}
-        options={{ tabBarLabel: i18n.t('actions') }}
+        options={{ tabBarLabel: t('actions') }}
         component={IssueActions}
       />
       <TopTab.Screen
         name="IssueDetail"
         initialParams={{ item: temp }}
-        options={{ tabBarLabel: i18n.t('details') }}
+        options={{ tabBarLabel: t('details') }}
         component={IssueDetail}
       />
       <TopTab.Screen
         name="History"
         initialParams={{ item: temp }}
-        options={{ tabBarLabel: i18n.t('history') }}
+        options={{ tabBarLabel: t('history') }}
         component={IssueHistory}
       />
     </TopTab.Navigator>

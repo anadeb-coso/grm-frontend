@@ -1,21 +1,36 @@
-import * as Localization from "expo-localization";
-import i18n from "i18n-js";
-import en from './rw.json'; //TODO FIX THIS!!!
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import en from './en.json';
 import fr from './fr.json';
 import rw from './rw.json';
 
-// Set the key-value pairs for the different languages you want to support.
-i18n.translations = {
-  fr,
-  rw,
-  en,
-};
-// Set the locale once at the beginning of your app.
-i18n.defaultLocale = 'fr';
-i18n.locale = 'fr';
-i18n.locale = Localization.locale;
+const { languageDetectorPlugin } = require('./LanguageDetectorPlugin');
 
-// Set the locale once at the beginning of your app.
-i18n.locale = Localization.locale;
-// When a value is missing from a language it'll fallback to another language with the key present.
-i18n.fallbacks = true;
+// set default fallback language
+export const DEFAULT_LANGUAGE = 'en';
+
+const resources = {
+  en: {
+    translation: en,
+  },
+  rw: {
+    translation: rw,
+  },
+  fr: {
+    translation: fr,
+  },
+};
+
+i18n
+  .use(initReactI18next)
+  .use(languageDetectorPlugin)
+  .init({
+    resources,
+    // language to use if translations in user language are not available
+    fallbackLng: DEFAULT_LANGUAGE,
+    interpolation: {
+      escapeValue: false, // not needed for react!!
+    },
+  });
+
+export default i18n;

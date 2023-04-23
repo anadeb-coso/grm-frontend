@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
-import i18n from 'i18n-js';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
   TextInput as NativeTextInput,
@@ -24,6 +24,8 @@ const theme = {
 };
 
 export function Content({ stepOneParams, stepTwoParams, uniqueRegion }) {
+  const { t } = useTranslation();
+
   const navigation = useNavigation();
   //   const [communes, setCommunes] = useState(issueCommunes);
   //   const [commune1, setCommune1] = useState(null);
@@ -90,9 +92,9 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion }) {
     <ScrollView>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : null}>
         <View style={{ padding: 23 }}>
-          <Text style={styles.stepText}>{i18n.t('step_4')}</Text>
-          <Text style={styles.stepDescription}>{i18n.t('step_location_description')}</Text>
-          <Text style={styles.stepNote}>{i18n.t('step_location_body')}</Text>
+          <Text style={styles.stepText}>{t('step_4')}</Text>
+          <Text style={styles.stepDescription}>{t('step_location_description')}</Text>
+          <Text style={styles.stepNote}>{t('step_location_body')}</Text>
         </View>
 
         {/* {!uniqueRegion && communes && (
@@ -101,7 +103,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion }) {
               label: 'name',
               value: 'administrative_id',
             }}
-            placeholder={i18n.t('step_location_dropdown_placeholder')}
+            placeholder={t('step_location_dropdown_placeholder')}
             value={commune1}
             disabled={!!uniqueRegion}
             items={filterCommunes(null)}
@@ -123,7 +125,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion }) {
                 value: 'administrative_id',
               }}
               disabled={!!uniqueRegion}
-              placeholder={i18n.t('step_location_dropdown_placeholder')}
+              placeholder={t('step_location_dropdown_placeholder')}
               value={pickersState[index]}
               items={filterCommunes(parent, index)}
               onSelectItem={(item) => setLocation(item)}
@@ -140,7 +142,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion }) {
           </View>
         ))} */}
         <View style={{ paddingHorizontal: 50 }}>
-          <Text style={styles.stepNote}>{i18n.t('step_location_input_explanation')}</Text>
+          <Text style={styles.stepNote}>{t('step_location_input_explanation')}</Text>
           <TextInput
             multiline
             numberOfLines={4}
@@ -152,7 +154,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion }) {
                 textAlignVertical: 'top',
               },
             ]}
-            placeholder={i18n.t('step_2_placeholder_4')}
+            placeholder={t('step_2_placeholder_4')}
             outlineColor="#f6f6f6"
             theme={theme}
             mode="outlined"
@@ -195,7 +197,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion }) {
               });
             }}
           >
-            {i18n.t('next')}
+            {t('next')}
           </Button>
         </View>
       </KeyboardAvoidingView>

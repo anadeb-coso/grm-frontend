@@ -1,9 +1,11 @@
-import { StyleSheet, Text, View } from 'react-native';
-import i18n from 'i18n-js';
 import * as PropTypes from 'prop-types';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { StyleSheet, Text, View } from 'react-native';
 
 export default function ListHeader(props) {
+  const { t } = useTranslation();
+
   return (
     <View>
       <View
@@ -32,21 +34,20 @@ export default function ListHeader(props) {
             color: '#707070',
           }}
         >
-          {i18n.t('overdue_label')}:{' '}
+          {t('overdue_label')}:{' '}
           {props.overdue ? <Text style={{ color: '#ef6a78' }}>{props.overdue}</Text> : '--'}
         </Text>
         <Text style={styles.statisticsText}>
-          {i18n.t('assigned_to_you_label')}: {props.length}
+          {t('assigned_to_you_label')}: {props.length}
         </Text>
         <Text style={styles.statisticsText}>
-          {i18n.t('resolved_by_you_label')}:{' '}
-          {props.average ? <Text style>issues.average</Text> : '--'}
+          {t('resolved_by_you_label')}: {props.average ? <Text style>issues.average</Text> : '--'}
         </Text>
         <Text style={styles.statisticsText}>
-          {i18n.t('average_days_label')}: {props.average ? <Text style>issues.average</Text> : '--'}
+          {t('average_days_label')}: {props.average ? <Text style>issues.average</Text> : '--'}
         </Text>
         <Text style={styles.statisticsText}>
-          {i18n.t('average_satisfaction_label')}:{' '}
+          {t('average_satisfaction_label')}:{' '}
           {props.average ? <Text style>issues.average</Text> : '--'}
         </Text>
       </View>
@@ -62,7 +63,7 @@ export default function ListHeader(props) {
             color: '#707070',
           }}
         >
-          {i18n.t('your_issues_label')}:
+          {t('your_issues_label')}:
         </Text>
       </View>
     </View>

@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { Audio } from 'expo-av';
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as ImagePicker from 'expo-image-picker';
+import moment from 'moment';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  View,
+  ImageBackground,
+  KeyboardAvoidingView,
+  TextInput as NativeTextInput,
+  Platform,
   ScrollView,
   Text,
-  Platform,
-  KeyboardAvoidingView,
-  ImageBackground,
   TouchableOpacity,
-  TextInput as NativeTextInput,
+  View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Button, Checkbox, IconButton, TextInput } from 'react-native-paper';
-import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
-import moment from 'moment';
-import { Audio } from 'expo-av';
-import i18n from 'i18n-js';
 import CustomDropDownPicker from '../../../../components/CustomDropDownPicker/CustomDropDownPicker';
 import { colors } from '../../../../utils/colors';
 import { styles } from './Content.styles';
@@ -32,6 +32,8 @@ const theme = {
 };
 
 function Content({ stepOneParams, issueCategories, issueTypes }) {
+  const { t } = useTranslation();
+
   const navigation = useNavigation();
   const [pickerValue, setPickerValue] = useState(null);
   const [pickerValue2, setPickerValue2] = useState(null);
@@ -156,13 +158,12 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         );
         setAttachments([...attachments, { ...manipResult, id: new Date() }]);
       }
-
     }
   };
 
   const pickImage = async () => {
     try {
-      if(attachments.length < 3){
+      if (attachments.length < 3) {
         const result = await ImagePicker.launchImageLibraryAsync({
           presentationStyle: 0,
           mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -174,20 +175,20 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
           const manipResult = await ImageManipulator.manipulateAsync(
             result.localUri || result.uri,
             [{ resize: { width: 1000, height: 1000 } }],
-            { compress: 1, format: ImageManipulator.SaveFormat.PNG },
+            { compress: 1, format: ImageManipulator.SaveFormat.PNG }
           );
           setAttachments([...attachments, { ...manipResult, id: new Date() }]);
         }
       }
     } catch (e) {
-      console.log(e)
+      console.log(e);
     }
   };
 
   const getCategory = (value) => {
     const result = issueCategories.filter((obj) => obj.name === value);
     let _category;
-    if(result[0]) {
+    if (result[0]) {
       _category = {
         id: result[0].id,
         name: result[0].name,
@@ -195,23 +196,23 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         assigned_department: result[0].assigned_department?.id,
         administrative_level: result[0].assigned_department?.administrative_level,
       };
-
     }
     return _category;
   };
 
   const goToNextStep = () => {
-      if (pickerValue2 !== null && selectedIssueType !== null) {
-        setIssueTypeCategoryError(false)
-        navigation.navigate('CitizenReportLocationStep', {
-          stepOneParams,
-          stepTwoParams: {
-            date: date ? date.toISOString() : undefined,
-            issueType: selectedIssueType
-              ? { id: selectedIssueType.id, name: selectedIssueType.name }
-              : null,
-            ongoingEvent: checked,
-            attachments: attachments.length > 0
+    if (pickerValue2 !== null && selectedIssueType !== null) {
+      setIssueTypeCategoryError(false);
+      navigation.navigate('CitizenReportLocationStep', {
+        stepOneParams,
+        stepTwoParams: {
+          date: date ? date.toISOString() : undefined,
+          issueType: selectedIssueType
+            ? { id: selectedIssueType.id, name: selectedIssueType.name }
+            : null,
+          ongoingEvent: checked,
+          attachments:
+            attachments.length > 0
               ? attachments.map((attachment) => ({
                   url: '',
                   id: attachment?.id,
@@ -220,8 +221,8 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                   name: attachment?.uri.split('/').pop(),
                 }))
               : undefined,
-            recording: recordingURI
-              ? {
+          recording: recordingURI
+            ? {
                 url: '',
                 id: recordingURI.split('/').pop(),
                 uploaded: false,
@@ -229,16 +230,15 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                 isAudio: true,
                 name: recordingURI.split('/').pop(),
               }
-              : undefined,
-            category: getCategory(pickerValue2),
-            additionalDetails,
-          },
-        });
-      } else {
-        setIssueTypeCategoryError(true)
-      }
-    };
-
+            : undefined,
+          category: getCategory(pickerValue2),
+          additionalDetails,
+        },
+      });
+    } else {
+      setIssueTypeCategoryError(true);
+    }
+  };
 
   function removeAttachment(index) {
     const array = [...attachments];
@@ -250,9 +250,9 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     <ScrollView showsVerticalScrollIndicator={false}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : null}>
         <View style={{ padding: 23 }}>
-          <Text style={styles.stepText}>{i18n.t('step_3')}</Text>
-          <Text style={styles.stepDescription}>{i18n.t('step_2_subtitle')}</Text>
-          <Text style={styles.stepNote}>{i18n.t('step_2_explanation')}</Text>
+          <Text style={styles.stepText}>{t('step_3')}</Text>
+          <Text style={styles.stepDescription}>{t('step_2_subtitle')}</Text>
+          <Text style={styles.stepNote}>{t('step_2_explanation')}</Text>
         </View>
         <View
           style={{
@@ -287,7 +287,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             mode="contained"
             onPress={showDatePicker}
           >
-            {date ? moment(date).format('DD-MMMM-YY') : i18n.t('step_2_select_date')}
+            {date ? moment(date).format('DD-MMMM-YY') : t('step_2_select_date')}
           </Button>
           <Button
             compact
@@ -301,7 +301,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             uppercase={false}
             onPress={() => setDate(new Date())}
           >
-            {i18n.t('step_2_set_today')}
+            {t('step_2_set_today')}
           </Button>
         </View>
         <View
@@ -319,7 +319,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
               setChecked(!checked);
             }}
           />
-          <Text style={[styles.stepNote, { flex: 1 }]}>{i18n.t('step_2_ongoing_hint')}</Text>
+          <Text style={[styles.stepNote, { flex: 1 }]}>{t('step_2_ongoing_hint')}</Text>
         </View>
         <View
           style={{
@@ -344,7 +344,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
               label: 'name',
               value: 'name',
             }}
-            placeholder={i18n.t('step_2_placeholder_1')}
+            placeholder={t('step_2_placeholder_1')}
             value={pickerValue}
             items={items}
             setPickerValue={setPickerValue}
@@ -361,14 +361,16 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
               confidentiality_level: 'confidentiality_level',
               assigned_department: 'assigned_department',
             }}
-            placeholder={i18n.t('step_2_placeholder_2')}
+            placeholder={t('step_2_placeholder_2')}
             value={pickerValue2}
             items={items2}
             setPickerValue={setPickerValue2}
             setItems={setItems2}
           />
         </View>
-        {issueTypeCategoryError && <Text style={styles.errorText}>{i18n.t('please_select_option')}</Text>}
+        {issueTypeCategoryError && (
+          <Text style={styles.errorText}>{t('please_select_option')}</Text>
+        )}
 
         <View style={{ paddingHorizontal: 50 }}>
           <TextInput
@@ -382,7 +384,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                 textAlignVertical: 'top',
               },
             ]}
-            placeholder={i18n.t('step_2_placeholder_3')}
+            placeholder={t('step_2_placeholder_3')}
             outlineColor="#f6f6f6"
             theme={theme}
             mode="outlined"
@@ -417,35 +419,34 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
               marginVertical: 13,
             }}
           >
-            {i18n.t('step_2_share_photos')}
+            {t('step_2_share_photos')}
           </Text>
-          <View style={{flexDirection: 'row'}}>
-            {attachments.length > 0 && attachments.map((attachment, index) => (
-                  <ImageBackground
-                    source={{ uri: attachment.uri }}
+          <View style={{ flexDirection: 'row' }}>
+            {attachments.length > 0 &&
+              attachments.map((attachment, index) => (
+                <ImageBackground
+                  source={{ uri: attachment.uri }}
+                  style={{
+                    height: 80,
+                    width: 80,
+                    marginHorizontal: 1,
+                    alignSelf: 'center',
+                    justifyContent: 'flex-end',
+                    marginVertical: 20,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => removeAttachment(index)}
                     style={{
-                      height: 80,
-                      width: 80,
-                      marginHorizontal: 1,
-                      alignSelf: 'center',
-                      justifyContent: 'flex-end',
-                      marginVertical: 20,
+                      alignItems: 'center',
+                      padding: 5,
+                      backgroundColor: 'rgba(36, 195, 139, 1)',
                     }}
                   >
-                    <TouchableOpacity
-                      onPress={() => removeAttachment(index)}
-                      style={{
-                        alignItems: 'center',
-                        padding: 5,
-                        backgroundColor: 'rgba(36, 195, 139, 1)',
-                      }}
-                    >
-                      <Text style={{ color: 'white' }}>X</Text>
-                    </TouchableOpacity>
-                  </ImageBackground>
-                )
-            )
-            }
+                    <Text style={{ color: 'white' }}>X</Text>
+                  </TouchableOpacity>
+                </ImageBackground>
+              ))}
           </View>
           <View
             style={{
@@ -461,7 +462,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
               onPress={pickImage}
               uppercase={false}
             >
-              {i18n.t('step_2_upload_attachment')}
+              {t('step_2_upload_attachment')}
             </Button>
             <View style={styles.iconButtonStyle}>
               <IconButton icon="camera" color={colors.primary} size={24} onPress={openCamera} />
@@ -516,7 +517,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             mode="contained"
             onPress={goToNextStep}
           >
-            {i18n.t('next')}
+            {t('next')}
           </Button>
         </View>
       </KeyboardAvoidingView>

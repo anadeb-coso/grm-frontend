@@ -1,12 +1,12 @@
-import React from 'react';
-import { View, ScrollView, Text, Dimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Button } from 'react-native-paper';
 import { useBackHandler } from '@react-native-community/hooks';
-import i18n from 'i18n-js';
-import { styles } from './Content.styles';
+import { useNavigation } from '@react-navigation/native';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Dimensions, ScrollView, Text, View } from 'react-native';
+import { Button } from 'react-native-paper';
 import LockImage from '../../../../../assets/lock.svg';
 import { colors } from '../../../../utils/colors';
+import { styles } from './Content.styles';
 
 const screenWidth = Dimensions.get('window').width;
 const screenHeight = Dimensions.get('window').height;
@@ -22,6 +22,8 @@ const theme = {
 };
 
 function Content({ issue }) {
+  const { t } = useTranslation();
+
   const navigation = useNavigation();
 
   useBackHandler(
@@ -34,13 +36,13 @@ function Content({ issue }) {
   return (
     <ScrollView>
       <View style={{ padding: 23 }}>
-        <Text style={styles.stepText}>{i18n.t('step_6')}</Text>
-        <Text style={styles.stepSubtitle}>{i18n.t('step_4_subtitle')}</Text>
-        <Text style={styles.stepDescription}>{i18n.t('step_4_description')}</Text>
-        <Text style={styles.stepDescription}></Text>
-        <Text style={styles.stepDescription}>{i18n.t('step_5_description')}</Text>
-        <Text style={styles.stepDescription}></Text>
-        <Text style={styles.stepDescription}>{i18n.t('step_6_description')}</Text>
+        <Text style={styles.stepText}>{t('step_6')}</Text>
+        <Text style={styles.stepSubtitle}>{t('step_4_subtitle')}</Text>
+        <Text style={styles.stepDescription}>{t('step_4_description')}</Text>
+        <Text style={styles.stepDescription} />
+        <Text style={styles.stepDescription}>{t('step_5_description')}</Text>
+        <Text style={styles.stepDescription} />
+        <Text style={styles.stepDescription}>{t('step_6_description')}</Text>
       </View>
 
       <LockImage
@@ -48,9 +50,7 @@ function Content({ issue }) {
         height={screenHeight * 0.2}
         width={screenWidth * 0.5}
       />
-      <Text style={[styles.stepSubtitle, { textAlign: 'center' }]}>
-        {i18n.t('step_4_issue_code')}
-      </Text>
+      <Text style={[styles.stepSubtitle, { textAlign: 'center' }]}>{t('step_4_issue_code')}</Text>
       <Text
         style={{
           fontSize: 49,
@@ -81,7 +81,7 @@ function Content({ issue }) {
         {/*    mode="contained" */}
         {/*    onPress={() => console.log("Pressed")} */}
         {/*  > */}
-        {/*    {i18n.t("step_4_short_code")} */}
+        {/*    {t("step_4_short_code")} */}
         {/*  </Button> */}
         {/*  <Button */}
         {/*    theme={theme} */}
@@ -94,7 +94,7 @@ function Content({ issue }) {
         {/*    mode="contained" */}
         {/*    onPress={() => console.log("Pressed")} */}
         {/*  > */}
-        {/*    {i18n.t("step_4_two_word_code")} */}
+        {/*    {t("step_4_two_word_code")} */}
         {/*  </Button> */}
         {/* </View> */}
 
@@ -104,7 +104,7 @@ function Content({ issue }) {
           mode="contained"
           onPress={() => navigation.navigate('GRM')}
         >
-          {i18n.t('step_4_back_text')}
+          {t('step_4_back_text')}
         </Button>
       </View>
     </ScrollView>

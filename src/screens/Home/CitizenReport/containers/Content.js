@@ -1,42 +1,38 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  ScrollView,
-  Text,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { styles } from "./Content.styles";
-import { Button, RadioButton, TextInput } from "react-native-paper";
-import { colors } from "../../../../utils/colors";
-import CustomDropDownPicker from "../../../../components/CustomDropDownPicker/CustomDropDownPicker";
-import i18n from "i18n-js";
+import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Button, RadioButton, TextInput } from 'react-native-paper';
+import CustomDropDownPicker from '../../../../components/CustomDropDownPicker/CustomDropDownPicker';
+import { colors } from '../../../../utils/colors';
+import { styles } from './Content.styles';
 
 const theme = {
   roundness: 12,
   colors: {
     ...colors,
-    background: "white",
-    placeholder: "#dedede",
-    text: "#707070",
+    background: 'white',
+    placeholder: '#dedede',
+    text: '#707070',
   },
 };
 
 function Content() {
+  const { t } = useTranslation();
+
   const navigation = useNavigation();
-  const [value, setValue] = React.useState("facilitator");
+  const [value, setValue] = React.useState('facilitator');
   const [dropdownDisabled, setDropdownDisabled] = React.useState(true);
   const [contactMethodError, setContactMethodError] = React.useState();
-  const [contactInfo, setContactInfo] = React.useState("");
-  const [pickerValue, setPickerValue] = useState("email");
+  const [contactInfo, setContactInfo] = React.useState('');
+  const [pickerValue, setPickerValue] = useState('email');
   const [items, setItems] = useState([
-    { label: i18n.t("step_1_method_1"), value: "phone_number" },
-    { label: i18n.t("step_1_method_2"), value: "whatsapp" },
-    { label: i18n.t("step_1_method_3"), value: "email" },
+    { label: t('step_1_method_1'), value: 'phone_number' },
+    { label: t('step_1_method_2'), value: 'whatsapp' },
+    { label: t('step_1_method_3'), value: 'email' },
   ]);
   useEffect(() => {
-    if (value === "channel-alert") {
+    if (value === 'channel-alert') {
       setDropdownDisabled(false);
     } else {
       setDropdownDisabled(true);
@@ -44,42 +40,35 @@ function Content() {
   }, [value, pickerValue]);
   return (
     <ScrollView>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "position" : null}
-      >
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'position' : null}>
         <View style={{ padding: 23 }}>
-          <Text style={styles.stepText}>{i18n.t("step_1")}</Text>
-          <Text style={styles.stepDescription}>
-            {i18n.t("stay_touch_question")}
-          </Text>
-          <Text style={styles.stepNote}>{i18n.t("step_1_hint_1")}</Text>
-          <RadioButton.Group
-            onValueChange={(newValue) => setValue(newValue)}
-            value={value}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Text style={styles.stepText}>{t('step_1')}</Text>
+          <Text style={styles.stepDescription}>{t('stay_touch_question')}</Text>
+          <Text style={styles.stepNote}>{t('step_1_hint_1')}</Text>
+          <RadioButton.Group onValueChange={(newValue) => setValue(newValue)} value={value}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <RadioButton.Android
                 value="anonymous"
-                uncheckedColor={"#dedede"}
+                uncheckedColor="#dedede"
                 color={colors.primary}
               />
-              <Text style={styles.radioLabel}>{i18n.t("step_1_option_1")}</Text>
+              <Text style={styles.radioLabel}>{t('step_1_option_1')}</Text>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <RadioButton.Android
                 value="facilitator"
-                uncheckedColor={"#dedede"}
+                uncheckedColor="#dedede"
                 color={colors.primary}
               />
-              <Text style={styles.radioLabel}>{i18n.t("step_1_option_2")}</Text>
+              <Text style={styles.radioLabel}>{t('step_1_option_2')}</Text>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <RadioButton.Android
                 value="channel-alert"
-                uncheckedColor={"#dedede"}
+                uncheckedColor="#dedede"
                 color={colors.primary}
               />
-              <Text style={styles.radioLabel}>{i18n.t("step_1_option_3")}</Text>
+              <Text style={styles.radioLabel}>{t('step_1_option_3')}</Text>
             </View>
           </RadioButton.Group>
         </View>
@@ -87,7 +76,7 @@ function Content() {
           <>
             <CustomDropDownPicker
               disabled={dropdownDisabled}
-              placeholder={i18n.t("step_1_placeholder_1")}
+              placeholder={t('step_1_placeholder_1')}
               value={pickerValue}
               items={items}
               setPickerValue={setPickerValue}
@@ -96,11 +85,11 @@ function Content() {
             <View style={{ paddingHorizontal: 50 }}>
               <TextInput
                 style={styles.grmInput}
-                placeholder={i18n.t("step_1_placeholder_2")}
-                outlineColor={"#f6f6f6"}
+                placeholder={t('step_1_placeholder_2')}
+                outlineColor="#f6f6f6"
                 theme={theme}
                 error={contactMethodError}
-                mode={"outlined"}
+                mode="outlined"
                 value={contactInfo}
                 onChangeText={(text) => {
                   setContactMethodError();
@@ -113,13 +102,13 @@ function Content() {
         <View style={{ paddingHorizontal: 50 }}>
           <Button
             theme={theme}
-            style={{ alignSelf: "center", margin: 24 }}
-            labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }}
+            style={{ alignSelf: 'center', margin: 24 }}
+            labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
             mode="contained"
             onPress={() => {
               if (!dropdownDisabled) {
                 if (contactInfo) {
-                  navigation.navigate("CitizenReportContactInfo", {
+                  navigation.navigate('CitizenReportContactInfo', {
                     stepOneParams: {
                       typeOfPerson: value,
                       methodOfContact: pickerValue,
@@ -127,12 +116,10 @@ function Content() {
                     },
                   });
                 } else {
-                  setContactMethodError(
-                    "Please insert a valid method of contact"
-                  );
+                  setContactMethodError('Please insert a valid method of contact');
                 }
               } else {
-                navigation.navigate("CitizenReportContactInfo", {
+                navigation.navigate('CitizenReportContactInfo', {
                   stepOneParams: {
                     typeOfPerson: value,
                     methodOfContact: pickerValue,
@@ -142,7 +129,7 @@ function Content() {
               }
             }}
           >
-            {i18n.t("next")}
+            {t('next')}
           </Button>
         </View>
       </KeyboardAvoidingView>

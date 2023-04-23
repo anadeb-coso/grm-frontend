@@ -1,13 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { View, FlatList, TouchableOpacity, Text, StatusBar, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ToggleButton } from 'react-native-paper';
 import { colors } from '../../../../utils/colors';
-import i18n from 'i18n-js';
 import ListHeader from '../components/ListHeader';
 
 function Content({ issues, eadl, statuses }) {
+  const { t } = useTranslation();
+
   const navigation = useNavigation();
   const [selectedId, setSelectedId] = useState(null);
   const [status, setStatus] = useState('assigned');
@@ -52,8 +54,16 @@ function Content({ issues, eadl, statuses }) {
   function Item({ item, onPress, backgroundColor, textColor }) {
     return (
       <TouchableOpacity onPress={onPress} style={[styles.item]}>
-        <Text style={[styles.title, { flexShrink: 1 }]}>{item.category?.name?.length > 40 ? `${item.category.name.substring(0, 40)}...` : item.category?.name}</Text>
-        <Text style={[styles.subTitle, { flexShrink: 1 }]}>{item.description?.length > 40 ? `${item.description.substring(0, 40)}...` : item.description}</Text>
+        <Text style={[styles.title, { flexShrink: 1 }]}>
+          {item.category?.name?.length > 40
+            ? `${item.category.name.substring(0, 40)}...`
+            : item.category?.name}
+        </Text>
+        <Text style={[styles.subTitle, { flexShrink: 1 }]}>
+          {item.description?.length > 40
+            ? `${item.description.substring(0, 40)}...`
+            : item.description}
+        </Text>
         <View
           style={{
             flexDirection: 'row',
@@ -70,7 +80,7 @@ function Content({ issues, eadl, statuses }) {
   }
 
   const renderItem = ({ item }) => {
-    console.log(item)
+    console.log(item);
     const backgroundColor = item.id === selectedId ? '#6e3b6e' : '#f9c2ff';
     const color = item.id === selectedId ? 'white' : 'black';
 
@@ -103,7 +113,7 @@ function Content({ issues, eadl, statuses }) {
           style={{ flex: 1 }}
           icon={() => (
             <View>
-              <Text style={{ color: colors.primary }}>{i18n.t('assigned')}</Text>
+              <Text style={{ color: colors.primary }}>{t('assigned')}</Text>
             </View>
           )}
           value="assigned"
@@ -112,7 +122,7 @@ function Content({ issues, eadl, statuses }) {
           style={{ flex: 1 }}
           icon={() => (
             <View>
-              <Text style={{ color: colors.primary }}>{i18n.t('open')}</Text>
+              <Text style={{ color: colors.primary }}>{t('open')}</Text>
             </View>
           )}
           value="open"
@@ -121,7 +131,7 @@ function Content({ issues, eadl, statuses }) {
           style={{ flex: 1 }}
           icon={() => (
             <View>
-              <Text style={{ color: colors.primary }}>{i18n.t('resolved')}</Text>
+              <Text style={{ color: colors.primary }}>{t('resolved')}</Text>
             </View>
           )}
           value="resolved"

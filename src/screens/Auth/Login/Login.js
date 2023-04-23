@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
-import i18n from 'i18n-js';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -23,6 +23,7 @@ import { getEncryptedData } from '../../../utils/storageManager';
 import styles from './Login.style';
 
 function Login() {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [isPasswordSecure, setIsPasswordSecure] = useState(true);
@@ -108,7 +109,7 @@ function Login() {
               color: '#707070',
             }}
           >
-            {i18n.t('welcome_login')}
+            {t('welcome_login')}
           </Text>
         </View>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -128,7 +129,7 @@ function Login() {
                           },
                         }}
                         autoCapitalize="none"
-                        label={i18n.t('email')}
+                        label={t('email')}
                         mode="outlined"
                         labelColor="#dedede"
                         style={styles.loginFormTextInput}
@@ -165,7 +166,7 @@ function Login() {
                         }}
                         mode="outlined"
                         placeholderColor="#dedede"
-                        label={i18n.t('password')}
+                        label={t('password')}
                         style={styles.loginFormTextInput}
                         left={
                           <TextInput.Icon
@@ -225,7 +226,7 @@ function Login() {
                 onPress={handleSubmit(onLoginPress)}
                 color="white"
               >
-                {i18n.t('login')}
+                {t('login')}
               </Button>
             )}
           </View>

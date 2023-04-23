@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, Text, Platform, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Button, IconButton } from 'react-native-paper';
+import { Audio } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import moment from 'moment';
-import i18n from 'i18n-js';
-import { LocalGRMDatabase } from '../../../../utils/databaseManager';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Image, Platform, ScrollView, Text, View } from 'react-native';
+import { Button, IconButton } from 'react-native-paper';
 import { colors } from '../../../../utils/colors';
+import { LocalGRMDatabase } from '../../../../utils/databaseManager';
 import { styles } from './Content.styles';
-import { Audio } from 'expo-av';
 
 const SAMPLE_WORDS = ['car', 'house', 'tree', 'ball'];
 const theme = {
@@ -22,7 +22,8 @@ const theme = {
 };
 
 function Content({ issue, eadl }) {
-	console.log('>>>>',eadl)
+  const { t } = useTranslation();
+
   const navigation = useNavigation();
   // const incrementId = () => {
   //   const last = eadl.bp_projects[eadl.bp_projects.length - 1];
@@ -50,7 +51,7 @@ function Content({ issue, eadl }) {
         ...(issue?.recording ? [issue.recording] : []),
       ],
       status: {
-        name: i18n.t('open'),
+        name: t('open'),
         id: 1,
       },
       confirmed: true,
@@ -114,8 +115,8 @@ function Content({ issue, eadl }) {
   };
 
   const playSound = async (recordingUri) => {
-    if(playing === false) {
-      setPlaying(true)
+    if (playing === false) {
+      setPlaying(true);
       // console.log("Loading Sound");
       const { sound } = await Audio.Sound.createAsync({ uri: recordingUri });
       setSound(sound);
@@ -123,10 +124,10 @@ function Content({ issue, eadl }) {
       await sound.playAsync();
 
       sound.setOnPlaybackStatusUpdate((status) => {
-        if(status.didJustFinish) {
-          setPlaying(false)
+        if (status.didJustFinish) {
+          setPlaying(false);
         }
-      })
+      });
     }
     // setPlaying(false)
   };
@@ -135,15 +136,12 @@ function Content({ issue, eadl }) {
     () =>
       sound
         ? () => {
-          // console.log("Unloading Sound");
-          sound.unloadAsync();
-
-        }
+            // console.log("Unloading Sound");
+            sound.unloadAsync();
+          }
         : undefined,
     [sound]
   );
-
-
 
   useEffect(() => {
     (async () => {
@@ -158,9 +156,9 @@ function Content({ issue, eadl }) {
   return (
     <ScrollView>
       <View style={{ padding: 23 }}>
-        <Text style={styles.stepText}>{i18n.t('step_5')}</Text>
-        <Text style={styles.stepSubtitle}>{i18n.t('step_3_confirmation')}</Text>
-        <Text style={styles.stepDescription}>{i18n.t('step_3_subtitle')}</Text>
+        <Text style={styles.stepText}>{t('step_5')}</Text>
+        <Text style={styles.stepSubtitle}>{t('step_3_confirmation')}</Text>
+        <Text style={styles.stepDescription}>{t('step_3_subtitle')}</Text>
       </View>
 
       <View
@@ -180,18 +178,18 @@ function Content({ issue, eadl }) {
           backgroundColor: 'white',
         }}
       >
-        <Text style={styles.stepSubtitle}>{i18n.t('step_3_field_title_1')}</Text>
+        <Text style={styles.stepSubtitle}>{t('step_3_field_title_1')}</Text>
         <Text style={styles.stepDescription}>
           {issue.date !== 'null' && !!issue.date ? moment(issue.date).format('DD-MMMM-YYYY') : '--'}
         </Text>
-        <Text style={styles.stepSubtitle}>{i18n.t('step_3_field_title_2')}</Text>
+        <Text style={styles.stepSubtitle}>{t('step_3_field_title_2')}</Text>
         <Text style={styles.stepDescription}>{issue.issueType?.name ?? '--'}</Text>
-        <Text style={styles.stepSubtitle}>{i18n.t('step_3_field_title_3')}</Text>
+        <Text style={styles.stepSubtitle}>{t('step_3_field_title_3')}</Text>
         <Text style={styles.stepDescription}>{issue.category?.name ?? '--'}</Text>
 
-        <Text style={styles.stepSubtitle}>{i18n.t('step_3_field_title_4')}</Text>
+        <Text style={styles.stepSubtitle}>{t('step_3_field_title_4')}</Text>
         <Text style={styles.stepDescription}>{issue.additionalDetails ?? '--'}</Text>
-        <Text style={styles.stepSubtitle}>{i18n.t('step_3_attachments')}</Text>
+        <Text style={styles.stepSubtitle}>{t('step_3_attachments')}</Text>
         {issue.recording && (
           <View
             style={{
@@ -200,7 +198,12 @@ function Content({ issue, eadl }) {
               // justifyContent: 'center',
             }}
           >
-            <IconButton icon="play" color={playing ? colors.disabled : colors.primary} size={24} onPress={() => playSound(issue.recording.local_url)} />
+            <IconButton
+              icon="play"
+              color={playing ? colors.disabled : colors.primary}
+              size={24}
+              onPress={() => playSound(issue.recording.local_url)}
+            />
             <Text
               style={{
                 fontFamily: 'Poppins_400Regular',
@@ -214,23 +217,24 @@ function Content({ issue, eadl }) {
                 marginVertical: 13,
               }}
             >
-              {i18n.t('play_recorded_audio')}
+              {t('play_recorded_audio')}
             </Text>
           </View>
         )}
-        {issue.attachments && issue.attachments.length > 0 && issue.attachments.map((attachment) => (
-
-          <Image
-            source={{ uri: attachment.local_url }}
-            style={{
-              height: 80,
-              width: 80,
-              justifyContent: 'flex-end',
-              marginVertical: 20,
-              marginLeft: 20
-            }}
-          />
-        ))}
+        {issue.attachments &&
+          issue.attachments.length > 0 &&
+          issue.attachments.map((attachment) => (
+            <Image
+              source={{ uri: attachment.local_url }}
+              style={{
+                height: 80,
+                width: 80,
+                justifyContent: 'flex-end',
+                marginVertical: 20,
+                marginLeft: 20,
+              }}
+            />
+          ))}
       </View>
       <View style={{ paddingHorizontal: 50 }}>
         <Button
@@ -240,7 +244,7 @@ function Content({ issue, eadl }) {
           mode="contained"
           onPress={() => submitIssue()}
         >
-          {i18n.t('submit_button_text')}
+          {t('submit_button_text')}
         </Button>
       </View>
     </ScrollView>
