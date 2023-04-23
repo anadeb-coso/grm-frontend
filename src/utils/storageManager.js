@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SecureStore from "expo-secure-store";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 export const storeData = async (key, value) => {
   try {
@@ -55,8 +55,10 @@ export const removeEncryptedValue = async (key) => {
 
 export const clearEncryptedValues = async () => {
   try {
-    await removeEncryptedValue("userPassword");
-    await removeEncryptedValue("username");
+    await removeEncryptedValue('userPassword');
+    await removeEncryptedValue('username');
+    await removeValue('userDoc');
+    await removeValue('userCommune');
   } catch (e) {
     // remove error
   }

@@ -24,6 +24,8 @@ const theme = {
 function Content({ issue, eadl }) {
   const { t } = useTranslation();
 
+  console.log('>???', { eadl: eadl?.representative?.name });
+
   const navigation = useNavigation();
   // const incrementId = () => {
   //   const last = eadl.bp_projects[eadl.bp_projects.length - 1];
@@ -239,6 +241,7 @@ function Content({ issue, eadl }) {
       <View style={{ paddingHorizontal: 50 }}>
         <Button
           theme={theme}
+          disabled={!eadl}
           style={{ alignSelf: 'center', margin: 24 }}
           labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
           mode="contained"

@@ -40,9 +40,9 @@ function Content({ issue }) {
         <Text style={styles.stepSubtitle}>{t('step_4_subtitle')}</Text>
         <Text style={styles.stepDescription}>{t('step_4_description')}</Text>
         <Text style={styles.stepDescription} />
-        <Text style={styles.stepDescription}>{t('step_5_description')}</Text>
+        {/* <Text style={styles.stepDescription}>{t('step_5_description')}</Text>
         <Text style={styles.stepDescription} />
-        <Text style={styles.stepDescription}>{t('step_6_description')}</Text>
+        <Text style={styles.stepDescription}>{t('step_6_description')}</Text> */}
       </View>
 
       <LockImage

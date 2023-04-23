@@ -15,8 +15,6 @@ function CitizenReportLocationStep({ route }) {
   const { username } = useSelector((state) => state.get('authentication').toObject());
   const { userCommune } = useSelector((state) => state.get('userDocument').toObject());
 
-  console.log('>>>>>>>><<<<<TYR', { userCommune });
-
   useEffect(() => {
     const fetchUserCommune = async () => {
       if (!userCommune) {
@@ -31,7 +29,7 @@ function CitizenReportLocationStep({ route }) {
     };
 
     fetchUserCommune(); // Call the fetch userCommune data function
-  }, [dispatch, userCommune]); // Empty array as dependencies to run the effect only once on mount
+  }, [dispatch, userCommune, username]);
 
   const customStyles = styles();
   return (

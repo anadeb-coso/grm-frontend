@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native';
-import { useSelector } from 'react-redux';
 import { ActivityIndicator } from 'react-native-paper';
-import Content from './containers';
-import { styles } from './IssueSearch.style';
-import LocalDatabase, { LocalGRMDatabase } from '../../../utils/databaseManager';
+import { useSelector } from 'react-redux';
 import { colors } from '../../../utils/colors';
+import { LocalGRMDatabase } from '../../../utils/databaseManager';
+import { styles } from './IssueSearch.style';
+import Content from './containers';
 
 function IssueSearch() {
   const customStyles = styles();
   const [issues, setIssues] = useState();
   const [statuses, setStatuses] = useState();
-  const [eadl, setEadl] = useState(false);
-  const { username } = useSelector((state) => state.get('authentication').toObject());
+
+  const { userDocument: eadl } = useSelector((state) => state.get('userDocument').toObject());
 
   useEffect(() => {
     LocalGRMDatabase.find({
@@ -25,23 +25,6 @@ function IssueSearch() {
         alert(`Unable to retrieve statuses. ${JSON.stringify(err)}`);
       });
   }, []);
-
-  useEffect(() => {
-    if (username) {
-      LocalDatabase.find({
-        selector: { 'representative.email': username },
-        // fields: ["_id", "commune", "phases"],
-      })
-        .then((result) => {
-          setEadl(result.docs[0]);
-
-          // handle result
-        })
-        .catch((err) => {
-          console.log('ERROR FETCHING EADL', err);
-        });
-    }
-  }, [username]);
 
   useEffect(() => {
     // FETCH ISSUE CATEGORY

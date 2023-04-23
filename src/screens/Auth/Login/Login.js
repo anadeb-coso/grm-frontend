@@ -34,7 +34,6 @@ function Login() {
       `dbCredentials_${data?.password}_${data?.email.replace('@', '')}`
     );
     if (dbConfig) {
-      console.log('<<<<<<>UUUUUUUUUUU>>>', data?.email);
       const { userDoc, userCommune } = await getUserDocs(data?.email);
       if (userDoc) {
         dispatch(setDocument(userDoc)); // Dispatch setDocument action
@@ -50,7 +49,6 @@ function Login() {
           if (response.error) {
             return;
           }
-          console.log('<<<<<<>TTTTTTTTTTTTTTT>>>', data?.email);
           const { userDoc, userCommune } = await getUserDocs(data?.email);
           if (userDoc) {
             dispatch(setDocument(userDoc)); // Dispatch setDocument action

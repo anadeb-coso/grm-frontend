@@ -29,8 +29,6 @@ function Router({ theme }) {
   useEffect(() => {
     async function fetchData() {
       // You can await here
-      // const response = await MyAPI.getData(someId);
-      console.log('<<<<<<>USE EFFECT>>>', fetchedUser);
       const { userDoc, userCommune } = await getUserDocs(fetchedUser);
       if (userDoc) {
         dispatch(setDocument(userDoc)); // Dispatch setDocument action
