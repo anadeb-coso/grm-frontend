@@ -64,7 +64,7 @@
   "step_2_select_date": "Tap to select the date",
   "step_2_subtitle": "Details of Issue or Feedback",
   "step_2_explanation": "Tell the citizen: “I want to record the dates of the events you report. If you can’t remember the exact dates, do your best and I’ll make a special note of it. Don’t worry if you can’t remember every detail. ”",
-  "step_2_ongoing_hint": "Current event or multiple occurrences",
+  "step_2_ongoing_hint": "Is multiple occurrences?",
   "step_2_set_today": "Set for Today",
   "step_2_placeholder_1": "What are you reporting?",
   "step_2_placeholder_2": "Choose type of grievance",

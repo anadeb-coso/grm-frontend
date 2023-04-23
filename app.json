@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
-//      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -48,6 +47,11 @@
       "expo-location",
       "expo-image-picker",
       "expo-av"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "13cc8fd9-97c4-46f0-9f52-d0b0043066cd"
+      }
+    }
   }
 }

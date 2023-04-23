@@ -13,6 +13,3 @@ URL for Web App
 ### Build the App
 Build the app for android
 
-Change Log > 18 APRIL 2023
-- Changed the commune fetching to only fetch user cell since they are reporting only items from that cell.
-- 
