@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 export default function ListHeader(props) {
   const { t } = useTranslation();
-
+  console.log({ props });
   return (
     <View>
       <View
@@ -41,10 +41,11 @@ export default function ListHeader(props) {
           {t('assigned_to_you_label')}: {props.length}
         </Text>
         <Text style={styles.statisticsText}>
-          {t('resolved_by_you_label')}: {props.average ? <Text style>issues.average</Text> : '--'}
+          {t('resolved_by_you_label')}:{' '}
+          {props.resolved ? <Text style>{props.resolved}</Text> : '--'}
         </Text>
         <Text style={styles.statisticsText}>
-          {t('average_days_label')}: {props.average ? <Text style>issues.average</Text> : '--'}
+          {t('average_days_label')}: {props.average ? <Text style>{props.average}</Text> : '--'}
         </Text>
         <Text style={styles.statisticsText}>
           {t('average_satisfaction_label')}:{' '}

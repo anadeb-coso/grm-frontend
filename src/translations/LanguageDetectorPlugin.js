@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Localization from 'expo-localization';
 
 const STORE_LANGUAGE_KEY = 'settings.lang';
 
@@ -15,8 +14,8 @@ const languageDetectorPlugin = {
           // if language was stored before, use this language in the app
           return callback(language);
         }
-        // if language was not stored yet, use device's locale
-        return callback(Localization.locale);
+        // if language was not stored yet, use set default's locale
+        return callback('rw');
       });
     } catch (error) {
       console.log('Error reading language', error);

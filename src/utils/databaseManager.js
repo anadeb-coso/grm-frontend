@@ -100,7 +100,6 @@ const fetchDocumentsByFilter = async (filter) => {
         timeout: 50000,
       }
     );
-    console.log('>>>>>>>><<<<<', dbCredentials);
     return response.data;
   } catch (error) {
     console.log('Error fetching documents by filter:', error);
@@ -128,7 +127,6 @@ export const getUserDocs = async (email) => {
   const getUserDoc = await fetchDocumentsByFilter({
     'representative.email': email,
   });
-  console.log('****<', getUserDoc);
 
   if (getUserDoc?.docs?.length > 0) {
     [userDoc] = getUserDoc.docs;

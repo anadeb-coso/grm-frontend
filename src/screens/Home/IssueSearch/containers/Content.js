@@ -14,42 +14,55 @@ function Content({ issues, eadl, statuses }) {
   const [selectedId, setSelectedId] = useState(null);
   const [status, setStatus] = useState('assigned');
   const [_issues, setIssues] = useState([]);
+  const [filteredIssues, setFilteredIssues] = useState({});
 
   useEffect(() => {
     setIssues(issues);
   }, []);
 
   useEffect(() => {
-    let filteredIssues;
-    let foundStatus;
+    const filteredIssuesCopy = { ...issues };
+
+    filteredIssuesCopy.assigned = issues.filter(
+      (issue) => issue.assignee && issue.assignee.id === eadl._id
+    );
+
+    const openStatus = statuses.find((el) => el.final_status === false);
+    filteredIssuesCopy.open = issues.filter(
+      (issue) =>
+        ((issue.assignee && issue.assignee.id === eadl._id) ||
+          (issue.reporter && issue.reporter.id === eadl._id)) &&
+        issue.status.id === openStatus.id
+    );
+
+    const resolvedStatus = statuses.find((el) => el.final_status === true);
+    filteredIssuesCopy.resolved = issues.filter(
+      (issue) =>
+        ((issue.assignee && issue.assignee.id === eadl._id) ||
+          (issue.reporter && issue.reporter.id === eadl._id)) &&
+        issue.status.id === resolvedStatus.id
+    );
+
+    setFilteredIssues(filteredIssuesCopy);
+
+    let selectedTabIssues;
     switch (status) {
       case 'assigned':
-        filteredIssues = issues.filter((issue) => issue.assignee && issue.assignee.id === eadl._id);
+        selectedTabIssues = filteredIssuesCopy.assigned;
         break;
       case 'open':
-        foundStatus = statuses.find((el) => el.final_status === false);
-        foundStatus = statuses.find((el) => el.final_status === false);
-        filteredIssues = issues.filter(
-          (issue) =>
-            ((issue.assignee && issue.assignee.id === eadl._id) ||
-              (issue.reporter && issue.reporter.id === eadl._id)) &&
-            issue.status.id === foundStatus.id
-        );
+        selectedTabIssues = filteredIssuesCopy.open;
+
         break;
       case 'resolved':
-        foundStatus = statuses.find((el) => el.final_status === true);
-        filteredIssues = issues.filter(
-          (issue) =>
-            ((issue.assignee && issue.assignee.id === eadl._id) ||
-              (issue.reporter && issue.reporter.id === eadl._id)) &&
-            issue.status.id === foundStatus.id
-        );
+        selectedTabIssues = filteredIssuesCopy.resolved;
+
         break;
       default:
-        filteredIssues = _issues.map((issue) => issue);
+        selectedTabIssues = _issues.map((issue) => issue);
     }
-    setIssues(filteredIssues);
-  }, [status]);
+    setIssues(selectedTabIssues);
+  }, [status, issues, statuses, eadl._id]);
 
   function Item({ item, onPress, backgroundColor, textColor }) {
     return (
@@ -80,7 +93,6 @@ function Content({ issues, eadl, statuses }) {
   }
 
   const renderItem = ({ item }) => {
-    console.log(item);
     const backgroundColor = item.id === selectedId ? '#6e3b6e' : '#f9c2ff';
     const color = item.id === selectedId ? 'white' : 'black';
 
@@ -99,8 +111,15 @@ function Content({ issues, eadl, statuses }) {
     );
   };
 
+  console.log({ _issues, eadl });
+
   const renderHeader = () => (
-    <ListHeader overdue={issues.overdue} length={issues.length} average={issues.average} />
+    <ListHeader
+      overdue={issues.overdue}
+      length={issues.length}
+      average={issues.average}
+      resolved={filteredIssues?.resolved?.length || 0}
+    />
   );
   return (
     <>

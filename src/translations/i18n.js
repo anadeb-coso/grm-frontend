@@ -8,7 +8,7 @@ import rw from './rw.json';
 const { languageDetectorPlugin } = require('./LanguageDetectorPlugin');
 
 // set default fallback language
-export const DEFAULT_LANGUAGE = 'en';
+export const DEFAULT_LANGUAGE = 'rw';
 
 const resources = {
   en: {
