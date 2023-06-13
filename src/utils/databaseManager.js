@@ -11,8 +11,8 @@ PouchDB.plugin(require('pouchdb-upsert'));
 
 PouchDB.plugin(PouchAsyncStorage);
 
-// const couchDBURLBase = "http://54.183.195.20:5984";
-const couchDBURLBase = "http://10.0.2.2:5984";
+const couchDBURLBase = "http://54.183.195.20:5984";
+// const couchDBURLBase = "http://10.0.2.2:5984";
 
 const LocalDatabase = new PouchDB('eadl', {
   adapter: 'asyncstorage',
