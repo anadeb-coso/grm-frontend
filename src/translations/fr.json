@@ -5,7 +5,7 @@
   //Onboarding
   "used_app_before": "Avez-vous déjà utilisé cette application ?",
   "yes": "OUI",
-  "no": "NO",
+  "no": "NON",
   "welcome_login": "Bienvenu! Accédez à votre compte ici",
   "email": "Email",
   "password": "Mot de passe",
@@ -17,6 +17,7 @@
   "please_enter_code": "Utilisez le code fourni par votre superviseur",
   "account_create_success": "Votre compte a été créé avec succès",
   "logout": "Se déconnecter",
+  "signup": "S'enregistrer",
   //GRM
   "diagnostics": "Statistiques",
   "information": "Information",
