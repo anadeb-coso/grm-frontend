@@ -11,6 +11,9 @@ PouchDB.plugin(require('pouchdb-upsert'));
 
 PouchDB.plugin(PouchAsyncStorage);
 
+// const couchDBURLBase = "http://54.183.195.20:5984";
+const couchDBURLBase = "http://10.0.2.2:5984";
+
 const LocalDatabase = new PouchDB('eadl', {
   adapter: 'asyncstorage',
 });
@@ -19,25 +22,34 @@ export const LocalGRMDatabase = new PouchDB('grm', {
   adapter: 'asyncstorage',
 });
 
-export const LocalCommunesDatabase = new PouchDB('commune', {
+export const LocalADMINLEVELDatabase = new PouchDB('administrativelevel', {
   adapter: 'asyncstorage',
 });
 
+// export const LocalCommunesDatabase = new PouchDB('commune', {
+//   adapter: 'asyncstorage',
+// });
+
 export const SyncToRemoteDatabase = async ({ username, password }, userEmail) => {
-  const remoteDB = new PouchDB('http://197.243.104.5/couchdb/eadls', {
+  const remoteDB = new PouchDB(`${couchDBURLBase}/eadls`, {
     skip_setup: true,
   });
 
-  const grmRemoteDB = new PouchDB('http://197.243.104.5/couchdb/grm', {
+  const grmRemoteDB = new PouchDB(`${couchDBURLBase}/grm`, {
     skip_setup: true,
   });
 
-  //   const communesRemoteDB = new PouchDB('http://197.243.104.5/couchdb/eadls', {
+  const remoteADMINLEVEL = new PouchDB(`${couchDBURLBase}/administrative_levels`, {
+    skip_setup: true,
+  });
+
+  //   const communesRemoteDB = new PouchDB(`${couchDBURLBase}/eadls`, {
   //     skip_setup: true,
   //   });
 
   await remoteDB.login(username, password);
   await grmRemoteDB.login(username, password);
+  await remoteADMINLEVEL.login(username, password);
   const sync = LocalDatabase.sync(remoteDB, {
     live: true,
     retry: true,
@@ -68,7 +80,7 @@ export const SyncToRemoteDatabase = async ({ username, password }, userEmail) =>
 };
 
 // Function to fetch documents from CouchDB with a Mango query
-const fetchDocumentsByFilter = async (filter) => {
+const fetchDocumentsByFilter = async (db_name,filter) => {
   const password = await getEncryptedData('userPassword');
 
   if (!password) {
@@ -80,7 +92,7 @@ const fetchDocumentsByFilter = async (filter) => {
 
   try {
     const response = await axios.post(
-      `http://197.243.104.5/couchdb/eadls/_find`,
+      `${couchDBURLBase}/${db_name}/_find`,
       {
         selector: filter, // Specify the filter criteria as the Mango query selector
       },
@@ -124,13 +136,13 @@ export const getUserDocs = async (email) => {
     );
     return { userDoc: JSON.parse(userDoc), userCommune: JSON.parse(userCommune) };
   }
-  const getUserDoc = await fetchDocumentsByFilter({
+  const getUserDoc = await fetchDocumentsByFilter("eadls", {
     'representative.email': email,
   });
 
   if (getUserDoc?.docs?.length > 0) {
     [userDoc] = getUserDoc.docs;
-    const getCommune = await fetchDocumentsByFilter({
+    const getCommune = await fetchDocumentsByFilter("administrative_levels", {
       administrative_id: userDoc?.administrative_region,
       type: 'administrative_level',
     });
