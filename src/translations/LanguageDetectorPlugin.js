@@ -15,7 +15,7 @@ const languageDetectorPlugin = {
           return callback(language);
         }
         // if language was not stored yet, use set default's locale
-        return callback('rw');
+        return callback('fr');
       });
     } catch (error) {
       console.log('Error reading language', error);
