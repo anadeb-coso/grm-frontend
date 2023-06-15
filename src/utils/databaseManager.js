@@ -22,9 +22,9 @@ export const LocalGRMDatabase = new PouchDB('grm', {
   adapter: 'asyncstorage',
 });
 
-export const LocalADMINLEVELDatabase = new PouchDB('administrativelevel', {
-  adapter: 'asyncstorage',
-});
+// export const LocalADMINLEVELDatabase = new PouchDB('administrative_levels', {
+//   adapter: 'asyncstorage',
+// });
 
 // export const LocalCommunesDatabase = new PouchDB('commune', {
 //   adapter: 'asyncstorage',
@@ -39,9 +39,9 @@ export const SyncToRemoteDatabase = async ({ username, password }, userEmail) =>
     skip_setup: true,
   });
 
-  const remoteADMINLEVEL = new PouchDB(`${couchDBURLBase}/administrative_levels`, {
-    skip_setup: true,
-  });
+  // const remoteADMINLEVEL = new PouchDB(`${couchDBURLBase}/administrative_levels`, {
+  //   skip_setup: true,
+  // });
 
   //   const communesRemoteDB = new PouchDB(`${couchDBURLBase}/eadls`, {
   //     skip_setup: true,
@@ -49,7 +49,7 @@ export const SyncToRemoteDatabase = async ({ username, password }, userEmail) =>
 
   await remoteDB.login(username, password);
   await grmRemoteDB.login(username, password);
-  await remoteADMINLEVEL.login(username, password);
+  // await remoteADMINLEVEL.login(username, password);
   const sync = LocalDatabase.sync(remoteDB, {
     live: true,
     retry: true,
@@ -69,11 +69,17 @@ export const SyncToRemoteDatabase = async ({ username, password }, userEmail) =>
     live: true,
     retry: true,
   });
+  // const syncADMINLEVEL = remoteADMINLEVEL.sync(remoteADMINLEVEL, {
+  //   live: true,
+  //   retry: true,
+  // });
   const syncStates = ['change', 'paused', 'active', 'denied', 'complete', 'error'];
   syncStates.forEach((state) => {
     sync.on(state, (currState) => console.log(`[Sync EADL: ]`));
 
     syncGRM.on(state, (currState) => console.log(`[Sync GRM: ]`));
+
+    // syncADMINLEVEL.on(state, (currState) => console.log(`[Sync GRM: ]`));
   });
 
   getUserDocs(userEmail);
