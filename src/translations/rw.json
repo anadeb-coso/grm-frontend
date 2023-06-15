@@ -200,6 +200,11 @@
 	"confidential": "Ibanga",
 
 	//issue search
+	"registe_to_you_label": "Complaints registered by you", //to complete
+	"open_to_you_label": "Complaints pending", //to complete
+	"your_complaints_resolved_to_you_label": "Your resolved complaints", //to complete
+	"your_complaints_reject_to_you_label": "Your rejected complaints", //to complete
+	"reject_to_you_label": "Complaints rejected by you", //to complete
 	"overdue_label": "Ibibazo byarengeje igihe",
 
 	"assigned_to_you_label": "Ibibazo wahawe",
@@ -212,6 +217,10 @@
 
 	"your_issues_label": "Ibibazo biri mu nshingano zawe",
 	"open": "Ibitarakemuka",
+	"initial_status": "Registe", //to complete
+	"open_status": "In process", //to complete
+	"final_status": "Resolved", //to complete
+	"rejected_status": "Rejected", //to complete
 	"assigned": "Ibyo nshinzwe",
 	"resolved": "Ibyakemutse",
 	"issue_was_accepted": "Cyemewe",

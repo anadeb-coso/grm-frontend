@@ -130,6 +130,11 @@
   "confidential": "Confidential",
 
   //issue search
+  "registe_to_you_label": "Complaints registered by you",
+  "open_to_you_label": "Complaints pending",
+  "your_complaints_resolved_to_you_label": "Your resolved complaints",
+  "your_complaints_reject_to_you_label": "Your rejected complaints",
+  "reject_to_you_label": "Complaints rejected by you",
   "overdue_label": "Overdue Issues",
   "assigned_to_you_label": "Issues assigned to you",
   "resolved_by_you_label": "Issues resolved by you",
@@ -137,6 +142,10 @@
   "average_satisfaction_label": "Average Satisfaction",
   "your_issues_label": "Your Open Issues",
   "open": "Open",
+  "initial_status": "Registe",
+  "open_status": "In process",
+  "final_status": "Resolved",
+  "rejected_status": "Rejected",
   "assigned": "Assigned",
   "resolved": "Resolved",
   "issue_was_accepted": "The issue was accepted",

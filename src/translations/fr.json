@@ -132,6 +132,11 @@
   "confidential": "Confidentiel",
 
   //issue search
+  "registe_to_you_label": "Plaintes qui sont enregistrées par vous",
+  "open_to_you_label": "Plaintes en cours",
+  "your_complaints_resolved_to_you_label": "Vos plaintes Résolues",
+  "your_complaints_reject_to_you_label": "Vos plaintes Rejetées",
+  "reject_to_you_label": "Plaintes Rejetées par vous",
   "overdue_label": "Plaintes dont le traitement est en retard",
   "assigned_to_you_label": "Plaintes qui vous sont assignées",
   "resolved_by_you_label": "Plaintes Résolues par vous",
@@ -139,6 +144,10 @@
   "average_satisfaction_label": "Satisfaction moyenne",
   "your_issues_label": "Vos plaintes ouvertes",
   "open": "Ouverte",
+  "initial_status": "Enregistrée",
+  "open_status": "En cours de traitement",
+  "final_status": "Résolue",
+  "rejected_status": "Rejetée",
   "assigned": "Assignée",
   "resolved": "Résoluee",
   "issue_was_accepted": "La plainte a été acceptée",
