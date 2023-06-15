@@ -97,9 +97,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
   const acceptIssue = () => {
     const newStatus = statuses.find((x) => x.open_status === true);
-    issue.comments?.push({
+    issue.comments?.unshift({
       name: issue.reporter.name,
-      id: eadl._id,
+      id: eadl.representative?.id,
       comment: t('issue_was_accepted'),
       due_at: moment(),
     });
@@ -108,9 +108,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
   const rejectIssue = () => {
     const newStatus = statuses.find((x) => x.rejected_status === true);
-    issue.comments?.push({
+    issue.comments?.unshift({
       name: issue.reporter.name,
-      id: eadl._id,
+      id: eadl.representative?.id,
       comment: t('issue_was_rejected'),
       due_at: moment(),
     });
@@ -119,15 +119,16 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
   const escalateIssue = () => {
     issue.escalate_flag = true;
-    issue.escalation_reasons?.push({
-      id: eadl?._id,
+    issue.escalation_reasons = issue.escalation_reasons ?? []
+    issue.escalation_reasons?.unshift({
+      id: eadl?.representative?.id,
       name: eadl?.representative?.name,
       comment: escalateComment,
       due_at: moment(),
     });
-    issue.comments?.push({
+    issue.comments?.unshift({
       name: issue.reporter.name,
-      id: eadl._id,
+      id: eadl.representative?.id,
       comment: t('issue_was_escalated'),
       due_at: moment(),
     });
@@ -137,9 +138,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   };
 
   const recordStep = () => {
-    issue.comments?.push({
+    issue.comments?.unshift({
       name: issue.reporter.name,
-      id: eadl._id,
+      id: eadl.representative?.id,
       comment,
       due_at: moment(),
     });
@@ -154,9 +155,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const recordResolutionConfirmation = () => {
     issue.research_result = resolution;
     const newStatus = statuses.find((x) => x.final_status === true);
-    issue.comments?.push({
+    issue.comments?.unshift({
       name: issue.reporter.name,
-      id: eadl._id,
+      id: eadl.representative?.id,
       comment: t('issue_was_resolved'),
       due_at: moment(),
     });
