@@ -1,7 +1,7 @@
 // const baseURL = 'http://197.243.104.5/webapp';
 // const baseURL = 'http://drdip.e3grm.org';
-const baseURL = 'http://grm-2-env.eba-speiyafz.us-west-1.elasticbeanstalk.com';
-// const baseURL = 'http://10.0.2.2:8002';
+// const baseURL = 'http://grm-2-env.eba-speiyafz.us-west-1.elasticbeanstalk.com';
+const baseURL = 'http://10.0.2.2:8002';
 export { baseURL };
 function handleErrors(response) {
   if (response.non_field_errors) {
@@ -40,6 +40,27 @@ class API {
       .then((response) => response.json())
       .then(handleErrors)
       .then((a) => a)
+      .catch((error) => ({ error }));
+    return result;
+  }
+
+
+  async administrativeLevelsFilterByAdministrativeRegion(administrative_region, filter) {
+    
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    d = ""
+    for (var [key, value] of Object.entries(filter)) {
+      d += "&" + key + "=" + value;
+    }
+    const requestOptions = {
+      method: 'GET',
+      headers: myHeaders
+    };
+    const result = fetch(`${baseURL}/administrative-levels/filter-by-administrative-region/?administrative_region=${administrative_region}${d}`, requestOptions)
+      .then((response) => response.json())
+      .then(handleErrors)
+      .then((response) => response)
       .catch((error) => ({ error }));
     return result;
   }
