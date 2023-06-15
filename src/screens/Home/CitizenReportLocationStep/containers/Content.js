@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
@@ -12,6 +12,8 @@ import {
 import { Button, TextInput } from 'react-native-paper';
 import { colors } from '../../../../utils/colors';
 import { styles } from './Content.styles';
+import CustomDropDownPickerWithRender from '../../../../components/CustomDropDownPicker/CustomDropDownPicker';
+import DropDownPicker from 'react-native-dropdown-picker';
 
 const theme = {
   roundness: 12,
@@ -23,9 +25,8 @@ const theme = {
   },
 };
 
-export function Content({ stepOneParams, stepTwoParams, uniqueRegion }) {
+export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, villages }) {
   const { t } = useTranslation();
-
   const navigation = useNavigation();
   //   const [communes, setCommunes] = useState(issueCommunes);
   //   const [commune1, setCommune1] = useState(null);
@@ -34,7 +35,62 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion }) {
   const [additionalDetails, setAdditionalDetails] = useState(null);
   //   const [initialized, setInitialized] = useState(false);
   //   const [communesPickers, setCommunesPickers] = useState([]);
+  const [canton, setCanton] = useState(null);
+  const [cantonsItems, setCantonsItems] = useState(cantons ?? []);
+  const [selectedCanton, setSelectedselectedCanton] = useState(null);
+  const [village, setVillage] = useState(null);
+  const [villagesItems, setVillagesItems] = useState([]);
+  const [selectedVillage, setSelectedselectedVillage] = useState(null);
+  const [hideCantonField, setHideCantonField] = useState(true);
+  const [hideVillageField, setHideVillageField] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [openVillage, setOpenVillage] = useState(false);
+  
 
+  const setVillagesInfos = (hideC, c) => {
+    let v = [];
+    if([0, 1].includes(villages.length) || (hideC == false && c == null)){
+      setHideVillageField(true);
+      if(villages.length == 1){
+        setVillage(villages[0]);
+      }
+    }else{
+      for(let i=0; i<villages.length; i++){
+        if(c != null && c.id == villages[i].parent){
+          v.push({name: String(villages[i].name), id: String(villages[i].id)});
+        }else if(c  == null){
+          v.push({name: String(villages[i].name), id: String(villages[i].id)});
+        }
+        if(i+1==villages.length){
+          setVillagesItems(v);
+        }
+      }
+      setHideVillageField(false);
+    }
+  }
+
+  useEffect(() => {
+    let d = [];
+    if([0, 1].includes(cantons.length)){
+      setHideCantonField(true);
+      setVillagesInfos(true, canton);
+    }else{
+      setHideCantonField(false);
+      setVillagesInfos(false, canton);
+      for(let i=0; i<cantons.length; i++){
+        d.push({name: String(cantons[i].name), id: String(cantons[i].id)});
+        if(i+1==cantons.length){
+          setCantonsItems(d);
+        }
+      }
+    }
+    // setVillagesInfos(hideCantonField, canton);
+   
+  }, []);
+
+  
+  
+  
   //   useEffect(() => {
   //     if (issueCommunes && !initialized) {
   //       setInitialized(true);
@@ -141,6 +197,62 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion }) {
             />
           </View>
         ))} */}
+
+        {/* {cantons && (
+          <CustomDropDownPicker
+            schema={{
+              label: 'name',
+              value: 'administrative_id',
+            }}
+            placeholder={t('step_location_dropdown_placeholder')}
+            value={canton}
+            // disabled={!!uniqueRegion}
+            items={cantons}
+            setPickerValue={setCanton}
+            // setItems={setCantons}
+          />
+        )} */}
+        {!hideCantonField && (<View style={{ zIndex: 2000 }}>
+          <CustomDropDownPickerWithRender
+            schema={{
+              label: 'name',
+              value: 'id',
+            }}
+            placeholder={t('step_location_dropdown_placeholder')}
+            value={canton}
+            setValue={setCanton}
+            items={cantonsItems}
+            setPickerValue={setCanton}
+            setItems={setCantonsItems}
+            onSelectItem={(item) => {
+              setVillagesInfos(hideCantonField, item);
+              setSelectedselectedCanton(item);
+            }}
+            open={open}
+            setOpen={setOpen}
+          />
+        </View> )}
+
+        {!hideVillageField && (<View style={{ zIndex: 2000 }}>
+          <CustomDropDownPickerWithRender
+            schema={{
+              label: 'name',
+              value: 'id',
+            }}
+            placeholder={t('step_location_dropdown_placeholder')}
+            value={village}
+            setValue={setVillage}
+            items={villagesItems}
+            setPickerValue={setVillage}
+            setItems={setVillagesItems}
+            onSelectItem={(item) => setSelectedselectedVillage(item)}
+            open={openVillage}
+            setOpen={setOpenVillage}
+          />
+        </View> )}
+        
+
+
         <View style={{ paddingHorizontal: 50 }}>
           <Text style={styles.stepNote}>{t('step_location_input_explanation')}</Text>
           <TextInput
@@ -179,7 +291,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion }) {
         <View style={{ paddingHorizontal: 50 }}>
           <Button
             theme={theme}
-            disabled={!uniqueRegion || !additionalDetails}
+            disabled={!uniqueRegion || !additionalDetails} // || (!hideVillageField && !village) || (!hideCantonField && !canton)
             style={{ alignSelf: 'center', margin: 24 }}
             labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
             mode="contained"
@@ -188,9 +300,13 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion }) {
                 stepOneParams,
                 stepTwoParams,
                 stepLocationParams: {
+                  // issueLocation: {
+                  //   administrative_id: uniqueRegion?.administrative_id,
+                  //   name: uniqueRegion?.name,
+                  // },
                   issueLocation: {
-                    administrative_id: uniqueRegion?.administrative_id,
-                    name: uniqueRegion?.name,
+                    administrative_id: selectedVillage?.id,
+                    name: selectedVillage?.name,
                   },
                   locationDescription: additionalDetails,
                 },
