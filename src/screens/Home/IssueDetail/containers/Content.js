@@ -127,22 +127,30 @@ function Content({ issue }) {
   const onAddComment = () => {
     if (newComment) {
       const commentDate = moment().format('DD-MMM-YYYY');
-      issue.comments = [
-        ...issue.comments,
-        {
-          name: issue.reporter.name,
-          comment: newComment,
-          due_at: commentDate,
-        },
-      ];
-      setComments([
-        ...comments,
-        {
-          name: issue.reporter.name,
-          comment: newComment,
-          due_at: commentDate,
-        },
-      ]);
+      let cs = issue.comments.unshift({
+        name: issue.reporter.name,
+        comment: newComment,
+        due_at: commentDate,
+      });
+      // issue.comments = [
+      //   ...issue.comments,
+      //   {
+      //     name: issue.reporter.name,
+      //     comment: newComment,
+      //     due_at: commentDate,
+      //   },
+      // ];
+      // setComments([
+      //   ...comments,
+      //   {
+      //     name: issue.reporter.name,
+      //     comment: newComment,
+      //     due_at: commentDate,
+      //   },
+      // ]);
+      issue.comments = cs;
+      setComments(issue.comments);
+      
       setNewComment('');
       setTimeout(() => {
         scrollViewRef.current.scrollToEnd({ animated: true });

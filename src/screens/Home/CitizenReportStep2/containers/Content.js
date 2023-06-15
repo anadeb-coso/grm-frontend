@@ -192,6 +192,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
       _category = {
         id: result[0].id,
         name: result[0].name,
+        abbreviation: result[0].abbreviation,
         confidentiality_level: result[0].confidentiality_level,
         assigned_department: result[0].assigned_department?.id,
         administrative_level: result[0].assigned_department?.administrative_level,

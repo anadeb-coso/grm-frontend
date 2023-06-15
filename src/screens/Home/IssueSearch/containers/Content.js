@@ -19,34 +19,59 @@ function Content({ issues, eadl, statuses }) {
   useEffect(() => {
     setIssues(issues);
   }, []);
-
+ 
   useEffect(() => {
     const filteredIssuesCopy = { ...issues };
 
+    filteredIssuesCopy.registe = issues.filter(
+      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id)
+    );
+
     filteredIssuesCopy.assigned = issues.filter(
-      (issue) => issue.assignee && issue.assignee.id === eadl._id
+      (issue) => issue.assignee && issue.assignee.id === eadl.representative?.id
     );
 
-    const openStatus = statuses.find((el) => el.final_status === false);
+    // const openStatus = statuses.find((el) => el.open_status === true);
+    // filteredIssuesCopy.open = issues.filter(
+    //   (issue) =>
+    //     ((issue.assignee && issue.assignee.id === eadl.representative?.id) ||
+    //       (issue.reporter && issue.reporter.id === eadl.representative?.id)) &&
+    //     issue.status.id === openStatus.id
+    // );
     filteredIssuesCopy.open = issues.filter(
-      (issue) =>
-        ((issue.assignee && issue.assignee.id === eadl._id) ||
-          (issue.reporter && issue.reporter.id === eadl._id)) &&
-        issue.status.id === openStatus.id
+      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id) && issue.status.id === 2
     );
 
-    const resolvedStatus = statuses.find((el) => el.final_status === true);
+    // const resolvedStatus = statuses.find((el) => el.final_status === true);
+    // filteredIssuesCopy.resolved = issues.filter(
+    //   (issue) =>
+    //     ((issue.assignee && issue.assignee.id === eadl.representative?.id) ||
+    //       (issue.reporter && issue.reporter.id === eadl.representative?.id)) &&
+    //     issue.status.id === resolvedStatus.id
+    // );
     filteredIssuesCopy.resolved = issues.filter(
-      (issue) =>
-        ((issue.assignee && issue.assignee.id === eadl._id) ||
-          (issue.reporter && issue.reporter.id === eadl._id)) &&
-        issue.status.id === resolvedStatus.id
+      (issue) => (issue.assignee && issue.assignee.id === eadl.representative?.id) && issue.status.id === 3
+    );
+
+    filteredIssuesCopy.yourResolution = issues.filter(
+      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id) && issue.status.id === 3
+    );
+
+    filteredIssuesCopy.rejected = issues.filter(
+      (issue) => (issue.assignee && issue.assignee.id === eadl.representative?.id) && issue.status.id === 4
+    );
+
+    filteredIssuesCopy.YourRejecte = issues.filter(
+      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id) && issue.status.id === 4
     );
 
     setFilteredIssues(filteredIssuesCopy);
 
     let selectedTabIssues;
     switch (status) {
+      case 'registe':
+        selectedTabIssues = filteredIssuesCopy.registe;
+        break;
       case 'assigned':
         selectedTabIssues = filteredIssuesCopy.assigned;
         break;
@@ -56,13 +81,15 @@ function Content({ issues, eadl, statuses }) {
         break;
       case 'resolved':
         selectedTabIssues = filteredIssuesCopy.resolved;
-
+        break;
+      case 'rejected':
+        selectedTabIssues = filteredIssuesCopy.rejected;
         break;
       default:
         selectedTabIssues = _issues.map((issue) => issue);
     }
     setIssues(selectedTabIssues);
-  }, [status, issues, statuses, eadl._id]);
+  }, [status, issues, statuses, eadl.representative?.id]);
 
   function Item({ item, onPress, backgroundColor, textColor }) {
     return (
@@ -111,7 +138,7 @@ function Content({ issues, eadl, statuses }) {
     );
   };
 
-  console.log({ _issues, eadl });
+  // console.log({ _issues, eadl });
 
   const renderHeader = () => (
     <ListHeader
@@ -119,6 +146,13 @@ function Content({ issues, eadl, statuses }) {
       length={issues.length}
       average={issues.average}
       resolved={filteredIssues?.resolved?.length || 0}
+
+      registe={filteredIssues?.registe?.length || 0}
+      assigned={filteredIssues?.assigned?.length || 0}
+      open={filteredIssues?.open?.length || 0}
+      yourResolution={filteredIssues?.yourResolution?.length || 0}
+      rejected={filteredIssues?.rejected?.length || 0}
+      YourRejecte={filteredIssues?.YourRejecte?.length || 0}
     />
   );
   return (
@@ -128,6 +162,15 @@ function Content({ issues, eadl, statuses }) {
         onValueChange={(value) => setStatus(value)}
         value={status}
       >
+        <ToggleButton
+          style={{ flex: 1 }}
+          icon={() => (
+            <View>
+              <Text style={{ color: colors.primary }}>{t('initial_status')}</Text>
+            </View>
+          )}
+          value="registe"
+        />
         <ToggleButton
           style={{ flex: 1 }}
           icon={() => (
@@ -154,6 +197,16 @@ function Content({ issues, eadl, statuses }) {
             </View>
           )}
           value="resolved"
+        />
+        
+        <ToggleButton
+          style={{ flex: 1 }}
+          icon={() => (
+            <View>
+              <Text style={{ color: colors.primary }}>{t('rejected_status')}</Text>
+            </View>
+          )}
+          value="rejected"
         />
       </ToggleButton.Row>
       <FlatList

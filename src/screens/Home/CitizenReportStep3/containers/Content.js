@@ -21,7 +21,7 @@ const theme = {
   },
 };
 
-function Content({ issue, eadl }) {
+function Content({ issue, eadl, issues }) {
   const { t } = useTranslation();
 
   console.log('>???', { eadl: eadl?.representative?.name });
@@ -36,16 +36,19 @@ function Content({ issue, eadl }) {
   const [sound, setSound] = useState();
   const [playing, setPlaying] = useState(false);
   const submitIssue = () => {
+    
     const isAssignee =
-      issue.category?.assigned_department === eadl?.department &&
-      issue.category?.administrative_level === eadl?.administrative_level;
+      issue.category?.assigned_department === eadl?.department
+      && issue.administrative_region?.administrative_id === eadl?.administrative_region;
+      //  &&
+      // issue.category?.administrative_level === eadl?.administrative_level;
     // submit params
     const randomCodeNumber = Math.floor(Math.random() * 1000);
     // const newId = incrementId();
     const _issue = {
-      internal_code: '',
+      internal_code: "",//issue.category?.abbreviation+'-'+issue.issueLocation.administrative_id+'-'+String(issues ? (issues.length+1) : 1),
       tracking_code: `${randomWord(SAMPLE_WORDS)}${randomCodeNumber}`,
-      auto_increment_id: '',
+      auto_increment_id: "",//issues ? (issues.length+1) : 1,
       title: issue.issueSummary,
       description: issue.additionalDetails,
       attachments: [
@@ -53,13 +56,13 @@ function Content({ issue, eadl }) {
         ...(issue?.recording ? [issue.recording] : []),
       ],
       status: {
-        name: t('open'),
+        name: t('initial_status'),
         id: 1,
       },
       confirmed: true,
-      assignee: isAssignee ? { id: eadl._id, name: eadl.representative?.name } : '',
+      assignee: isAssignee ? { id: eadl.representative?.id, name: eadl.representative?.name } : '',
       reporter: {
-        id: eadl._id,
+        id: eadl.representative?.id,
         name: eadl.representative?.name,
       },
       citizen_age_group: issue.ageGroup,
@@ -87,6 +90,7 @@ function Content({ issue, eadl }) {
       created_date: new Date(),
       resolution_days: 0,
       resolution_date: '',
+      reject_date: '',
       intake_date: new Date(),
       issue_date: issue.date,
       ongoing_issue: issue.ongoingEvent,
@@ -101,6 +105,7 @@ function Content({ issue, eadl }) {
         prefecture: '',
       },
       type: 'issue',
+      source: 'mobile'
     };
     createIssue(_issue);
     // navigation.navigate("CitizenReportStep4");

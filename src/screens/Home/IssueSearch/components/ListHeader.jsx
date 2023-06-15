@@ -19,11 +19,11 @@ export default function ListHeader(props) {
           },
           shadowRadius: 15,
           shadowOpacity: 1,
-          margin: 23,
-          padding: 15,
+          margin: 17,
+          padding: 10,
         }}
       >
-        <Text
+        {/* <Text
           style={{
             fontFamily: 'Poppins_700Bold',
             fontSize: 14,
@@ -36,21 +36,45 @@ export default function ListHeader(props) {
         >
           {t('overdue_label')}:{' '}
           {props.overdue ? <Text style={{ color: '#ef6a78' }}>{props.overdue}</Text> : '--'}
+        </Text> */}
+        {/* <Text style={styles.statisticsText}>
+          {t('assigned_to_you_label')}: {props.length}
+        </Text> */}
+
+        <Text style={styles.statisticsText}>
+          {t('registe_to_you_label')}: {props.registe}
         </Text>
         <Text style={styles.statisticsText}>
-          {t('assigned_to_you_label')}: {props.length}
+          {t('assigned_to_you_label')}: {props.assigned}
+        </Text>
+        <Text style={styles.statisticsText}>
+          {t('open_to_you_label')}: {props.open}
         </Text>
         <Text style={styles.statisticsText}>
           {t('resolved_by_you_label')}:{' '}
           {props.resolved ? <Text style>{props.resolved}</Text> : '--'}
         </Text>
         <Text style={styles.statisticsText}>
+          {t('your_complaints_resolved_to_you_label')}:{' '}
+          {props.resolved ? <Text style>{props.yourResolution}</Text> : '--'}
+        </Text>
+        <Text style={styles.statisticsText}>
+          {t('reject_to_you_label')}:{' '}
+          {props.resolved ? <Text style>{props.rejected}</Text> : '--'}
+        </Text>
+        <Text style={styles.statisticsText}>
+          {t('your_complaints_reject_to_you_label')}:{' '}
+          {props.resolved ? <Text style>{props.YourRejecte}</Text> : '--'}
+        </Text>
+
+
+        {/* <Text style={styles.statisticsText}>
           {t('average_days_label')}: {props.average ? <Text style>{props.average}</Text> : '--'}
         </Text>
         <Text style={styles.statisticsText}>
           {t('average_satisfaction_label')}:{' '}
           {props.average ? <Text style>issues.average</Text> : '--'}
-        </Text>
+        </Text> */}
       </View>
       <View style={{ padding: 15 }}>
         <Text

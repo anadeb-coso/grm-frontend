@@ -32,7 +32,7 @@ function IssueSearch() {
       LocalGRMDatabase.find({
         selector: {
           type: 'issue',
-          'reporter.name': eadl.representative.name,
+          'reporter.id': eadl.representative.id,
         },
       })
         .then((result) => {

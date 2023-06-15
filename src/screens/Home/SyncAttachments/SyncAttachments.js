@@ -118,7 +118,7 @@ function SyncAttachments({ navigation }) {
                 LocalGRMDatabase.find({
                   selector: {
                     type: 'issue',
-                    'reporter.name': eadl.docs[0].representative.name,
+                    'reporter.id': eadl.docs[0].representative.id,
                   },
                 }).then((res) => {
                   for (let i = 0; i < res.docs.length; i++) {
