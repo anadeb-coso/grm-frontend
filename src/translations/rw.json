@@ -227,9 +227,12 @@
 	"issue_was_rejected": "Ntikijyanye n'umushinga",
 	"issue_was_escalated": "Cyamenyeshejwe inzego zo hejuru",
 	"issue_was_resolved": "Cyakemutse",
+	"issue_was_not_resolved": "The issue wasn't resolved", //to complete
+	"issue_was_re_opened": "The issue was reopened", //to complete
 
 	// issue detail
-	"are_you_accepting": "Uremera ko iki kibazo kijyanye n'uyu mushinga? cyangwa  ntaho gihuriye n'umushinga?",
+	"are_you_accepting": "Uremera ko iki kibazo kijyanye n'uyu mushinga?",
+	"are_you_accepting_or_rejeting": "Uremera ko iki kibazo kijyanye n'uyu mushinga? cyangwa  ntaho gihuriye n'umushinga?",
 	"you_have_accepted": "Wemeye Iki kibazo muri porogaramu. Ubutumwa bwohererejwe umuturage bdetse nuwashyize ikibazo muri porogaramu.",
 	"finished": "Byarangiye",
 	"actions": "IBIKORWA",
@@ -237,9 +240,12 @@
 	"history": "AMATEKA",
 	"days_ago": "iminsi",
 	"view_details": "Reba birambuye",
+	"accept_or_rejet_issue": "Accept or rejet Issue", //to complete
 	"accept_issue": "Emera Ikibazo",
+	"re_open_issue": "Re-open", //to complete
 	"record_steps_taken": "Shyiraho Ibyakozwe",
 	"record_resolution": "Shyiraho imyanzuro",
+	"record_not_resolve": "Set to unresolve", //to complete
 	"rate_appeal": "Kunyurwa Cyangwa kujurira",
 	"escalate": "Inzego zikurikiyeho",
 	"lodged_by": "Cyashyizwemo na:",

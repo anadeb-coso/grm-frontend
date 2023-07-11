@@ -105,7 +105,8 @@ function Content({ issue, eadl, issues }) {
         prefecture: '',
       },
       type: 'issue',
-      source: 'mobile'
+      source: 'mobile',
+      publish: false
     };
     createIssue(_issue);
     // navigation.navigate("CitizenReportStep4");

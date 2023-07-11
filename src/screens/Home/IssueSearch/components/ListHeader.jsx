@@ -56,16 +56,16 @@ export default function ListHeader(props) {
         </Text>
         <Text style={styles.statisticsText}>
           {t('your_complaints_resolved_to_you_label')}:{' '}
-          {props.resolved ? <Text style>{props.yourResolution}</Text> : '--'}
+          {props.yourResolution ? <Text style>{props.yourResolution}</Text> : '--'}
         </Text>
-        <Text style={styles.statisticsText}>
+        {/* <Text style={styles.statisticsText}>
           {t('reject_to_you_label')}:{' '}
-          {props.resolved ? <Text style>{props.rejected}</Text> : '--'}
+          {props.rejected ? <Text style>{props.rejected}</Text> : '--'}
         </Text>
         <Text style={styles.statisticsText}>
           {t('your_complaints_reject_to_you_label')}:{' '}
-          {props.resolved ? <Text style>{props.YourRejecte}</Text> : '--'}
-        </Text>
+          {props.YourRejecte ? <Text style>{props.YourRejecte}</Text> : '--'}
+        </Text> */}
 
 
         {/* <Text style={styles.statisticsText}>

@@ -8,6 +8,7 @@ import {
   ScrollView,
   Text,
   View,
+  Image
 } from 'react-native';
 import { Button, TextInput } from 'react-native-paper';
 import { colors } from '../../../../utils/colors';
@@ -53,6 +54,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
       setHideVillageField(true);
       if(villages.length == 1){
         setVillage(villages[0]);
+        setSelectedselectedVillage(villages[0]);
       }
     }else{
       for(let i=0; i<villages.length; i++){
@@ -71,7 +73,10 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
 
   useEffect(() => {
     let d = [];
-    if([0, 1].includes(cantons.length)){
+    if(cantons.length == 0 && villages.length == 0){
+      setHideCantonField(true);
+      setHideVillageField(true);
+    }else if([0, 1].includes(cantons.length)){
       setHideCantonField(true);
       setVillagesInfos(true, canton);
     }else{
@@ -250,6 +255,18 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
             setOpen={setOpenVillage}
           />
         </View> )}
+
+        {selectedVillage && (<View style={{ paddingHorizontal: 50, flexDirection: 'row', marginBottom: 15 }} >
+          <Image source={require("../../../../../assets/location_icon.png")} 
+          style={{
+            resizeMode: 'contain',
+            width: 50,
+            height: 50,
+            flex: 1
+          }}/>
+          <Text style={{...styles.stepDescription, flex: 4, marginTop: 15}}>{selectedVillage.name}</Text>
+        </View> )}
+
         
 
 
@@ -267,7 +284,8 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
               },
             ]}
             placeholder={t('step_2_placeholder_4')}
-            outlineColor="#f6f6f6"
+            outlineColor="#3e4000"
+            placeholderTextColor="#5f6800"
             theme={theme}
             mode="outlined"
             value={additionalDetails}
@@ -291,7 +309,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
         <View style={{ paddingHorizontal: 50 }}>
           <Button
             theme={theme}
-            disabled={!uniqueRegion || !additionalDetails} // || (!hideVillageField && !village) || (!hideCantonField && !canton)
+            disabled={!uniqueRegion || !additionalDetails || (!selectedVillage && villages.length != 0)} // || (!hideVillageField && !village) || (!hideCantonField && !canton)
             style={{ alignSelf: 'center', margin: 24 }}
             labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
             mode="contained"

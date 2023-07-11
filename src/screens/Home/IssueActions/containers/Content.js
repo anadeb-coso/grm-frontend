@@ -33,6 +33,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const [recordStepsDialog, setRecordStepsDialog] = useState(false);
   const [escalateDialog, setEscalateDialog] = useState(false);
   const [recordResolutionDialog, setRecordResolutionDialog] = useState(false);
+  const [notResolveDialog, setNotResolveDialog] = useState(false);
   const [acceptedDialog, setAcceptedDialog] = useState(false);
   const [rejectedDialog, setRejectedDialog] = useState(false);
   const [escalatedDialog, setEscalatedDialog] = useState(false);
@@ -45,8 +46,10 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const [escalateComment, onChangeEscalateComment] = useState('');
   const [comment, onChangeComment] = useState('');
   const [resolution, onChangeResolution] = useState('');
+  const [notResolutionComment, onChangeNotResolutionComment] = useState('');
   const [isAcceptEnabled, setIsAcceptEnabled] = useState(false);
   const [isRecordResolutionEnabled, setIsRecordResolutionEnabled] = useState(false);
+  const [isNotResolveEnabled, setIsNotResolveEnabled] = useState(false);
   const [isRateAppealEnabled, setIsRateAppealEnabled] = useState(false);
   const [isIssueAssignedToMe, setIsIssueAssignedToMe] = useState(false);
   const goToDetails = () => navigation.jumpTo('IssueDetail');
@@ -62,7 +65,12 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const _hideEscalateDialog = () => setEscalateDialog(false);
   const _showRecordResolutionDialog = () => setRecordResolutionDialog(true);
   const _hideRecordResolutionDialog = () => setRecordResolutionDialog(false);
-  const _hideDialog = () => setAcceptDialog(false);
+  const _showNotresolveDialog = () => setNotResolveDialog(true);
+  const _hideNotresolveDialog = () => setNotResolveDialog(false);
+  const _hideDialog = () => {
+    setAcceptDialog(false);
+    setAcceptedDialog(false);
+  };
   const _showRejectDialog = () => {
     _hideDialog();
     setRejectDialog(true);
@@ -71,13 +79,19 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
   const updateActionButtons = () => {
     function _isAcceptEnabled(x) {
-      if (x.initial_status && isIssueAssignedToMe) {
+      if ((x.initial_status || x.final_status || x.rejected_status || x.unresolved_status) && issue.category.id != 2 && isIssueAssignedToMe) {
         return issue.status?.id === x.id;
       }
     }
 
     function _isRecordResolutionEnabled(x) {
       if (x.open_status && isIssueAssignedToMe) {
+        return issue.status?.id === x.id;
+      }
+    }
+
+    function _isNotResolveEnabled(x) {
+      if (!x.rejected_status && !x.final_status && !x.unresolved_status && issue.category.id != 2 && isIssueAssignedToMe) {
         return issue.status?.id === x.id;
       }
     }
@@ -91,8 +105,33 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     if (statuses) {
       setIsAcceptEnabled(statuses.some(_isAcceptEnabled));
       setIsRecordResolutionEnabled(statuses.some(_isRecordResolutionEnabled));
+      setIsNotResolveEnabled(statuses.some(_isNotResolveEnabled));
       setIsRateAppealEnabled(statuses.some(_isRateAppealEnabled));
     }
+  };
+
+  const issue_status_stories = (status, coment_message) => {
+    issue.issue_status_stories = issue.issue_status_stories ?? []
+    issue.issue_status_stories?.unshift({
+      status: {name: status.name, id: status.id},
+      user: {
+          id: eadl?.representative?.id,
+          username: null,
+          full_name: eadl?.representative?.name
+      },
+      comment: coment_message,
+      datetime: moment()
+    });
+    LocalGRMDatabase.upsert(issue._id, (doc) => {
+      doc = issue;
+      return doc;
+    })
+      .then(() => {
+        
+      })
+      .catch((err) => {
+        console.log('Error', err);
+      });
   };
 
   const acceptIssue = () => {
@@ -100,10 +139,13 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     issue.comments?.unshift({
       name: issue.reporter.name,
       id: eadl.representative?.id,
-      comment: t('issue_was_accepted'),
+      comment: (issue.status.id === 3 || issue.status.id === 4) ? t('issue_was_re_opened') : t('issue_was_accepted'),
       due_at: moment(),
     });
     saveIssueStatus(newStatus, 'accept');
+    issue_status_stories(newStatus, 
+      `${((issue.status.id === 3 || issue.status.id === 4) ? t('issue_was_re_opened') : t('issue_was_accepted'))}\n${reason}`
+    );
   };
 
   const rejectIssue = () => {
@@ -115,6 +157,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       due_at: moment(),
     });
     saveIssueStatus(newStatus, 'reject');
+    issue_status_stories(newStatus, `${t('issue_was_rejected')}\n${reason}`);
   };
 
   const escalateIssue = () => {
@@ -135,6 +178,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     saveIssueStatus();
     setDisableEscalation(true);
     setEscalatedDialog(true);
+
+    const newStatus = statuses.find((x) => x.id === issue.status.id);
+    issue_status_stories(newStatus, `${t('issue_was_escalated')}\n${escalateComment}`);
   };
 
   const recordStep = () => {
@@ -146,6 +192,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     });
     saveIssueStatus();
     setRecordedSteps(true);
+
+    const newStatus = statuses.find((x) => x.id === issue.status.id);
+    issue_status_stories(newStatus, comment);
   };
 
   const recordResolution = () => {
@@ -163,6 +212,22 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     });
     saveIssueStatus(newStatus, 'record_resolution');
     _hideRecordResolutionDialog();
+    issue_status_stories(newStatus, `${t('issue_was_resolved')}\n${resolution}`);
+  };
+
+  const notResolve = () => {
+    issue.unresolved_reason = notResolutionComment;
+    issue.unresolved_date = moment();
+    const newStatus = statuses.find((x) => x.unresolved_status === true);
+    issue.comments?.unshift({
+      name: issue.reporter.name,
+      id: eadl.representative?.id,
+      comment: t('issue_was_not_resolved'),
+      due_at: moment(),
+    });
+    saveIssueStatus(newStatus, 'not_resolve');
+    _hideNotresolveDialog();
+    issue_status_stories(newStatus, `${t('issue_was_not_resolved')}\n${notResolutionComment}`);
   };
 
   const saveIssueStatus = (newStatus, type = 'none') => {
@@ -188,6 +253,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
         } else if (type === 'record_resolution') {
           setRecordedResolution(false);
           _hideRecordResolutionDialog();
+        }else if(type == 'not_resolve'){
+          setNotResolveDialog(false);
+          _hideNotresolveDialog();
         }
       })
       .catch((err) => {
@@ -198,7 +266,8 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   useEffect(() => {
     function _isIssueAssignedToMe() {
       if (issue.assignee && issue.assignee.id) {
-        return issue.reporter.id === issue.assignee.id;
+        // return issue.reporter.id === issue.assignee.id;
+        return issue.assignee.id === eadl.representative?.id;
       }
     }
     setIsIssueAssignedToMe(_isIssueAssignedToMe());
@@ -252,7 +321,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 marginVertical: 10,
               }}
             >
-              <Text style={styles.subtitle}>{t('accept_issue')}</Text>
+              <Text style={styles.subtitle}>{([3, 4, 5].includes(issue.status.id)) ? t('re_open_issue') : t('accept_issue')}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <AntDesign
                   style={{ marginRight: 5 }}
@@ -307,6 +376,31 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 <Feather name="help-circle" size={24} color="gray" />
               </View>
             </TouchableOpacity>
+
+            {/* Not resolve */}
+            <TouchableOpacity
+              onPress={_showNotresolveDialog}
+              disabled={!isNotResolveEnabled}
+              style={{
+                alignItems: 'center',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                marginVertical: 10,
+              }}
+            >
+              <Text style={styles.subtitle}>{t('record_not_resolve')}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <AntDesign
+                  style={{ marginRight: 5 }}
+                  name="rightsquare"
+                  size={35}
+                  color={isNotResolveEnabled ? colors.primary : colors.disabled}
+                />
+                <Feather name="help-circle" size={24} color="gray" />
+              </View>
+            </TouchableOpacity>
+            {/* End Not resolve */}
+
             <TouchableOpacity
               disabled={!isRateAppealEnabled}
               style={{
@@ -330,7 +424,8 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           </View>
           <TouchableOpacity
             onPress={_showEscalateDialog}
-            disabled={disableEscalation || !isRecordResolutionEnabled || issue.escalate_flag}
+            // disabled={disableEscalation || !isRecordResolutionEnabled || issue.escalate_flag}
+            disabled={!issue.status.id == 5}
             style={{
               alignItems: 'center',
               flexDirection: 'row',
@@ -345,9 +440,8 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 style={{ marginRight: 5 }}
                 name="rightsquare"
                 size={35}
-                color={
-                  !disableEscalation && isRecordResolutionEnabled ? colors.primary : colors.disabled
-                }
+                // color={!disableEscalation && isRecordResolutionEnabled ? colors.primary : colors.disabled}
+                color={issue.status.id == 5 ? colors.primary : colors.disabled}
               />
               <Feather name="help-circle" size={24} color="gray" />
             </View>
@@ -415,7 +509,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       {/* ACCEPT MODAL */}
       <Portal>
         <Dialog visible={acceptDialog} onDismiss={_hideDialog}>
-          {!acceptedDialog && <Dialog.Title>{t('accept_issue')}?</Dialog.Title>}
+          {!acceptedDialog && <Dialog.Title>{([3, 4, 5].includes(issue.status.id)) ? (t('re_open_issue') + " ?") : (t('accept_issue') + "?")}</Dialog.Title>}
           <Dialog.Content>
             {!acceptedDialog ? (
               <Paragraph>{t('are_you_accepting')}</Paragraph>
@@ -425,14 +519,29 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           </Dialog.Content>
           {!acceptedDialog ? (
             <Dialog.Actions>
+               {/* {
+                (issue.status.id === 3 || issue.status.id === 4) 
+                  ? 
+                    <></>
+                  : 
+                    <Button
+                      theme={theme}
+                      style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
+                      labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+                      mode="contained"
+                      onPress={_showRejectDialog}
+                    >
+                      {t('reject')}
+                    </Button>
+                } */}
               <Button
                 theme={theme}
                 style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
                 labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
                 mode="contained"
-                onPress={_showRejectDialog}
+                onPress={_hideDialog}
               >
-                {t('reject')}
+                {t('cancel')}
               </Button>
               <Button
                 theme={theme}
@@ -441,7 +550,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 mode="contained"
                 onPress={acceptIssue}
               >
-                {t('accept')}
+                {([3, 4, 5].includes(issue.status.id)) ? t('re_open_issue') : t('accept')}
               </Button>
             </Dialog.Actions>
           ) : (
@@ -618,7 +727,10 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
                 labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
                 mode="contained"
-                onPress={_hideRecordStepsDialog}
+                onPress={() => {
+                  _hideRecordStepsDialog();
+                  _hideRecordResolutionDialog();
+                }}
               >
                 {t('cancel')}
               </Button>
@@ -640,7 +752,10 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
                 labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
                 mode="contained"
-                onPress={() => setRecordedResolution(false)}
+                onPress={() => {
+                  setRecordedResolution(false);
+                  _hideRecordResolutionDialog();
+                }}
               >
                 {t('cancel')}
               </Button>
@@ -657,6 +772,50 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           )}
         </Dialog>
       </Portal>
+          
+      {/* Dialog NOt resolve */}
+      <Portal>
+        <Dialog visible={notResolveDialog} onDismiss={_hideNotresolveDialog}>
+          <Dialog.Content>
+            
+            <Paragraph>{t('record_not_resolve')}</Paragraph>
+
+            <TextInput
+                multiline
+                style={{ marginTop: 10 }}
+                mode="outlined"
+                theme={theme}
+                onChangeText={onChangeNotResolutionComment}
+              />
+
+          </Dialog.Content>
+          
+            <Dialog.Actions>
+              <Button
+                theme={theme}
+                style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
+                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+                mode="contained"
+                onPress={_hideNotresolveDialog}
+              >
+                {t('cancel')}
+              </Button>
+              <Button
+                disabled={notResolutionComment === ''}
+                theme={theme}
+                style={{ alignSelf: 'center', margin: 24 }}
+                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+                mode="contained"
+                onPress={notResolve}
+              >
+                {t('submit')}
+              </Button>
+            </Dialog.Actions>
+            
+        </Dialog>
+      </Portal>
+      {/* Dialog NOt resolve */}
+
     </ScrollView>
   );
 }

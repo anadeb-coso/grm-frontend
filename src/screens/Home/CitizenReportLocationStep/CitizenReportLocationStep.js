@@ -9,6 +9,7 @@ import Content from './containers/Content';
 // import { LocalADMINLEVELDatabase } from "../../../utils/databaseManager";
 import { colors } from '../../../utils/colors';
 import API from '../../../services/API';
+import NetInfo from '@react-native-community/netinfo';
 
 function CitizenReportLocationStep({ route }) {
   const { params } = route;
@@ -50,19 +51,41 @@ function CitizenReportLocationStep({ route }) {
   //     .catch(function (err) {
   //       console.log(err);
   //     });
-  
+//   NetInfo.fetch().then((state) => {
+//     console.log('Connection type', state.type);
+//     console.log('Is connected?', state.isConnected);
+// });
+// const unsubscribe = NetInfo.addEventListener((state) => {
+//     console.log('Connection type', state.type);
+//     console.log('Is connected?', state.isConnected);
+// });
+
+
   new API().administrativeLevelsFilterByAdministrativeRegion(userCommune.administrative_id, {}).then((response) => {
     if (response.error) {
-      Alert.alert('Error to get Cantons', response?.non_field_errors[0], [{ text: 'OK' }], {
+      Alert.alert('Warning', response?.error?.toString(), [{ text: 'OK' }], {
         cancelable: false,
       });
       return;
     }
-    console.log(response.cantons)
-    console.log(response.villages)
     setCantons(response.cantons);
     setVillages(response.villages);
   });
+
+  NetInfo.fetch().then((state) => {
+      if(!state.isConnected){
+        setCantons([]);
+        setVillages([]);
+      }
+  });
+
+  setTimeout(function(){
+    console.log("ici"),
+    setCantons([]);
+    setVillages([]);
+  }, 5000);
+
+
   }, []);
 
   const customStyles = styles();

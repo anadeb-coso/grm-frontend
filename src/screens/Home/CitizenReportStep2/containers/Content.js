@@ -18,6 +18,7 @@ import {
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Button, Checkbox, IconButton, TextInput } from 'react-native-paper';
 import CustomDropDownPicker from '../../../../components/CustomDropDownPicker/CustomDropDownPicker';
+import CustomDropDownPickerWithRender from '../../../../components/CustomDropDownPicker/CustomDropDownPickerWithRender';
 import { colors } from '../../../../utils/colors';
 import { styles } from './Content.styles';
 
@@ -48,7 +49,10 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const [items2, setItems2] = useState(issueCategories ?? []);
   const [sound, setSound] = React.useState();
   const [issueTypeCategoryError, setIssueTypeCategoryError] = React.useState(false);
-  const [selectedIssueType, setSelectedIssueType] = useState(null);
+  const [selectedIssueType, setSelectedIssueType] = useState({
+    id: 1,
+    name: "Plainte"
+  });
 
   useEffect(() => {
     if (issueTypes) {
@@ -247,6 +251,13 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     setAttachments(array);
   }
 
+  const renderItem = (item) => (
+    <DropDownPicker.Item
+      label={`${item.id} - ${item.name}`}
+      value={`${item.id} - ${item.name}`}
+    />
+  );
+
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : null}>
@@ -339,7 +350,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
           onConfirm={handleConfirm}
           onCancel={hideDatePicker}
         />
-        <View style={{ zIndex: 2000 }}>
+        {/* <View style={{ zIndex: 2000 }}>
           <CustomDropDownPicker
             schema={{
               label: 'name',
@@ -352,17 +363,18 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             setItems={setItems}
             onSelectItem={(item) => setSelectedIssueType(item)}
           />
-        </View>
+        </View> */}
         <View style={{ zIndex: 1000 }}>
-          <CustomDropDownPicker
+          <CustomDropDownPickerWithRender
             schema={{
-              label: 'name',
+              label: 'label',
               value: 'name',
               id: 'id',
               confidentiality_level: 'confidentiality_level',
               assigned_department: 'assigned_department',
             }}
-            placeholder={t('step_2_placeholder_2')}
+            // renderItem={renderItem}
+            placeholder={t('step_2_placeholder_1')}
             value={pickerValue2}
             items={items2}
             setPickerValue={setPickerValue2}
@@ -386,7 +398,8 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
               },
             ]}
             placeholder={t('step_2_placeholder_3')}
-            outlineColor="#f6f6f6"
+            outlineColor="#3e4000"
+            placeholderTextColor="#5f6800"
             theme={theme}
             mode="outlined"
             value={additionalDetails}
@@ -512,6 +525,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         )}
         <View style={{ paddingHorizontal: 50 }}>
           <Button
+            disabled={!additionalDetails}
             theme={theme}
             style={{ alignSelf: 'center', margin: 24 }}
             labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}

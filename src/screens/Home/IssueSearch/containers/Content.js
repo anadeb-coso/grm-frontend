@@ -36,10 +36,10 @@ function Content({ issues, eadl, statuses }) {
     //   (issue) =>
     //     ((issue.assignee && issue.assignee.id === eadl.representative?.id) ||
     //       (issue.reporter && issue.reporter.id === eadl.representative?.id)) &&
-    //     issue.status.id === openStatus.id
+    //     issue?.status?.id === openStatus.id
     // );
     filteredIssuesCopy.open = issues.filter(
-      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id) && issue.status.id === 2
+      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id) && issue?.status?.id === 2
     );
 
     // const resolvedStatus = statuses.find((el) => el.final_status === true);
@@ -47,22 +47,22 @@ function Content({ issues, eadl, statuses }) {
     //   (issue) =>
     //     ((issue.assignee && issue.assignee.id === eadl.representative?.id) ||
     //       (issue.reporter && issue.reporter.id === eadl.representative?.id)) &&
-    //     issue.status.id === resolvedStatus.id
+    //     issue?.status?.id === resolvedStatus.id
     // );
     filteredIssuesCopy.resolved = issues.filter(
-      (issue) => (issue.assignee && issue.assignee.id === eadl.representative?.id) && issue.status.id === 3
+      (issue) => (issue.assignee && issue.assignee.id === eadl.representative?.id) && issue?.status?.id === 3
     );
 
     filteredIssuesCopy.yourResolution = issues.filter(
-      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id) && issue.status.id === 3
+      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id) && issue?.status?.id === 3
     );
 
     filteredIssuesCopy.rejected = issues.filter(
-      (issue) => (issue.assignee && issue.assignee.id === eadl.representative?.id) && issue.status.id === 4
+      (issue) => (issue.assignee && issue.assignee.id === eadl.representative?.id) && issue?.status?.id === 4
     );
 
     filteredIssuesCopy.YourRejecte = issues.filter(
-      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id) && issue.status.id === 4
+      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id) && issue?.status?.id === 4
     );
 
     setFilteredIssues(filteredIssuesCopy);
@@ -151,8 +151,8 @@ function Content({ issues, eadl, statuses }) {
       assigned={filteredIssues?.assigned?.length || 0}
       open={filteredIssues?.open?.length || 0}
       yourResolution={filteredIssues?.yourResolution?.length || 0}
-      rejected={filteredIssues?.rejected?.length || 0}
-      YourRejecte={filteredIssues?.YourRejecte?.length || 0}
+      // rejected={filteredIssues?.rejected?.length || 0}
+      // YourRejecte={filteredIssues?.YourRejecte?.length || 0}
     />
   );
   return (
@@ -199,7 +199,7 @@ function Content({ issues, eadl, statuses }) {
           value="resolved"
         />
         
-        <ToggleButton
+        {/* <ToggleButton
           style={{ flex: 1 }}
           icon={() => (
             <View>
@@ -207,7 +207,7 @@ function Content({ issues, eadl, statuses }) {
             </View>
           )}
           value="rejected"
-        />
+        /> */}
       </ToggleButton.Row>
       <FlatList
         style={{ flex: 1 }}

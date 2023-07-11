@@ -66,7 +66,8 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
           <TextInput
             style={styles.grmInput}
             placeholder={t('contact_step_placeholder_1')}
-            outlineColor="#f6f6f6"
+            outlineColor="#3e4000"
+            placeholderTextColor="#5f6800"
             theme={theme}
             mode="outlined"
             value={name}
@@ -128,7 +129,7 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
               setPickerValue={setPickerGenderValue}
               setItems={setGenders}
             />
-            <CustomDropDownPicker
+            {_citizenGroupsI ? <CustomDropDownPicker
               schema={{
                 label: 'name',
                 value: 'id',
@@ -140,8 +141,8 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
               items={_citizenGroupsI}
               setPickerValue={setSelectedCitizenGroupI}
               setItems={setCitizenGroupsI}
-            />
-            <CustomDropDownPicker
+            /> : <></>}
+            {_citizenGroupsII ? <CustomDropDownPicker
               schema={{
                 label: 'name',
                 value: 'id',
@@ -153,7 +154,7 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
               items={_citizenGroupsII}
               setPickerValue={setSelectedCitizenGroupII}
               setItems={setCitizenGroupsII}
-            />
+            /> : <></>}
             <View style={{ paddingHorizontal: 50 }}>
               <Button
                 theme={theme}
