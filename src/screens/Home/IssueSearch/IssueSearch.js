@@ -29,19 +29,26 @@ function IssueSearch() {
   useEffect(() => {
     // FETCH ISSUE CATEGORY
     if (eadl) {
+      let selector = {
+        type: 'issue',
+        // 'reporter.id': eadl.representative.id,
+        "$or": [
+          {
+            "reporter.id": eadl.representative.id
+          },
+          {
+            "assignee.id": eadl.representative.id
+          }
+        ]
+      }
+      if(eadl.administrative_region == "1"){
+        selector = {
+          type: 'issue'
+        }
+      }
+
       LocalGRMDatabase.find({
-        selector: {
-          type: 'issue',
-          // 'reporter.id': eadl.representative.id,
-          "$or": [
-            {
-              "reporter.id": eadl.representative.id
-            },
-            {
-              "assignee.id": eadl.representative.id
-            }
-          ]
-        },
+        selector: selector
       })
         .then((result) => {
           setIssues(result?.docs);

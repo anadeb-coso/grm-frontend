@@ -15,7 +15,7 @@ const CitizenReportStep2 = ({ route }) => {
       selector: { type: "issue_category" },
     })
       .then(function (result) {
-        setIssueCategories(result?.docs);
+        setIssueCategories((result?.docs ?? []).filter((obj) => !([4, 7].includes(obj.id))));
       })
       .catch(function (err) {
         console.log(err);

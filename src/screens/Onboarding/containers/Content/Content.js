@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text, View } from 'react-native';
+import { Text, View, TouchableOpacity } from 'react-native';
 import { Button, Title } from 'react-native-paper';
 import { styles } from './Content.style';
 // import { PreferencesContext } from "@providers/PreferencesProvider/PreferencesContext";
@@ -63,6 +63,10 @@ function Content() {
         {/* <Text>V:1.0.1</Text> */}
       </View>
       <LanguageSelector />
+
+      <TouchableOpacity onPress={() => Linking.openURL("https://cheery-sable-3fbd0b.netlify.app/")}>
+        <Text style={{ color: 'green' }}>{t('privacy_policy')}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
