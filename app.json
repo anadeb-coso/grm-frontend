@@ -2,7 +2,7 @@
   "expo": {
     "name": "MGP TG",
     "slug": "grm-app",
-    "version": "1.0.0",
+    "version": "0.0.9",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -11,7 +11,6 @@
     },
     "updates": {
       "fallbackToCacheTimeout": 0
-      // "url": "https://u.expo.dev/13cc8fd9-97c4-46f0-9f52-d0b0043066cd"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -48,6 +47,11 @@
       "expo-location",
       "expo-image-picker",
       "expo-av"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9bfe59c1-ca12-4be9-9241-950dddc0ed69"
+      }
+    }
   }
 }
