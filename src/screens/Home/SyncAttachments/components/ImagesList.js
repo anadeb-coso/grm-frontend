@@ -9,7 +9,7 @@ function ImagesList({ attachments }) {
   function AttachmentComponent({ attachment }) {
     return (
       <View
-        key={attachment.id}
+        key={attachment?.attachment?.id}
         style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -68,7 +68,7 @@ function ImagesList({ attachments }) {
       attachments?.length > 0 &&
         _setAttachments(
           attachments.map(
-            (obj) => obj?.attachment?.uploaded === false && <AttachmentComponent attachment={obj} />
+            (obj) => obj?.attachment?.uploaded === false && <AttachmentComponent key={obj?.attachment?.id} attachment={obj} />
           )
         );
       setLoading(false);

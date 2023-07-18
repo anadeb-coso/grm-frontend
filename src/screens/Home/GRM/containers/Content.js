@@ -34,13 +34,33 @@ function Content() {
           }
         />
       </View>
-      <BigCard
+      {/* <BigCard
         image={require('../../../../../assets/small-rectangle.png')}
         onCardPress={() => navigation.navigate('SyncAttachments')}
         title={t('sync_files')}
         icon={<SyncIcon />}
         // cardHeight={79}
-      />
+      /> */}
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-evenly',
+          borderRadius: 15,
+        }}
+      >
+        <SmallCard
+          image={require('../../../../../assets/BG_1.png')}
+          onCardPress={() => navigation.navigate('SyncDatas')}
+          title={t('sync_datas')}
+          icon={<SyncIcon />}
+        />
+        <SmallCard
+          image={require('../../../../../assets/BG_1.png')}
+          onCardPress={() => navigation.navigate('SyncAttachments')}
+          title={t('sync_files')}
+          icon={<SyncIcon />}
+        />
+      </View>
       <View
         style={{
           flexDirection: 'row',

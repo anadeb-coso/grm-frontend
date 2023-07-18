@@ -26,6 +26,7 @@ import PhaseTasks from './PhaseTasks/PhaseTasks';
 import RegisterSubprojects from './RegisterSubprojects/RegisterSubprojects';
 import RegisterVotesActivity from './RegisterVotesActivity/RegisterVotesActivity';
 import SyncAttachments from './SyncAttachments/SyncAttachments';
+import SyncDatas from './SyncDatas/SyncDatas';
 import WorkInProgress from './WorkInProgress';
 
 import CitizenReportLocationStep from './CitizenReportLocationStep/CitizenReportLocationStep';
@@ -172,7 +173,12 @@ function DashboardStackScreen() {
       <HomeStack.Screen
         name="SyncAttachments"
         component={SyncAttachments}
-        options={({ navigation, route }) => customHeaderOptions('Sync Files')}
+        options={({ navigation, route }) => customHeaderOptions(t('sync_files_abbreviation'))}
+      />
+      <HomeStack.Screen
+        name="SyncDatas"
+        component={SyncDatas}
+        options={({ navigation, route }) => customHeaderOptions(t('sync_datas_abbreviation'))}
       />
       {/* <HomeStack.Screen name="Details" component={WorkInProgress} /> */}
     </HomeStack.Navigator>

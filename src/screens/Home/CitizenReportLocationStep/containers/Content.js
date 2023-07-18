@@ -8,7 +8,8 @@ import {
   ScrollView,
   Text,
   View,
-  Image
+  Image,
+  RefreshControl
 } from 'react-native';
 import { Button, TextInput } from 'react-native-paper';
 import { colors } from '../../../../utils/colors';
@@ -46,7 +47,40 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
   const [hideVillageField, setHideVillageField] = useState(true);
   const [open, setOpen] = useState(false);
   const [openVillage, setOpenVillage] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   
+
+  
+
+  const setAdministrativeLevel = () => {
+    let d = [];
+    if(cantons.length == 0 && villages.length == 0){
+      setHideCantonField(true);
+      setHideVillageField(true);
+    }else if([0, 1].includes(cantons.length)){
+      setHideCantonField(true);
+      setVillagesInfos(true, canton);
+    }else{
+      setHideCantonField(false);
+      setVillagesInfos(false, canton);
+      for(let i=0; i<cantons.length; i++){
+        d.push({name: String(cantons[i].name), id: String(cantons[i].id)});
+        if(i+1==cantons.length){
+          setCantonsItems(d);
+        }
+      }
+    }
+  }
+  useEffect(() => {
+    setAdministrativeLevel();
+    // setVillagesInfos(hideCantonField, canton);
+   
+  }, []);
+  const onRefresh = () => {
+    setRefreshing(true);
+    setAdministrativeLevel();
+    setRefreshing(false);
+  };
 
   const setVillagesInfos = (hideC, c) => {
     let v = [];
@@ -70,28 +104,6 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
       setHideVillageField(false);
     }
   }
-
-  useEffect(() => {
-    let d = [];
-    if(cantons.length == 0 && villages.length == 0){
-      setHideCantonField(true);
-      setHideVillageField(true);
-    }else if([0, 1].includes(cantons.length)){
-      setHideCantonField(true);
-      setVillagesInfos(true, canton);
-    }else{
-      setHideCantonField(false);
-      setVillagesInfos(false, canton);
-      for(let i=0; i<cantons.length; i++){
-        d.push({name: String(cantons[i].name), id: String(cantons[i].id)});
-        if(i+1==cantons.length){
-          setCantonsItems(d);
-        }
-      }
-    }
-    // setVillagesInfos(hideCantonField, canton);
-   
-  }, []);
 
   
   
@@ -150,7 +162,9 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
   //     return _communes;
   //   };
   return (
-    <ScrollView>
+    <ScrollView refreshControl={
+      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+    }>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : null}>
         <View style={{ padding: 23 }}>
           <Text style={styles.stepText}>{t('step_4')}</Text>

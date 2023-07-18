@@ -25,60 +25,8 @@ function SyncAttachments({ navigation }) {
   const onDismissSnackBar = () => setErrorVisible(false);
 
   const { username, userPassword } = useSelector((state) => state.get('authentication').toObject());
-  const uploadFile = async (file, dbConfig) => {
-    try {
-      const tmp = await getInfoAsync(file?.attachment?.local_url);
-      if (tmp.exists) {
-        const formData = new FormData();
-        formData.append('username', dbConfig?.username);
-        formData.append('password', dbConfig?.password);
-        formData.append('doc_id', file?.docId);
-        formData.append('phase', file?.phaseOrdinal);
-        formData.append('task', file?.taskOrdinal);
-        formData.append('attachment_id', file?.attachment?.id);
-        formData.append('file', {
-          uri:
-            Platform.OS === 'android'
-              ? file?.attachment?.local_url
-              : file?.attachment?.local_url.replace('file://', ''),
-          name: file?.attachment?.name,
-          type: file.attachment?.isAudio ? 'audio/m4a' : 'image/jpeg', // it may be necessary in Android.
-        });
 
-        await axios.post(
-          `${baseURL}${
-            file.taskOrdinal ? '/attachments/upload-to-task' : '/attachments/upload-to-issue'
-          }`,
-          formData,
-          { 'Content-Type': 'multipart/form-data' }
-        );
-        return {};
-      }
-      setErrorVisible(true);
-      return { error: FILE_READ_ERROR };
-    } catch (e) {
-      setErrorVisible(true);
-      return { error: FILE_READ_ERROR };
-    }
-  };
-
-  const syncImages = async () => {
-    const dbConfig = await getEncryptedData(
-      `dbCredentials_${userPassword}_${username.replace('@', '')}`
-    );
-    setLoading(true);
-    let isError = false;
-    for (let i = 0; i < attachments.length; i++) {
-      if (attachments[i]?.attachment?.uploaded === false) {
-        const response = await uploadFile(attachments[i], dbConfig);
-        if (response.error) isError = true;
-      }
-    }
-    setLoading(false);
-    if (!isError) setSuccessModal(true);
-  };
-
-  useEffect(() => {
+  const getAndSetAttachments = () => {
     if (!fetchedContent) {
       async function fetchContent() {
         LocalDatabase.find({
@@ -151,7 +99,65 @@ function SyncAttachments({ navigation }) {
       setLoading(true);
       fetchContent();
     }
+  };
+  useEffect(() => {
+    getAndSetAttachments();
   }, []);
+
+  const uploadFile = async (file, dbConfig) => {
+    try {
+      const tmp = await getInfoAsync(file?.attachment?.local_url);
+      if (tmp.exists) {
+        const formData = new FormData();
+        formData.append('username', dbConfig?.username);
+        formData.append('password', dbConfig?.password);
+        formData.append('doc_id', file?.docId);
+        formData.append('phase', file?.phaseOrdinal);
+        formData.append('task', file?.taskOrdinal);
+        formData.append('attachment_id', file?.attachment?.id);
+        formData.append('file', {
+          uri:
+            Platform.OS === 'android'
+              ? file?.attachment?.local_url
+              : file?.attachment?.local_url.replace('file://', ''),
+          name: file?.attachment?.name,
+          type: file.attachment?.isAudio ? 'audio/m4a' : 'image/jpeg', // it may be necessary in Android.
+        });
+
+        await axios.post(
+          `${baseURL}${
+            file.taskOrdinal ? '/attachments/upload-to-task' : '/attachments/upload-to-issue'
+          }`,
+          formData,
+          { 'Content-Type': 'multipart/form-data' }
+        );
+        return {};
+      }
+      setErrorVisible(true);
+      return { error: FILE_READ_ERROR };
+    } catch (e) {
+      setErrorVisible(true);
+      return { error: FILE_READ_ERROR };
+    }
+  };
+
+  const syncImages = async () => {
+    const dbConfig = await getEncryptedData(
+      `dbCredentials_${userPassword}_${username.replace('@', '')}`
+    );
+    setLoading(true);
+    let isError = false;
+    for (let i = 0; i < attachments.length; i++) {
+      if (attachments[i]?.attachment?.uploaded === false) {
+        const response = await uploadFile(attachments[i], dbConfig);
+        if (response.error) isError = true;
+      }
+    }
+    setLoading(false);
+    if (!isError) setSuccessModal(true);
+
+    getAndSetAttachments();
+  };
   return (
     <View style={{ flex: 1 }}>
       <Modal animationType="slide" style={{ flex: 1 }} visible={successModal}>

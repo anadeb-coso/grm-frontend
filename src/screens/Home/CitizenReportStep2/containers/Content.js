@@ -439,6 +439,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             {attachments.length > 0 &&
               attachments.map((attachment, index) => (
                 <ImageBackground
+                  key={attachment.id}
                   source={{ uri: attachment.uri }}
                   style={{
                     height: 80,

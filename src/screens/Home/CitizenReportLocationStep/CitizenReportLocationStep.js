@@ -83,7 +83,7 @@ function CitizenReportLocationStep({ route }) {
     console.log("ici"),
     setCantons([]);
     setVillages([]);
-  }, 5000);
+  }, 10000);
 
 
   }, []);
