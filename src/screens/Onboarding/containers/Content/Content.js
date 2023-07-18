@@ -7,6 +7,7 @@ import { styles } from './Content.style';
 // import { PreferencesContext } from "@providers/PreferencesProvider/PreferencesContext";
 import ThinkingSVG from '../../../../../assets/think.svg';
 import LanguageSelector from '../../../../translations/LanguageComponent';
+import * as Linking from 'expo-linking';
 
 function Content() {
   const { t } = useTranslation();
