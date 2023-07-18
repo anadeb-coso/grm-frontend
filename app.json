@@ -2,7 +2,7 @@
   "expo": {
     "name": "MGP TG",
     "slug": "grm-app",
-    "version": "0.0.9",
+    "version": "0.0.99",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -38,7 +38,8 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.anadeb.grmapp"
+      "package": "com.anadeb.grmapp",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"
