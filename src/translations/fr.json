@@ -25,6 +25,10 @@
   "collect_reports": "Collecte Plaintes ou Suggestions",
   "search_reports": "Recherche des Plaintes",
   "sync_files": "Synchroniser les Fichiers",
+  "sync_datas": "Synchroniser les Données",
+  "sync_files_abbreviation": "Sync les Fichiers",
+  "sync_datas_abbreviation": "Sync les Données",
+	"sync_datas_text": "Nous vous mettons cette page à votre disposition pour vos synchronisations manuelles des données pour éviter les pertes de ces dernières en cas de non-synchronisation de celles-ci.",
 
   //GRM-Intro
   "intro_text_0": "Informez le citoyen : ",

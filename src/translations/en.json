@@ -25,6 +25,10 @@
   "collect_reports": "Collect Reports from Citizens",
   "search_reports": "Search Reports",
   "sync_files": "Sync Files",
+  "sync_datas": "Sync Datas",
+  "sync_files_abbreviation": "Sync Files",
+  "sync_datas_abbreviation": "Sync Datas",
+  "sync_datas_text": "This page is at your disposal for manual data synchronization, to avoid data loss in the event of non-synchronization.",
 
   //GRM-Intro
   "intro_text_0": "Tell the citizen: ",

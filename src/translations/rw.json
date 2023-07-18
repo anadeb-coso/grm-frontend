@@ -29,6 +29,10 @@
 	"search_reports": "Shakisha raporo",
 
 	"sync_files": "Guhuza dosiye",
+	"sync_datas": "Sync Datas", //to complete
+	"sync_files_abbreviation": "Sync Files", //to complete
+	"sync_datas_abbreviation": "Sync Datas", //to complete
+	"sync_datas_text": "This page is at your disposal for manual data synchronization, to avoid data loss in the event of non-synchronization.", //to complete
 
 	//GRM-Intro
 	"intro_text_0": "Icyitonderwa ku bakangurambaga: ",
