@@ -24,11 +24,15 @@ function Content({ issues, eadl, statuses }) {
     const filteredIssuesCopy = { ...issues };
 
     filteredIssuesCopy.registe = issues.filter(
-      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id)
+      (issue) => ( issue?.status?.id === 1 && 
+        ((issue.reporter && issue.reporter.id === eadl.representative?.id) || eadl.administrative_region == "1")
+        )
     );
 
     filteredIssuesCopy.assigned = issues.filter(
-      (issue) => issue.assignee && issue.assignee.id === eadl.representative?.id
+      (issue) => ( issue.assignee && issue.assignee.id && 
+        ((issue.assignee.id === eadl.representative?.id)  || eadl.administrative_region == "1")
+        )
     );
 
     // const openStatus = statuses.find((el) => el.open_status === true);
@@ -39,7 +43,9 @@ function Content({ issues, eadl, statuses }) {
     //     issue?.status?.id === openStatus.id
     // );
     filteredIssuesCopy.open = issues.filter(
-      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id) && issue?.status?.id === 2
+      (issue) => (issue?.status?.id === 2 &&
+        ((issue.reporter && issue.reporter.id === eadl.representative?.id) || eadl.administrative_region == "1")
+      )
     );
 
     // const resolvedStatus = statuses.find((el) => el.final_status === true);
@@ -50,19 +56,27 @@ function Content({ issues, eadl, statuses }) {
     //     issue?.status?.id === resolvedStatus.id
     // );
     filteredIssuesCopy.resolved = issues.filter(
-      (issue) => (issue.assignee && issue.assignee.id === eadl.representative?.id) && issue?.status?.id === 3
+      (issue) => (issue?.status?.id === 3 &&
+        ((issue.assignee && issue.assignee.id === eadl.representative?.id) || eadl.administrative_region == "1")
+      )
     );
 
     filteredIssuesCopy.yourResolution = issues.filter(
-      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id) && issue?.status?.id === 3
+      (issue) => (issue?.status?.id === 3 &&
+        ((issue.reporter && issue.reporter.id === eadl.representative?.id) || eadl.administrative_region == "1")
+      )
     );
 
     filteredIssuesCopy.rejected = issues.filter(
-      (issue) => (issue.assignee && issue.assignee.id === eadl.representative?.id) && issue?.status?.id === 4
+      (issue) => (issue?.status?.id === 4 &&
+        ((issue.assignee && issue.assignee.id === eadl.representative?.id) || eadl.administrative_region == "1")
+      )
     );
 
     filteredIssuesCopy.YourRejecte = issues.filter(
-      (issue) => (issue.reporter && issue.reporter.id === eadl.representative?.id) && issue?.status?.id === 4
+      (issue) => (issue?.status?.id === 4 &&
+        ((issue.reporter && issue.reporter.id === eadl.representative?.id) || eadl.administrative_region == "1")
+      )
     );
 
     setFilteredIssues(filteredIssuesCopy);
@@ -112,7 +126,24 @@ function Content({ issues, eadl, statuses }) {
           }}
         >
           <Text style={[styles.subTitle]}>Code: {item.tracking_code}</Text>
-          <MaterialCommunityIcons name="chevron-right-circle" size={24} color={colors.primary} />
+          {
+            (item.reporter && item.reporter.id) 
+            ? <Text style={[styles.subTitle]}>{t('reported_by')}: {
+                item.reporter.id == eadl.representative?.id ? t('me') : item.reporter.name
+              }</Text>
+            : <></>
+          }
+          
+          {/* <MaterialCommunityIcons name="chevron-right-circle" size={24} color={colors.primary} /> */}
+          <MaterialCommunityIcons name="chevron-right-circle" size={24} color={
+            item.status.id == 1 ? 'red' : (
+              item.status.id == 2 ? 'purple' : (
+                item.status.id == 3 ? 'green' : (
+                  item.status.id == 5 ? 'yellow' : 'red'
+                  )
+                )
+            )
+          } />
         </View>
         {/* <Text style={[styles.title]}>{item.description}</Text> */}
       </TouchableOpacity>

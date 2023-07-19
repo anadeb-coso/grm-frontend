@@ -88,7 +88,7 @@ export default function ListHeader(props) {
             color: '#707070',
           }}
         >
-          {t('your_issues_label')}:
+          {t('issues')}:
         </Text>
       </View>
     </View>

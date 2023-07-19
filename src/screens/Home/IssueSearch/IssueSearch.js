@@ -32,6 +32,7 @@ function IssueSearch() {
       let selector = {
         type: 'issue',
         // 'reporter.id': eadl.representative.id,
+        confirmed: true,
         "$or": [
           {
             "reporter.id": eadl.representative.id
@@ -43,7 +44,8 @@ function IssueSearch() {
       }
       if(eadl.administrative_region == "1"){
         selector = {
-          type: 'issue'
+          type: 'issue',
+          confirmed: true
         }
       }
 
@@ -51,6 +53,15 @@ function IssueSearch() {
         selector: selector
       })
         .then((result) => {
+          let docs = result?.docs ?? [];
+          docs.sort((a, b) => {
+            if(a.created_date && b.created_date){
+              return a.created_date < b.created_date ? 1 : -1; // descending
+              // return a.created_date > b.created_date ? 1 : -1; // ascending
+            }
+          });
+
+
           setIssues(result?.docs);
         })
         .catch((err) => {
