@@ -9,8 +9,9 @@ import {
 } from '@expo-google-fonts/poppins';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { View, Text } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { ActivityIndicator } from 'react-native-paper';
 import { init } from '../store/ducks/authentication.duck';
 import { setCommune, setDocument } from '../store/ducks/userDocument.duck';
 import { getUserDocs } from '../utils/databaseManager';
@@ -68,7 +69,12 @@ function Router({ theme }) {
     Poppins_200ExtraLight,
   });
 
-  if (loading || !fontsLoaded) return <View />;
+  if (loading || !fontsLoaded) return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <ActivityIndicator size="large" color="#24c38b" />
+      <Text style={{ fontSize: 18, marginTop: 12 }} color="#000000">Loading...</Text>
+    </View>
+  );
 
   return (
     <NavigationContainer theme={theme || DefaultTheme}>
