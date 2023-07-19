@@ -120,6 +120,7 @@
   "female": "Femme",
   "other": "Autre",
   "rather_not_say":  "Préfère ne rien dire",
+  "loading":  "Chargement...",
 
   //issue detail
   "description_label": "Description",
@@ -161,6 +162,9 @@
   "issue_was_resolved": "La plainte a été résolue",
   "issue_was_not_resolved": "La plainte n'a pas été résolue",
   "issue_was_re_opened": "La plainte a été reouverte",
+  "reported_by": "Rapporté par",
+  "me": "Moi",
+  "issues": "Plaintes",
 
   // issue detail
   "are_you_accepting": "Acceptez-vous qu'il s'agisse d'une plainte / demande liée au projet ?",

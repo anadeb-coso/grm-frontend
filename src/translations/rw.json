@@ -176,6 +176,7 @@
 	"female": "Gore",
 	"other": "Ikindi",
 	"rather_not_say":  "Sinshaka kubivuga",
+	"loading":  "Loading...", //to complete
 
 	//issue detail
 	"description_label": "Ibisobanuro",
@@ -234,6 +235,9 @@
 	"issue_was_resolved": "Cyakemutse",
 	"issue_was_not_resolved": "The issue wasn't resolved", //to complete
 	"issue_was_re_opened": "The issue was reopened", //to complete
+	"reported_by": "Reported by", //to complete
+	"me": "Me", //to complete
+	"issues": "Issues", //to complete
 
 	// issue detail
 	"are_you_accepting": "Uremera ko iki kibazo kijyanye n'uyu mushinga?",

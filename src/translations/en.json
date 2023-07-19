@@ -118,6 +118,7 @@
   "female": "Female",
   "other": "Other",
   "rather_not_say":  "Rather not say",
+  "loading":  "Loading...",
 
   //issue detail
   "description_label": "Description",
@@ -159,6 +160,9 @@
   "issue_was_resolved": "The issue was resolved",
   "issue_was_not_resolved": "The issue wasn't resolved",
   "issue_was_re_opened": "The issue was reopened",
+  "reported_by": "Reported by",
+  "me": "Me",
+  "issues": "Issues",
 
   // issue detail
   "are_you_accepting": "Are you accepting this is a grievance relevant to the project?",
