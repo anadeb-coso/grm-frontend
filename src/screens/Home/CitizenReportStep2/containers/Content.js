@@ -157,7 +157,8 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
       if (!result.cancelled) {
         const manipResult = await ImageManipulator.manipulateAsync(
           result.localUri || result.uri,
-          [{ resize: { width: 1000, height: 1000 } }],
+          // [{ resize: { width: 1000, height: 1000 } }],
+          [{ resize: { width: manipResult.width, height: manipResult.height } }],
           { compress: 1, format: ImageManipulator.SaveFormat.PNG }
         );
         setAttachments([...attachments, { ...manipResult, id: new Date() }]);
@@ -178,7 +179,8 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         if (!result.cancelled) {
           const manipResult = await ImageManipulator.manipulateAsync(
             result.localUri || result.uri,
-            [{ resize: { width: 1000, height: 1000 } }],
+            // [{ resize: { width: 1000, height: 1000 } }],
+            [{ resize: { width: manipResult.width, height: manipResult.height } }],
             { compress: 1, format: ImageManipulator.SaveFormat.PNG }
           );
           setAttachments([...attachments, { ...manipResult, id: new Date() }]);
