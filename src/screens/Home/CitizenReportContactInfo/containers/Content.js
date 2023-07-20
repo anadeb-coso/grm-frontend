@@ -129,7 +129,7 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
               setPickerValue={setPickerGenderValue}
               setItems={setGenders}
             />
-            {_citizenGroupsI ? <CustomDropDownPicker
+            {(_citizenGroupsI && _citizenGroupsI.length > 0) ? <CustomDropDownPicker
               schema={{
                 label: 'name',
                 value: 'id',
@@ -142,7 +142,7 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
               setPickerValue={setSelectedCitizenGroupI}
               setItems={setCitizenGroupsI}
             /> : <></>}
-            {_citizenGroupsII ? <CustomDropDownPicker
+            {(_citizenGroupsII && _citizenGroupsII.length > 0) ? <CustomDropDownPicker
               schema={{
                 label: 'name',
                 value: 'id',
