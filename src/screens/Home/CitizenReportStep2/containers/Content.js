@@ -158,7 +158,11 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         const manipResult = await ImageManipulator.manipulateAsync(
           result.localUri || result.uri,
           // [{ resize: { width: 1000, height: 1000 } }],
-          [{ resize: { width: manipResult.width, height: manipResult.height } }],
+          [{ resize: { 
+            width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000, 
+            height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000 
+          } 
+          }],
           { compress: 1, format: ImageManipulator.SaveFormat.PNG }
         );
         setAttachments([...attachments, { ...manipResult, id: new Date() }]);
@@ -180,7 +184,10 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
           const manipResult = await ImageManipulator.manipulateAsync(
             result.localUri || result.uri,
             // [{ resize: { width: 1000, height: 1000 } }],
-            [{ resize: { width: manipResult.width, height: manipResult.height } }],
+            [{ resize: {
+              width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000, 
+              height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000 
+             } }],
             { compress: 1, format: ImageManipulator.SaveFormat.PNG }
           );
           setAttachments([...attachments, { ...manipResult, id: new Date() }]);
