@@ -97,6 +97,7 @@
   "step_location_body": "Informez le citoyen : \"Veuillez m'indiquer le lieu de l'incident.\"",
   "step_location_dropdown_placeholder": "Tapez pour sélectionner",
   "step_location_input_explanation": "Veuillez ajouter tout détail supplémentaire concernant le lieu, le cas échéant.",
+  "warning_message_location_not_load": "Les Localités n'ont pas été chargées. Veuillez recharger la page.",
 
 
   //step 4

@@ -98,6 +98,7 @@
   "step_location_body": "Tell the citizen: You should try to get as specific a location as needed\nto solve the issue. Addresses, street corners, descriptions of the\narea can all be helpful. If this is a confidential or sensitive issue,\nsimply select the locale and collect no further detalls.",
   "step_location_dropdown_placeholder": "Tap to select",
   "step_location_input_explanation": "Please enter additional details about the location\nthat might help resolve the issue (e.g. street\naddress, street corner, or description of location).",
+  "warning_message_location_not_load": "Localities have not been loaded. Please reload the page.",
 
 
   "step_4_subtitle": "You’re done!",

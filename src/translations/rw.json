@@ -164,6 +164,7 @@
 	"step_5": "Intambwe ya 5",
 
 	"step_6": "Intambwe ya 6",
+	"warning_message_location_not_load": "Localities have not been loaded. Please reload the page.", //to complete
 
 	//general
 	"save_button_text": "BIKA & UKOMEZE",
