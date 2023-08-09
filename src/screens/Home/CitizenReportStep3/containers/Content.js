@@ -76,6 +76,7 @@ function Content({ issue, eadl, issues }) {
         location_description: issue.locationDescription,
       },
       administrative_region: issue.issueLocation,
+      structure_in_charge: issue.structure_in_charge,
       // category: {
       //   id: 1,
       //   name: "Environmental",

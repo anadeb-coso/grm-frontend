@@ -80,6 +80,12 @@
   "step_2_keep_name_confidential": "Gardez le nom confidentiel. Seule la personne chargée de résoudre la plainte verra le nom.",
   "step_2_on_behalf_of_someone": "Il s'agit d'une personne qui remplit ceci pour le compte d'une autre personne.",
   "step_2_organization_behalf_someone": "Il s'agit d'une organisation qui remplit ceci pour le compte d'une autre personne.",
+  "step_2_structure_in_charge": "Structure en charge",
+  "step_2_structure_in_charge_name": "Nom de la structure en charge de cette plainte",
+  "step_2_structure_in_charge_phone": "Numéro de téléphone de la structure",
+  "step_2_structure_in_charge_email": "Adresse mail de la structure",
+  "step_2_validation_email": "L'e-mail n'est pas correct",
+
 
   //step 3
   "step_3": "Étape 3",

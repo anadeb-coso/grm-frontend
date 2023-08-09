@@ -81,6 +81,12 @@
   "step_2_keep_name_confidential": "Keep name confidential. Only the person resolving the issue will see the name.",
   "step_2_on_behalf_of_someone": "This is an individual filing on behalf of someone else.",
   "step_2_organization_behalf_someone": "This is an organization filing on behalf of someone else.",
+  "step_2_structure_in_charge": "Structure in charge",
+  "step_2_structure_in_charge_name": "Name of structure in charge of this issue",
+  "step_2_structure_in_charge_phone": "Phone number of the structure",
+  "step_2_structure_in_charge_email": "Structure's e-mail address",
+  "step_2_validation_email": "Email is Not Correct",
+
 
   //step 3
   "step_3": "Step 3",

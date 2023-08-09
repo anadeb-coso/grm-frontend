@@ -401,7 +401,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
             </TouchableOpacity>
             {/* End Not resolve */}
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               disabled={!isRateAppealEnabled}
               style={{
                 alignItems: 'center',
@@ -420,7 +420,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 />
                 <Feather name="help-circle" size={24} color="gray" />
               </View>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
           <TouchableOpacity
             onPress={_showEscalateDialog}

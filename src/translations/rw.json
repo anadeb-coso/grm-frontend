@@ -120,6 +120,13 @@
 	"step_2_on_behalf_of_someone": "Ikibazo gitanzwe n'umuntu uhagarariye undi.",
 	"step_2_organization_behalf_someone": "Ikibazo gitanzwe n'itsinda rihagarariye undi muntu.",
 
+	"step_2_structure_in_charge": "Structure in charge", //to complete
+	"step_2_structure_in_charge_name": "Name of structure in charge of this issue", //to complete
+	"step_2_structure_in_charge_phone": "Phone number of the structure", //to complete
+	"step_2_structure_in_charge_email": "Structure's e-mail address", //to complete
+	"step_2_validation_email": "Email is Not Correct", //to complete
+
+
 	//step 3
 	"step_3": "Intambwe ya 3",
 

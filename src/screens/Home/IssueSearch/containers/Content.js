@@ -55,6 +55,12 @@ function Content({ issues, eadl, statuses }) {
     //       (issue.reporter && issue.reporter.id === eadl.representative?.id)) &&
     //     issue?.status?.id === resolvedStatus.id
     // );
+    filteredIssuesCopy.all_resolved = issues.filter(
+      (issue) => (issue?.status?.id === 3 &&
+        ((issue.assignee && issue.assignee.id === eadl.representative?.id) || (issue.reporter && issue.reporter.id === eadl.representative?.id) || eadl.administrative_region == "1")
+      )
+    );
+
     filteredIssuesCopy.resolved = issues.filter(
       (issue) => (issue?.status?.id === 3 &&
         ((issue.assignee && issue.assignee.id === eadl.representative?.id) || eadl.administrative_region == "1")
@@ -94,7 +100,7 @@ function Content({ issues, eadl, statuses }) {
 
         break;
       case 'resolved':
-        selectedTabIssues = filteredIssuesCopy.resolved;
+        selectedTabIssues = filteredIssuesCopy.all_resolved;
         break;
       case 'rejected':
         selectedTabIssues = filteredIssuesCopy.rejected;

@@ -542,6 +542,16 @@ function Content({ issue }) {
               {t('assigned_to')}{' '}
               <Text style={styles.text}> {issue.assignee?.name ?? 'Pending Assigment'}</Text>
             </Text>
+            {issue.structure_in_charge && 
+              (issue.structure_in_charge.name || issue.structure_in_charge.phone || issue.structure_in_charge.email) ? 
+              <Text style={styles.subtitle}>
+              {t('step_2_structure_in_charge')}{' '}
+              <Text style={styles.text}>
+                {issue.structure_in_charge.name ?? '-'}
+                {issue.structure_in_charge.phone ? ` | ${issue.structure_in_charge.phone}` : ''}
+                {issue.structure_in_charge.email ? ` | ${issue.structure_in_charge.email}` : ''}
+              </Text>
+            </Text> : <></>}
             {issue.attachments?.length > 0 &&
               issue.attachments.map((item, index) => (
                 <View>
@@ -697,7 +707,7 @@ function Content({ issue }) {
             </Text>
           </View>
         </Collapsible>
-        <CustomSeparator />
+        {/* <CustomSeparator />
         <TouchableOpacity
           onPress={() => setIsSatisfactionCollapsed(!isSatisfactionCollapsed)}
           style={styles.collapsibleTrigger}
@@ -726,8 +736,8 @@ function Content({ issue }) {
               {t('information_not_available')}
             </Text>
           </View>
-        </Collapsible>
-        <CustomSeparator />
+        </Collapsible> */}
+        {/* <CustomSeparator />
         <TouchableOpacity
           onPress={() => setIsAppealCollapsed(!isAppealCollapsed)}
           style={styles.collapsibleTrigger}
@@ -756,7 +766,7 @@ function Content({ issue }) {
               {t('information_not_available')}
             </Text>
           </View>
-        </Collapsible>
+        </Collapsible> */}
         {/* <CustomSeparator /> */}
         {/* <Text style={styles.title}>{t("attachments_label")}</Text> */}
         {/* {issue?.attachments.map((item) => ( */}

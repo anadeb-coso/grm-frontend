@@ -48,6 +48,13 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
   const [open, setOpen] = useState(false);
   const [openVillage, setOpenVillage] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [structureName, setStructureName] = useState('');
+  const [structurePhone, setStructurePhone] = useState('');
+  const [structureEmail, setStructureEmail] = useState('');
+  const [structureNameMethodError, setStructureNameMethodError] = React.useState();
+  const [structurePhoneMethodError, setStructurePhoneMethodError] = React.useState();
+  const [structureEmailMethodError, setStructureEmaileMethodError] = React.useState();
+  const [validationEmail, setValidationEmail] = useState(true);
   
 
   
@@ -105,7 +112,18 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
     }
   }
 
-  
+  const validate_email = (text) => {
+    let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
+    if (text && reg.test(text) === false) {
+      setValidationEmail(false);
+      setStructureEmail(text);
+      return false;
+    }
+    else {
+      setValidationEmail(true);
+      setStructureEmail(text);
+    }
+  }
   
   
   //   useEffect(() => {
@@ -318,12 +336,59 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
               />
             )}
           />
+
+          <Text />
+          <TextInput
+              style={styles.grmInput}
+              placeholder={t('step_2_structure_in_charge_name')}
+              outlineColor="#3e4000"
+              placeholderTextColor="#5f6800"
+              theme={theme}
+              mode="outlined"
+              value={structureName}
+              error={structureNameMethodError}
+              onChangeText={(text) => {
+                setStructureName(text);
+              }}
+            />
+            <Text />
+            <TextInput
+              style={styles.grmInput}
+              placeholder={t('step_2_structure_in_charge_phone')}
+              outlineColor="#3e4000"
+              placeholderTextColor="#5f6800"
+              theme={theme}
+              mode="outlined"
+              value={structurePhone}
+              error={structurePhoneMethodError}
+              onChangeText={(text) => {
+                setStructurePhone(text);
+              }}
+            />
+            <Text />
+            <TextInput
+              style={styles.grmInput}
+              placeholder={t('step_2_structure_in_charge_email')}
+              outlineColor="#3e4000"
+              placeholderTextColor="#5f6800"
+              theme={theme}
+              mode="outlined"
+              value={structureEmail}
+              error={structureEmailMethodError}
+              onChangeText={(text) => validate_email(text)}
+            />
+           {!validationEmail ? <Text style={{ color: 'red'}}>{t('step_2_validation_email')}</Text> : <></>}
+            <Text />
         </View>
+
+
+
+
 
         <View style={{ paddingHorizontal: 50 }}>
           <Button
             theme={theme}
-            disabled={!uniqueRegion || !additionalDetails || (!selectedVillage && villages.length != 0)} // || (!hideVillageField && !village) || (!hideCantonField && !canton)
+            disabled={!uniqueRegion || !additionalDetails || (!selectedVillage && villages.length != 0) || !validationEmail} // || (!hideVillageField && !village) || (!hideCantonField && !canton)
             style={{ alignSelf: 'center', margin: 24 }}
             labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
             mode="contained"
@@ -341,6 +406,11 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
                     name: selectedVillage?.name,
                   },
                   locationDescription: additionalDetails,
+                  structure_in_charge: {
+                    name: structureName ?? '',
+                    phone: structurePhone ?? '',
+                    email: structureEmail ?? '',
+                  },
                 },
               });
             }}
