@@ -70,7 +70,9 @@
   "step_2_select_date": "Tap to select the date",
   "step_2_subtitle": "Details of Issue or Feedback",
   "step_2_explanation": "Tell the citizen: “I want to record the dates of the events you report. If you can’t remember the exact dates, do your best and I’ll make a special note of it. Don’t worry if you can’t remember every detail. ”",
-  "step_2_ongoing_hint": "Is multiple occurrences?",
+  // "step_2_ongoing_hint": "Is multiple occurrences?",
+  "step_2_ongoing_hint": "On going event",
+  "step_2_recurrence": "Event has occurred several times",
   "step_2_set_today": "Set for Today",
   "step_2_placeholder_1": "What are you reporting?",
   "step_2_placeholder_2": "Choose type of grievance",
@@ -105,6 +107,7 @@
   "step_location_dropdown_placeholder": "Tap to select",
   "step_location_input_explanation": "Please enter additional details about the location\nthat might help resolve the issue (e.g. street\naddress, street corner, or description of location).",
   "warning_message_location_not_load": "Localities have not been loaded. Please reload the page.",
+  "step_adl": "Administrative level",
 
 
   "step_4_subtitle": "You’re done!",

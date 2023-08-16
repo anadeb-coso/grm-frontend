@@ -68,13 +68,15 @@
   "step_2": "Étape 2",
   "step_2_subtitle": "Détails de la plainte ou de la demande.",
   "step_2_explanation": "Informez le citoyen : \"Je vais vous poser des questions précises sur les détails de votre plainte ou demande. Ne vous inquiétez pas si vous ne vous souvenez pas de tous les détails. Ne fournissez que les informations que vous êtes à l'aise de donner\"",
-  "step_2_ongoing_hint": "Événement en cours ou s’est produit plusieurs fois",
+  // "step_2_ongoing_hint": "Événement en cours ou s’est produit plusieurs fois",
+  "step_2_ongoing_hint": "Événement en cours",
+  "step_2_recurrence": "Événement s’est produit plusieurs fois",
   "step_2_select_date": "Date de l'incident",
   "step_2_set_today": "Aujourd’hui",
   "step_2_placeholder_1": "Quelle est la catégorie ?", // de votre demande
   "step_2_placeholder_2": "De quoi s’agit-il?",
   "step_2_placeholder_3": "Veuillez décrire la plainte ou la demande.",
-  "step_2_placeholder_4": "Écrivez les détails ici (facultatif)",
+  "step_2_placeholder_4": "Écrivez les détails ici",
   "step_2_share_photos": "Partagez toute vidéo, photo ou audio à l’appui comme preuve ou clarification.\n",
   "step_2_upload_attachment": "Pièces jointes",
   "step_2_keep_name_confidential": "Gardez le nom confidentiel. Seule la personne chargée de résoudre la plainte verra le nom.",
@@ -104,6 +106,7 @@
   "step_location_dropdown_placeholder": "Tapez pour sélectionner",
   "step_location_input_explanation": "Veuillez ajouter tout détail supplémentaire concernant le lieu, le cas échéant.",
   "warning_message_location_not_load": "Les Localités n'ont pas été chargées. Veuillez recharger la page.",
+  "step_adl": "Niveau administratif",
 
 
   //step 4

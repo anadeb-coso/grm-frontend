@@ -101,6 +101,9 @@
 	"step_2_explanation": "Umukangurambaga: “Nshaka kwandika itariki ibi byabereye. Niba utibuka itariki neza ntuhangayike ikibazo cyawe kizakuriranwa”",
 
 	"step_2_ongoing_hint": "Byabaye inshuro nyinshi zitandukanye?",
+	
+	// "step_2_ongoing_hint": "On going event",
+	"step_2_recurrence": "Event has occurred several times", //to complete
 
 	"step_2_set_today": "Itariki y'uyu munsi",
 
@@ -172,6 +175,10 @@
 
 	"step_6": "Intambwe ya 6",
 	"warning_message_location_not_load": "Localities have not been loaded. Please reload the page.", //to complete
+
+	"step_adl": "Niveau administrative", //to complete
+
+
 
 	//general
 	"save_button_text": "BIKA & UKOMEZE",
