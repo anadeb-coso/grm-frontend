@@ -12,6 +12,7 @@ import CustomGreenButton from '../../../components/CustomGreenButton/CustomGreen
 import SyncImage from '../../../../assets/sync-image.svg';
 import CheckCircle from '../../../../assets/check-circle.svg';
 import { baseURL } from '../../../services/API';
+import { SyncToRemoteDatabase } from "../../../utils/databaseManager";
 
 const FILE_READ_ERROR = 'Cannot read all the files.';
 
@@ -77,6 +78,15 @@ function SyncAttachments({ navigation }) {
                         docId: res?.docs[i]?._id,
                       });
                     }
+                    
+                    const reasons = res.docs[i]?.reasons;
+                    for (let index = 0; index < reasons?.length; index++) {
+                      issuesAttachments.push({
+                        attachment: reasons[index],
+                        docId: res?.docs[i]?._id,
+                      });
+                    }
+
                     // console.log(res.docs[i].attachments)
                   }
                   setAttachments([...attachmentsArray.flat(2), ...issuesAttachments]);
@@ -136,6 +146,7 @@ function SyncAttachments({ navigation }) {
       setErrorVisible(true);
       return { error: FILE_READ_ERROR };
     } catch (e) {
+      console.log(e);
       setErrorVisible(true);
       return { error: FILE_READ_ERROR };
     }
@@ -156,6 +167,7 @@ function SyncAttachments({ navigation }) {
     setLoading(false);
     if (!isError) setSuccessModal(true);
 
+    await SyncToRemoteDatabase(dbConfig, username);
     getAndSetAttachments();
   };
   return (
