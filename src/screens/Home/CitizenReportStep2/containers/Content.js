@@ -21,6 +21,7 @@ import CustomDropDownPicker from '../../../../components/CustomDropDownPicker/Cu
 import CustomDropDownPickerWithRender from '../../../../components/CustomDropDownPicker/CustomDropDownPickerWithRender';
 import { colors } from '../../../../utils/colors';
 import { styles } from './Content.styles';
+import LoadingScreen from '../../../../components/LoadingScreen/LoadingScreen';
 
 const theme = {
   roundness: 12,
@@ -39,6 +40,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const [pickerValue, setPickerValue] = useState(null);
   const [pickerValue2, setPickerValue2] = useState(null);
   const [checked, setChecked] = useState(false);
+  const [eventRecurrenceChecked, setEventRecurrenceChecked] = useState(false);
   const [additionalDetails, setAdditionalDetails] = useState(null);
   const [date, setDate] = useState(null);
   const [attachments, setAttachments] = useState([]);
@@ -53,6 +55,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     id: 1,
     name: "Plainte"
   });
+  const [isLoading, setLoading] = useState(false);
 
   useEffect(() => {
     if (issueTypes) {
@@ -155,6 +158,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
       });
 
       if (!result.cancelled) {
+        setLoading(true);
         const manipResult = await ImageManipulator.manipulateAsync(
           result.localUri || result.uri,
           // [{ resize: { width: 1000, height: 1000 } }],
@@ -166,6 +170,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
           { compress: 1, format: ImageManipulator.SaveFormat.PNG }
         );
         setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+        setLoading(false);
       }
     }
   };
@@ -181,6 +186,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
           quality: 1,
         });
         if (!result.cancelled) {
+          setLoading(true);
           const manipResult = await ImageManipulator.manipulateAsync(
             result.localUri || result.uri,
             // [{ resize: { width: 1000, height: 1000 } }],
@@ -191,6 +197,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             { compress: 1, format: ImageManipulator.SaveFormat.PNG }
           );
           setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+          setLoading(false);
         }
       }
     } catch (e) {
@@ -225,6 +232,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             ? { id: selectedIssueType.id, name: selectedIssueType.name }
             : null,
           ongoingEvent: checked,
+          eventRecurrence: eventRecurrenceChecked,
           attachments:
             attachments.length > 0
               ? attachments.map((attachment) => ({
@@ -341,6 +349,23 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             }}
           />
           <Text style={[styles.stepNote, { flex: 1 }]}>{t('step_2_ongoing_hint')}</Text>
+        </View>
+        <View
+          style={{
+            flexDirection: 'row',
+            paddingHorizontal: 43,
+            paddingBottom: 10,
+            alignItems: 'center',
+          }}
+        >
+          <Checkbox.Android
+            color={colors.primary}
+            status={eventRecurrenceChecked ? 'checked' : 'unchecked'}
+            onPress={() => {
+              setEventRecurrenceChecked(!eventRecurrenceChecked);
+            }}
+          />
+          <Text style={[styles.stepNote, { flex: 1 }]}>{t('step_2_recurrence')}</Text>
         </View>
         <View
           style={{
@@ -464,7 +489,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                     style={{
                       alignItems: 'center',
                       padding: 5,
-                      backgroundColor: 'rgba(36, 195, 139, 1)',
+                      backgroundColor: 'rgba(255, 1, 1, 1)',
                     }}
                   >
                     <Text style={{ color: 'white' }}>X</Text>
@@ -523,11 +548,11 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                 marginVertical: 13,
               }}
             >
-              Play Recorded Audio
+              {t('play_recorded_audio')}
             </Text>
             <IconButton
               icon="close"
-              color={colors.primary}
+              color={colors.error}
               size={24}
               onPress={() => setRecordingURI()}
             />
@@ -546,6 +571,9 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
           </Button>
         </View>
       </KeyboardAvoidingView>
+
+
+      <LoadingScreen visible={isLoading} />
     </ScrollView>
   );
 }
