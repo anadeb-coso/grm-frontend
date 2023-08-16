@@ -30,7 +30,7 @@ function CustomDropDownPickerWithRender({
   const [dropdownVisible, setDropdownVisible] = React.useState(false);
   const [open, setOpen] = useState(false);
 
-  renderItem = ({ item }) => {
+  const renderItem = ({ item }) => {
     return (
       <DropdownPicker.Item label={item.label} value={item.value} />
     );
@@ -86,7 +86,7 @@ function CustomDropDownPickerWithRender({
         setItems={(newItems) => setItems(newItems)}
         listMode={listMode}
         scrollViewProps={scrollViewProps}
-        renderItem={this.renderItem}
+        renderItem={renderItem}
       />
     </View>
   );
