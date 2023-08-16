@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, Platform, ScrollView, Text, View } from 'react-native';
+import { Image, Platform, ScrollView, Text, View, ImageBackground, TouchableOpacity } from 'react-native';
 import { Button, IconButton } from 'react-native-paper';
 import { colors } from '../../../../utils/colors';
 import { LocalGRMDatabase } from '../../../../utils/databaseManager';
@@ -35,6 +35,16 @@ function Content({ issue, eadl, issues }) {
   const randomWord = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const [sound, setSound] = useState();
   const [playing, setPlaying] = useState(false);
+  const [attachments, setAttachments] = useState(
+    [...(issue?.attachments ? issue.attachments : []),
+    ...(issue?.recording ? [issue.recording] : [])]
+  );
+
+  function removeAttachment(id) {
+    const array = attachments.filter(elt => elt.id !== id);
+    setAttachments(array);
+  }
+
   const submitIssue = () => {
     
     const isAssignee =
@@ -51,10 +61,11 @@ function Content({ issue, eadl, issues }) {
       auto_increment_id: "",//issues ? (issues.length+1) : 1,
       title: issue.issueSummary,
       description: issue.additionalDetails,
-      attachments: [
-        ...(issue?.attachments ? issue.attachments : []),
-        ...(issue?.recording ? [issue.recording] : []),
-      ],
+      attachments: attachments,
+      // [
+      //   ...(issue?.attachments ? issue.attachments : []),
+      //   ...(issue?.recording ? [issue.recording] : []),
+      // ],
       status: {
         name: t('initial_status'),
         id: 1,
@@ -95,6 +106,7 @@ function Content({ issue, eadl, issues }) {
       intake_date: new Date(),
       issue_date: issue.date,
       ongoing_issue: issue.ongoingEvent,
+      event_recurrence: issue.eventRecurrence,
       comments: [],
       contact_information: {
         type: issue.methodOfContact,
@@ -199,7 +211,7 @@ function Content({ issue, eadl, issues }) {
         <Text style={styles.stepSubtitle}>{t('step_3_field_title_4')}</Text>
         <Text style={styles.stepDescription}>{issue.additionalDetails ?? '--'}</Text>
         <Text style={styles.stepSubtitle}>{t('step_3_attachments')}</Text>
-        {issue.recording && (
+        {/* {issue.recording && (
           <View
             style={{
               flexDirection: 'row',
@@ -228,22 +240,106 @@ function Content({ issue, eadl, issues }) {
             >
               {t('play_recorded_audio')}
             </Text>
-          </View>
-        )}
-        {issue.attachments &&
-          issue.attachments.length > 0 &&
-          issue.attachments.map((attachment) => (
-            <Image
-              source={{ uri: attachment.local_url }}
-              style={{
-                height: 80,
-                width: 80,
-                justifyContent: 'flex-end',
-                marginVertical: 20,
-                marginLeft: 20,
-              }}
+            <IconButton
+              icon="close"
+              color={colors.error}
+              size={24}
+              onPress={() => removeAttachment(issue.recording.id)}
             />
-          ))}
+          </View>
+        )} */}
+        {attachments &&
+          attachments.length > 0 &&
+          attachments.map((attachment, index) => {
+            if(attachment.isAudio){
+              return(
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    // justifyContent: 'center',
+                  }}
+                >
+                  <IconButton
+                    icon="play"
+                    color={playing ? colors.disabled : colors.primary}
+                    size={24}
+                    onPress={() => playSound(attachment.local_url)}
+                  />
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins_400Regular',
+                      fontSize: 12,
+                      fontWeight: 'normal',
+                      fontStyle: 'normal',
+                      lineHeight: 18,
+                      letterSpacing: 0,
+                      textAlign: 'left',
+                      color: '#707070',
+                      marginVertical: 13,
+                    }}
+                  >
+                    {t('play_recorded_audio')}
+                  </Text>
+                  <IconButton
+                    icon="close"
+                    color={colors.error}
+                    size={24}
+                    onPress={() => removeAttachment(attachment.id)}
+                  />
+                </View>
+              )
+            }
+            })
+
+          }
+
+
+        {attachments &&
+          attachments.length > 0 &&
+          // issue.attachments.map((attachment) => (
+          //   <Image
+          //     source={{ uri: attachment.local_url }}
+          //     style={{
+          //       height: 80,
+          //       width: 80,
+          //       justifyContent: 'flex-end',
+          //       marginVertical: 20, 
+          //       marginLeft: 20,
+          //     }}
+          //   />
+          // ))
+          attachments.map((attachment, index) => {
+            if(!attachment.isAudio){
+              return(
+                <ImageBackground
+                  key={attachment.id}
+                  source={{ uri: attachment.local_url }}
+                  style={{
+                    height: 80,
+                    width: 80,
+                    marginHorizontal: 1,
+                    alignSelf: 'flex-start',
+                    justifyContent: 'flex-end',
+                    marginVertical: 20,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => removeAttachment(attachment.id)}
+                    style={{
+                      alignItems: 'center',
+                      padding: 5,
+                      backgroundColor: 'rgba(255, 1, 1, 1)',
+                    }}
+                  >
+                    <Text style={{ color: 'white' }}>X</Text>
+                  </TouchableOpacity>
+                </ImageBackground>
+              )
+            }
+            })
+
+          }
       </View>
       <View style={{ paddingHorizontal: 50 }}>
         <Button
