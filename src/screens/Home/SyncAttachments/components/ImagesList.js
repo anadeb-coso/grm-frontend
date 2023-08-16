@@ -68,7 +68,7 @@ function ImagesList({ attachments }) {
       attachments?.length > 0 &&
         _setAttachments(
           attachments.map(
-            (obj) => obj?.attachment?.uploaded === false && <AttachmentComponent key={obj?.attachment?.id} attachment={obj} />
+            (obj) => obj?.attachment?.uploaded === false && <AttachmentComponent key={`${obj?.attachment?.id} ${obj?.attachment?.local_url}`} attachment={obj} />
           )
         );
       setLoading(false);
