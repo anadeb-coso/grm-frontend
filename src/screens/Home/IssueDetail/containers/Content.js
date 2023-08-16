@@ -16,11 +16,13 @@ import CustomSeparator from '../../../../components/CustomSeparator/CustomSepara
 import { couchDBURLBase } from '../../../../utils/databaseManager';
 import { colors } from '../../../../utils/colors';
 import { LocalGRMDatabase } from '../../../../utils/databaseManager';
+import { getEncryptedData } from '../../../../utils/storageManager';
 import { citizenTypes } from '../../../../utils/utils';
 import { styles } from './Content.styles';
 import API from '../../../../services/API';
 import CustomDropDownPickerWithRender from '../../../../components/CustomDropDownPicker/CustomDropDownPicker';
 import { setCommune, setDocument } from '../../../../store/ducks/userDocument.duck';
+import UpdatableList from "../../../../components/UpdatableList";
 
 const theme = {
   roundness: 12,
@@ -34,6 +36,7 @@ const theme = {
 
 function Content({ issue }) {
   const { t } = useTranslation();
+  const [dbConfig, setDbConfig] = useState({});
 
   const [comments, setComments] = useState(issue.comments);
   const [isIssueAssignedToMe, setIsIssueAssignedToMe] = useState(false);
@@ -56,11 +59,11 @@ function Content({ issue }) {
 
   //Adminstrative
   const dispatch = useDispatch();
-  const { username } = useSelector((state) => state.get('authentication').toObject());
+  const { username, userPassword } = useSelector((state) => state.get('authentication').toObject());
   const { userCommune } = useSelector((state) => state.get('userDocument').toObject());
+
   const [cantons, setCantons] = useState(null);
   const [villages, setVillages] = useState(null);
-  
   const [canton, setCanton] = useState(null);
   const [cantonsItems, setCantonsItems] = useState(null);
   const [selectedCanton, setSelectedselectedCanton] = useState(null);
@@ -150,6 +153,11 @@ function Content({ issue }) {
 
   useEffect(() => {
     const fetchUserCommune = async () => {
+
+      setDbConfig(await getEncryptedData(
+        `dbCredentials_${userPassword}_${username.replace('@', '')}`
+      ));
+
       if (!userCommune) {
         console.log(username)
         const { userDoc, userCommune: usrC } = await getUserDocs(username);
@@ -335,88 +343,92 @@ function Content({ issue }) {
         </View>
       );
     }else{
-      // console.log(`${couchDBURLBase}${item.url}`);
-      // return(
-      //   <View>
-      //     {(item.url.includes(".3gp")) ? (
-      //       <View
-      //         style={{
-      //           flexDirection: 'row',
-      //           alignItems: 'center',
-      //           // justifyContent: 'center',
-      //         }}
-      //       >
-      //         <IconButton
-      //           icon="play"
-      //           color={playing ? colors.disabled : colors.primary}
-      //           size={24}
-      //           onPress={() => playSound(item.local_url, item.url)}
-      //         />
-      //         <Text
-      //           style={{
-      //             fontFamily: 'Poppins_400Regular',
-      //             fontSize: 12,
-      //             fontWeight: 'normal',
-      //             fontStyle: 'normal',
-      //             lineHeight: 18,
-      //             letterSpacing: 0,
-      //             textAlign: 'left',
-      //             color: '#707070',
-      //             marginVertical: 13,
-      //           }}
-      //         >
-      //           {t('play_recorded_audio')}
-      //         </Text>
-      //       </View>
-      //     ) : (
-      //       <View>
-      //         <Image
-      //             source={{ uri: `${couchDBURLBase}${item.url}`, headers:{
-      //               username: "root", // CouchDB username
-      //               password: "root", // CouchDB password
-      //             } }}
-      //             onError={() => setImageError(true)}
-      //             style={{
-      //               height: 80,
-      //               width: 80,
-      //               justifyContent: 'flex-end',
-      //               marginVertical: 20,
-      //               marginLeft: 20,
-      //             }}
-      //           />
-      //         {/* {imageError ? (
-      //           <Image
-      //             source={{ uri: `${couchDBURLBase}${item.url}`, headers:{
-      //               username: "root", // CouchDB username
-      //               password: "root", // CouchDB password
-      //             } }}
-      //             onError={() => setImageError(true)}
-      //             style={{
-      //               height: 80,
-      //               width: 80,
-      //               justifyContent: 'flex-end',
-      //               marginVertical: 20,
-      //               marginLeft: 20,
-      //             }}
-      //           />
-      //         ) : (
-      //           <Image
-      //             source={{ uri: item.local_url }}
-      //             onError={() => setImageError(true)}
-      //             style={{
-      //               height: 80,
-      //               width: 80,
-      //               justifyContent: 'flex-end',
-      //               marginVertical: 20,
-      //               marginLeft: 20,
-      //             }}
-      //           />
-      //         )} */}
-      //       </View>
-      //     )}
-      //   </View>
-      // );
-      <></>
+      return(
+        <View key={index} style={{...styles.commentCard, width: 150, height: 200}}>
+          {(item.url.includes(".3gp") || item.local_url.includes(".3gp")) ? (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                // justifyContent: 'center',
+              }}
+            >
+              <IconButton
+                icon="play"
+                color={playing ? colors.disabled : colors.primary}
+                size={24}
+                onPress={() => playSound(item.local_url, item.url)}
+              />
+              <Text
+                style={{
+                  fontFamily: 'Poppins_400Regular',
+                  fontSize: 12,
+                  fontWeight: 'normal',
+                  fontStyle: 'normal',
+                  lineHeight: 18,
+                  letterSpacing: 0,
+                  textAlign: 'left',
+                  color: '#707070',
+                  marginVertical: 13,
+                }}
+              >
+                {t('play_recorded_audio')}
+              </Text>
+            </View>
+          ) : (
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              // justifyContent: 'center',
+            }}>
+              {/* <Image
+                  source={{ uri: `${couchDBURLBase}${item.url}`, headers:{
+                    username: dbConfig?.username, // CouchDB username
+                    password: dbConfig?.password, // CouchDB password
+                  } }}
+                  onError={() => setImageError(true)}
+                  style={{
+                    height: 80,
+                    width: 80,
+                    justifyContent: 'flex-end',
+                    marginVertical: 20,
+                    marginLeft: 20,
+                  }}
+                /> */}
+              {imageError ? (
+                <Image
+                  key={`${couchDBURLBase}${item.url}`}
+                  source={{ uri: `${couchDBURLBase}${item.url}`, headers:{
+                    username: dbConfig?.username, // CouchDB username
+                    password: dbConfig?.password, // CouchDB password
+                  } }}
+                  onError={() => setImageError(true)}
+                  style={{
+                    height: 80,
+                    width: 80,
+                    justifyContent: 'flex-end',
+                    marginVertical: 20,
+                    marginLeft: 20,
+                  }}
+                />
+              ) : (
+                <Image
+                  key={item.local_url}
+                  source={{ uri: item.local_url }}
+                  onError={() => setImageError(true)}
+                  style={{
+                    height: 80,
+                    width: 80,
+                    justifyContent: 'flex-end',
+                    marginVertical: 20,
+                    marginLeft: 20,
+                  }}
+                />
+              )}
+            </View>
+          )}
+        </View>
+      );
     }
     
   };
@@ -662,7 +674,9 @@ function Content({ issue }) {
         </TouchableOpacity>
         <Collapsible collapsed={isDecisionCollapsed}>
           <View style={styles.collapsibleContent}>
-            <Text
+            {issue.research_result ? <Text>{issue.research_result}</Text> : <></>}
+            <Text></Text>
+            <View
               style={{
                 fontFamily: 'Poppins_400Regular',
                 fontSize: 12,
@@ -678,17 +692,16 @@ function Content({ issue }) {
               {(issue.research_result || (issue.reasons && issue.reasons.length != 0)) 
               ? 
                 <>
-                  <Text>{issue.research_result}</Text>
                   {
                     (issue.reasons && issue.reasons.length != 0) 
                     ?
                       <>
-                        {issue.research_result ? <Text>{t('other')}</Text> : <></>}
+                        {/* {issue.research_result ? <Text>{t('other')}</Text> : <></>} */}
                         <SafeAreaView style={{
                             flex: 1,
                             backgroundColor: "white",
                           }}>
-                              <FlatList
+                              {/* <FlatList
                               horizontal
                                 ItemSeparatorComponent={() => <Divider style={{
                                   marginTop: 7, marginBottom: 7
@@ -696,15 +709,28 @@ function Content({ issue }) {
                                 style={{ flex: 1 }}
                                 data={issue.reasons}
                                 renderItem={renderItemReason}
-                                keyExtractor={(item) => item.id ?? item.due_at}
-                              />
+                                keyExtractor={(item) => `${item.id} ${item.local_url}` ?? `${item.due_at} ${item.local_url}`}
+                              /> */}
+
+                            <UpdatableList
+                                  // onFetchMoreData={handleFetchMoreData}
+                                  horizontal
+                                  ItemSeparatorComponent={() => <Divider style={{
+                                    marginTop: 7, marginBottom: 7
+                                  }} />}
+                                  style={{ flex: 1 }}
+                                  data={issue.reasons}
+                                  keyExtractor={(item) => `${item.id} ${item.local_url}` ?? `${item.due_at} ${item.local_url}`}
+                                  renderItem={renderItemReason}
+                                />
+
                         </SafeAreaView>
                       </>
                     : <></>
                   }
                 </>
-              : t('information_not_available')}
-            </Text>
+              : <Text>{t('information_not_available')}</Text>}
+            </View>
           </View>
         </Collapsible>
         {/* <CustomSeparator />
