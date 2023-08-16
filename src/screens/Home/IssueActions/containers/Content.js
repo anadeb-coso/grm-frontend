@@ -9,11 +9,17 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ImageBackground,
 } from 'react-native';
-import { Button, Dialog, Paragraph, Portal, TextInput } from 'react-native-paper';
+import { Button, Dialog, Paragraph, Portal, TextInput, IconButton } from 'react-native-paper';
+import { Audio } from 'expo-av';
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../../../utils/colors';
 import { LocalGRMDatabase } from '../../../../utils/databaseManager';
 import { styles } from './Content.styles';
+import LoadingScreen from '../../../../components/LoadingScreen/LoadingScreen';
+
 
 const theme = {
   roundness: 12,
@@ -110,6 +116,140 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     }
   };
 
+
+  //Media
+  const [isLoading, setLoading] = useState(false);
+  const [sound, setSound] = React.useState();
+  const [recordingURI, setRecordingURI] = useState();
+  const [recording, setRecording] = useState();
+  const [attachments, setAttachments] = useState([]);
+
+  React.useEffect(
+    () =>
+      sound
+        ? () => {
+            sound.unloadAsync();
+          }
+        : undefined,
+    [sound]
+  );
+
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Sorry, we need camera roll permissions to make this work!');
+        }
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Sorry, we need camera roll permissions to make this work!');
+        }
+      }
+    })();
+  }, []);
+
+  const startRecording = async () => {
+    try {
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+      
+      const recording = new Audio.Recording();
+      await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+      await recording.startAsync();
+      setRecording(recording);
+    } catch (err) {
+
+    }
+  };
+
+  const stopRecording = async () => {
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+    setRecordingURI(uri);
+    setRecording(undefined);
+  };
+
+  const playSound = async () => {
+    const { sound } = await Audio.Sound.createAsync({ uri: recordingURI });
+    setSound(sound);
+
+    await sound.playAsync();
+  };
+
+  const openCamera = async () => {
+    if (attachments.length < 3) {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.cancelled) {
+        setLoading(true);
+        const manipResult = await ImageManipulator.manipulateAsync(
+          result.localUri || result.uri,
+          [{ resize: { 
+            width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000, 
+            height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000 
+          } 
+          }],
+          { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+        );
+        setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+        setLoading(false);
+      }
+    }
+  };
+
+  const pickImage = async () => {
+    try {
+      if (attachments.length < 3) {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          presentationStyle: 0,
+          mediaTypes: ImagePicker.MediaTypeOptions.All,
+          allowsEditing: false,
+
+          quality: 1,
+        });
+        if (!result.cancelled) {
+          setLoading(true);
+          const manipResult = await ImageManipulator.manipulateAsync(
+            result.localUri || result.uri,
+            [{ resize: {
+              width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000, 
+              height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000 
+             } }],
+            { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+          );
+          setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+          setLoading(false);
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+  function removeAttachment(index) {
+    const array = [...attachments];
+    array.splice(index, 1);
+    setAttachments(array);
+  }
+
+  //End Media
+
+
+
   const issue_status_stories = (status, coment_message) => {
     issue.issue_status_stories = issue.issue_status_stories ?? []
     issue.issue_status_stories?.unshift({
@@ -184,12 +324,58 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   };
 
   const recordStep = () => {
+    let due_at = moment();
     issue.comments?.unshift({
       name: issue.reporter.name,
       id: eadl.representative?.id,
       comment,
-      due_at: moment(),
+      due_at: due_at,
     });
+
+    issue.reasons = issue.reasons ?? []
+    issue.reasons?.unshift({
+      user_name: eadl?.representative?.name,
+      user_id: eadl?.representative?.id,
+      comment: comment,
+      due_at: due_at,
+      id: moment(),
+      type: "comment",
+      comment_id: due_at,
+    });
+
+    for(let i=0; i < attachments.length; i++){
+      issue.reasons?.unshift({
+        name: attachments[i]?.uri.split('/').pop(),
+        url: '',
+        local_url: attachments[i]?.uri,
+        id: moment(),
+        uploaded: false,
+        bd_id: due_at,
+        type: "file",
+        user_id: eadl?.representative?.id,
+        user_name: eadl?.representative?.name,
+        comment_id: due_at
+      });
+    }
+    setAttachments([]);
+    if(recordingURI){
+      issue.reasons?.unshift({
+        name: recordingURI.split('/').pop(),
+        url: '',
+        local_url: recordingURI,
+        id: moment(),
+        uploaded: false,
+        bd_id: due_at,
+        type: "file",
+        user_id: eadl?.representative?.id,
+        user_name: eadl?.representative?.name,
+        isAudio: true,
+        comment_id: due_at
+      });
+      setRecordingURI();
+    }
+
+
     saveIssueStatus();
     setRecordedSteps(true);
 
@@ -639,13 +825,123 @@ function Content({ issue, navigation, statuses = [], eadl }) {
               <Paragraph>{t('recorded_comment')}</Paragraph>
             )}
             {!recordedSteps && (
-              <TextInput
-                multiline
-                style={{ marginTop: 10 }}
-                mode="outlined"
-                theme={theme}
-                onChangeText={onChangeComment}
+              <>
+                <TextInput
+                  multiline
+                  style={{ marginTop: 10 }}
+                  mode="outlined"
+                  theme={theme}
+                  onChangeText={onChangeComment}
+                />
+
+<View style={{ paddingHorizontal: 5 }}>
+          <Text
+            style={{
+              fontFamily: 'Poppins_400Regular',
+              fontSize: 12,
+              fontWeight: 'normal',
+              fontStyle: 'normal',
+              lineHeight: 18,
+              letterSpacing: 0,
+              textAlign: 'left',
+              color: '#707070',
+              marginVertical: 13,
+            }}
+          >
+            {t('step_2_share_photos')}
+          </Text>
+          <View style={{ flexDirection: 'row' }}>
+            {attachments.length > 0 &&
+              attachments.map((attachment, index) => (
+                <ImageBackground
+                  key={attachment.id}
+                  source={{ uri: attachment.uri }}
+                  style={{
+                    height: 80,
+                    width: 80,
+                    marginHorizontal: 1,
+                    alignSelf: 'center',
+                    justifyContent: 'flex-end',
+                    marginVertical: 20,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => removeAttachment(index)}
+                    style={{
+                      alignItems: 'center',
+                      padding: 5,
+                      backgroundColor: 'rgba(255, 1, 1, 1)',
+                    }}
+                  >
+                    <Text style={{ color: 'white' }}>X</Text>
+                  </TouchableOpacity>
+                </ImageBackground>
+              ))}
+          </View>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Button
+              theme={theme}
+              style={{ alignSelf: 'center' }}
+              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+              mode="contained"
+              onPress={pickImage}
+              uppercase={false}
+            >
+              {t('step_2_upload_attachment')}
+            </Button>
+            <View style={styles.iconButtonStyle}>
+              <IconButton icon="camera" color={colors.primary} size={24} onPress={openCamera} />
+            </View>
+            <View style={styles.iconButtonStyle}>
+              <IconButton
+                icon={recording ? 'record-circle-outline' : 'microphone'}
+                color={recording ? '#f80102' : colors.primary}
+                size={24}
+                onPress={recording ? stopRecording : startRecording}
               />
+            </View>
+          </View>
+        </View>
+        {recordingURI && (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <IconButton icon="play" color={colors.primary} size={24} onPress={playSound} />
+            <Text
+              style={{
+                fontFamily: 'Poppins_400Regular',
+                fontSize: 12,
+                fontWeight: 'normal',
+                fontStyle: 'normal',
+                lineHeight: 18,
+                letterSpacing: 0,
+                textAlign: 'left',
+                color: '#707070',
+                marginVertical: 13,
+              }}
+            >
+              {t('play_recorded_audio')}
+            </Text>
+            <IconButton
+              icon="close"
+              color={colors.error}
+              size={24}
+              onPress={() => setRecordingURI()}
+            />
+          </View>
+        )}
+
+
+              </>
             )}
           </Dialog.Content>
           {!recordedSteps ? (
@@ -815,7 +1111,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
         </Dialog>
       </Portal>
       {/* Dialog NOt resolve */}
-
+      <LoadingScreen visible={isLoading} />
     </ScrollView>
   );
 }
