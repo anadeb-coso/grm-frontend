@@ -338,7 +338,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
           />
 
           <Text />
-          <TextInput
+          {/* <TextInput
               style={styles.grmInput}
               placeholder={t('step_2_structure_in_charge_name')}
               outlineColor="#3e4000"
@@ -378,7 +378,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
               onChangeText={(text) => validate_email(text)}
             />
            {!validationEmail ? <Text style={{ color: 'red'}}>{t('step_2_validation_email')}</Text> : <></>}
-            <Text />
+            <Text /> */}
         </View>
 
 

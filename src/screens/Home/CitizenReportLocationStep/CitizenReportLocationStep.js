@@ -67,16 +67,17 @@ function CitizenReportLocationStep({ route }) {
     if (response.error) {
       setCantons([]);
       setVillages([]);
+      setLoading(false);
       Alert.alert('Warning', response?.error?.toString(), [{ text: 'OK' }], {
         cancelable: false,
       });
-      return;
+      // return;
     }else{
       setCantons(response.cantons);
       setVillages(response.villages);
+      setLoading(false);
     }
     
-    setLoading(false);
     
   });
 
@@ -90,10 +91,10 @@ function CitizenReportLocationStep({ route }) {
 
   setTimeout(function(){
     if(loading) {
+      setLoading(false);
       Alert.alert('Warning', t('warning_message_location_not_load'), [{ text: 'OK' }], {
         cancelable: false,
       });
-      setLoading(false);
     }
   }, 10000);
 
