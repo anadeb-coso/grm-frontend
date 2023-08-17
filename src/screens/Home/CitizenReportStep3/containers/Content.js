@@ -254,6 +254,7 @@ function Content({ issue, eadl, issues }) {
             if(attachment.isAudio){
               return(
                 <View
+                  key={`${attachment.id} ${attachment.local_url}`}
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -313,7 +314,7 @@ function Content({ issue, eadl, issues }) {
             if(!attachment.isAudio){
               return(
                 <ImageBackground
-                  key={attachment.id}
+                  key={`${attachment.id} ${attachment.local_url}`}
                   source={{ uri: attachment.local_url }}
                   style={{
                     height: 80,
