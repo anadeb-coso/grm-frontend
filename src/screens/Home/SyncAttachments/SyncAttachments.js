@@ -27,7 +27,7 @@ function SyncAttachments({ navigation }) {
 
   const { username, userPassword } = useSelector((state) => state.get('authentication').toObject());
 
-  const getAndSetAttachments = () => {
+  const getAndSetAttachments = async () => {
     if (!fetchedContent) {
       async function fetchContent() {
         LocalDatabase.find({
@@ -107,7 +107,7 @@ function SyncAttachments({ navigation }) {
         setLoading(false);
       }
       setLoading(true);
-      fetchContent();
+      await fetchContent();
     }
   };
   useEffect(() => {
@@ -168,7 +168,7 @@ function SyncAttachments({ navigation }) {
     if (!isError) setSuccessModal(true);
 
     await SyncToRemoteDatabase(dbConfig, username);
-    getAndSetAttachments();
+    await getAndSetAttachments();
   };
   return (
     <View style={{ flex: 1 }}>
