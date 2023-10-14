@@ -28,6 +28,7 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
   const [pickerAgeValue, setPickerAgeValue] = useState(null);
   const [selectedAge, setSelectedAge] = useState(null);
   const [confidentialValue, setConfidentialValue] = useState(null);
+  const [citizenOrGroupChoicesValue, setCitizenOrGroupChoicesValue] = useState(null);
   const [selectedCitizenGroupI, setSelectedCitizenGroupI] = useState(null);
   const [selectedCitizenGroupII, setSelectedCitizenGroupII] = useState(null);
   const [_citizenGroupsI, setCitizenGroupsI] = useState(citizenGroupsI ?? []);
@@ -100,7 +101,31 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
               <Text style={styles.radioLabel}>{t('step_2_organization_behalf_someone')} </Text>
             </View>
           </RadioButton.Group>
+          
+          <Text />
+          <Text>{t('step_2_citizen_or_group_label')}</Text>
+          <RadioButton.Group
+            onValueChange={(newValue) => {
+              if (newValue === citizenOrGroupChoicesValue) {
+                setCitizenOrGroupChoicesValue(0);
+              } else {
+                setCitizenOrGroupChoicesValue(newValue);
+              }
+            }}
+            value={citizenOrGroupChoicesValue}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 5 }}>
+              <RadioButton.Android value={'Individual'} uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('step_2_citizen_or_group_individual')} </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 5 }}>
+              <RadioButton.Android value={'Group'} uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('step_2_citizen_or_group_group')} </Text>
+            </View>
+          </RadioButton.Group>
+
         </View>
+
         <Text />
         <CustomDropDownPicker
           schema={{
@@ -172,6 +197,7 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
                       citizen_group_2: selectedCitizenGroupII,
                       gender: pickerGenderValue,
                       filledOnSomebodyElseBehalf: checked,
+                      citizen_or_group: citizenOrGroupChoicesValue
                     },
                   });
                 }}

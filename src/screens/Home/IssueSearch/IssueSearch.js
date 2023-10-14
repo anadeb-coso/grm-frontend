@@ -42,7 +42,13 @@ function IssueSearch() {
           }
         ]
       }
-      if(eadl.administrative_region == "1"){
+      if(eadl.administrative_region == "1" && eadl.group  && eadl.group == "Admin"){
+        selector = {
+          type: 'issue',
+          confirmed: true,
+          publish: true
+        }
+      }else if(eadl.administrative_region == "1"){
         selector = {
           type: 'issue',
           confirmed: true

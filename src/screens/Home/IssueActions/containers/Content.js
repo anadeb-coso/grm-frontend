@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
   ImageBackground,
+  ToastAndroid,
 } from 'react-native';
 import { Button, Dialog, Paragraph, Portal, TextInput, IconButton } from 'react-native-paper';
 import { Audio } from 'expo-av';
@@ -19,6 +20,7 @@ import { colors } from '../../../../utils/colors';
 import { LocalGRMDatabase } from '../../../../utils/databaseManager';
 import { styles } from './Content.styles';
 import LoadingScreen from '../../../../components/LoadingScreen/LoadingScreen';
+import { id_kara_centrale_cantons, administrative_levels } from '../../../../utils/utils';
 
 
 const theme = {
@@ -58,6 +60,14 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const [isNotResolveEnabled, setIsNotResolveEnabled] = useState(false);
   const [isRateAppealEnabled, setIsRateAppealEnabled] = useState(false);
   const [isIssueAssignedToMe, setIsIssueAssignedToMe] = useState(false);
+  const [currentAdlObj, setCurrentAdlObj] = useState({
+    escalate_to: {
+      administrative_id: issue.administrative_region.administrative_id,
+      name: issue.administrative_region.name,
+      administrative_level: issue.category.administrative_level
+    },
+    due_at: issue.issue_date
+  });
   const goToDetails = () => navigation.jumpTo('IssueDetail');
   const goToHistory = () => {
     setRecordedSteps(false);
@@ -116,6 +126,50 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     }
   };
 
+
+  
+  const get_next_administrative_level = (current_escalate_to) => {
+    if(!current_escalate_to){
+      return "Canton";
+    }
+    if(current_escalate_to.administrative_level == "Canton"){
+      if(current_escalate_to.administrative_id){
+        if(id_kara_centrale_cantons.includes(Number(current_escalate_to.administrative_id))){
+          return "Prefecture";
+        }else{
+          return "Region";
+        }
+      }else{
+        ToastAndroid.show(`${t('error_message_for_update')}`, ToastAndroid.SHORT);
+      }
+    }
+    try{
+      return administrative_levels[administrative_levels.indexOf(current_escalate_to.administrative_level) - 1]
+    }catch(e){
+      return "Country";
+    }
+  }
+
+  const get_current_adl_obj = () => {
+    let escalation_administrativelevels = issue.escalation_administrativelevels ?? [];
+    
+    if(escalation_administrativelevels.length != 0){
+      setCurrentAdlObj(escalation_administrativelevels[0]);
+    }else{
+      // setCurrentAdlObj({
+      //   escalate_to: {
+      //     administrative_id: issue.administrative_region.administrative_id,
+      //     name: issue.administrative_region.name,
+      //     administrative_level: issue.category.administrative_level
+      //   },
+      //   due_at: issue.issue_date
+      // });
+    }
+  }
+
+  useEffect(() => {
+    get_current_adl_obj();
+  }, []);
 
   //Media
   const [isLoading, setLoading] = useState(false);
@@ -300,27 +354,51 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     issue_status_stories(newStatus, `${t('issue_was_rejected')}\n${reason}`);
   };
 
-  const escalateIssue = () => {
-    issue.escalate_flag = true;
-    issue.escalation_reasons = issue.escalation_reasons ?? []
-    issue.escalation_reasons?.unshift({
-      id: eadl?.representative?.id,
-      name: eadl?.representative?.name,
-      comment: escalateComment,
-      due_at: moment(),
-    });
-    issue.comments?.unshift({
-      name: issue.reporter.name,
-      id: eadl.representative?.id,
-      comment: t('issue_was_escalated'),
-      due_at: moment(),
-    });
-    saveIssueStatus();
-    setDisableEscalation(true);
-    setEscalatedDialog(true);
 
-    const newStatus = statuses.find((x) => x.id === issue.status.id);
-    issue_status_stories(newStatus, `${t('issue_was_escalated')}\n${escalateComment}`);
+  const escalateIssue = () => {
+
+    let current_escalate_to = null;
+    if(issue.escalation_administrativelevels.length != 0){
+      current_escalate_to = issue.escalation_administrativelevels[0].escalate_to;
+    }
+
+    if(current_escalate_to && !current_escalate_to.administrative_id){
+      ToastAndroid.show(`${t('error_message_for_update')}`, ToastAndroid.SHORT);
+    }else{
+      let administrative_level_to_escalate = get_next_administrative_level(current_escalate_to);
+
+      issue.escalate_flag = true;
+      issue.escalation_reasons = issue.escalation_reasons ?? [];
+      issue.escalation_administrativelevels = issue.escalation_administrativelevels ?? [];
+      issue.escalation_reasons?.unshift({
+        id: eadl?.representative?.id,
+        name: eadl?.representative?.name,
+        comment: escalateComment,
+        due_at: moment(),
+      });
+      issue.comments?.unshift({
+        name: issue.reporter.name,
+        id: eadl.representative?.id,
+        comment: `${t('issue_was_escalated')} ${t('escalate_to_label')} ${administrative_level_to_escalate == "Country" ? "Nation" : administrative_level_to_escalate}`,
+        due_at: moment(),
+      });
+
+
+      issue.escalation_administrativelevels?.unshift({
+        escalate_to: {
+          administrative_level: administrative_level_to_escalate
+        },
+        due_at: moment()
+      });
+      saveIssueStatus();
+      setDisableEscalation(true);
+      setEscalatedDialog(true);
+
+      const newStatus = statuses.find((x) => x.id === issue.status.id);
+      issue_status_stories(newStatus, `${t('issue_was_escalated')}\n${escalateComment}`);
+
+      get_current_adl_obj();
+    }
   };
 
   const recordStep = () => {
@@ -474,11 +552,16 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'position' : null}>
         <View style={{ padding: 23 }}>
           <Text style={styles.stepDescription}>
-            {citizenName}, {issue.intake_date && moment(issue.intake_date).format('DD-MMM-YYYY')}{' '}
+            {citizenName ? `${citizenName}, ` : ''} {issue.intake_date && moment(issue.intake_date).format('DD-MMM-YYYY')}{' '}
             {issue.intake_date && currentDate.diff(issue.intake_date, 'days')} {t('days_ago')}
           </Text>
           <Text style={styles.stepDescription}>
-            {t('status_label')} <Text style={{ color: colors.primary }}>{issue.status?.name}</Text>
+            {t('status_label')}: <Text style={{ color: colors.primary }}>{issue.status?.name}</Text>
+          </Text>
+          <Text style={styles.stepDescription}>
+            {t('level_label')}: <Text style={{ color: colors.primary }}>{
+              currentAdlObj.escalate_to.administrative_level == "Country" ? "Nation" : currentAdlObj.escalate_to.administrative_level
+            }</Text>
           </Text>
           <Text style={styles.stepNote}>{issue.description?.substring(0, 170)}</Text>
           <View style={{ paddingHorizontal: 50 }}>
@@ -611,7 +694,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           <TouchableOpacity
             onPress={_showEscalateDialog}
             // disabled={disableEscalation || !isRecordResolutionEnabled || issue.escalate_flag}
-            disabled={!issue.status.id == 5}
+            disabled={!issue.status.id == 5 || currentAdlObj.escalate_to.administrative_level == "Country"}
             style={{
               alignItems: 'center',
               flexDirection: 'row',
@@ -627,7 +710,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 name="rightsquare"
                 size={35}
                 // color={!disableEscalation && isRecordResolutionEnabled ? colors.primary : colors.disabled}
-                color={issue.status.id == 5 ? colors.primary : colors.disabled}
+                color={(issue.status.id == 5 && currentAdlObj.escalate_to.administrative_level != "Country") ? colors.primary : colors.disabled}
               />
               <Feather name="help-circle" size={24} color="gray" />
             </View>

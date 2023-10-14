@@ -48,7 +48,13 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
   const [open, setOpen] = useState(false);
   const [openVillage, setOpenVillage] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [structureName, setStructureName] = useState('');
+  const [structureName, setStructureName] = useState(
+    stepTwoParams.category.id == 7 
+      ? "ANADEB & " 
+      : (
+          stepTwoParams.category.id == 4 ? "ANADEB" : "Comité de gestion de plaintes"
+        )
+  );
   const [structurePhone, setStructurePhone] = useState('');
   const [structureEmail, setStructureEmail] = useState('');
   const [structureNameMethodError, setStructureNameMethodError] = React.useState();
@@ -338,7 +344,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
           />
 
           <Text />
-          {/* <TextInput
+          <TextInput
               style={styles.grmInput}
               placeholder={t('step_2_structure_in_charge_name')}
               outlineColor="#3e4000"
@@ -350,9 +356,10 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
               onChangeText={(text) => {
                 setStructureName(text);
               }}
+              disabled={true}
             />
             <Text />
-            <TextInput
+            {/* <TextInput
               style={styles.grmInput}
               placeholder={t('step_2_structure_in_charge_phone')}
               outlineColor="#3e4000"
@@ -388,7 +395,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
         <View style={{ paddingHorizontal: 50 }}>
           <Button
             theme={theme}
-            disabled={!uniqueRegion || !additionalDetails || (!selectedVillage && villages.length != 0) || !validationEmail} // || (!hideVillageField && !village) || (!hideCantonField && !canton)
+            disabled={!uniqueRegion || (!selectedVillage && villages.length != 0) || !validationEmail} // || (!hideVillageField && !village) || (!hideCantonField && !canton)
             style={{ alignSelf: 'center', margin: 24 }}
             labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
             mode="contained"

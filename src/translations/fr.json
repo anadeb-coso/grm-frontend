@@ -50,6 +50,8 @@
   "step_1_method_1": "SMS",
   "step_1_method_2": "WhatsApp",
   "step_1_method_3": "Email",
+  "step_1_method_4": "Appel téléphonique",
+  "step_1_method_5": "Par lettre (correspondance)",
   "step_1_placeholder_1": "Méthode de contact",
   "step_1_placeholder_2": "Entrez les informations ici",
 
@@ -87,6 +89,9 @@
   "step_2_structure_in_charge_phone": "Numéro de téléphone de la structure",
   "step_2_structure_in_charge_email": "Adresse mail de la structure",
   "step_2_validation_email": "L'e-mail n'est pas correct",
+  "step_2_citizen_or_group_label": "Type de plaignant",
+  "step_2_citizen_or_group_individual": "Individuel",
+  "step_2_citizen_or_group_group": "Groupe",
 
 
   //step 3
@@ -146,6 +151,8 @@
   "comment_placeholder": "Écrire un commentaire...",
   "information_not_available": "Information non disponible",
   "confidential": "Confidentiel",
+  "level_label": "Niveau",
+  "error_message_for_update": "La mise à jour de la dernière remontée n'a pas été faite",
 
   //issue search
   "registe_to_you_label": "Plaintes qui sont enregistrées par vous",
@@ -175,6 +182,7 @@
   "reported_by": "Rapporté par",
   "me": "Moi",
   "issues": "Plaintes",
+  "escalate_to_label": "au niveau",
 
   // issue detail
   "are_you_accepting": "Acceptez-vous qu'il s'agisse d'une plainte / demande liée au projet ?",
@@ -191,7 +199,7 @@
   "re_open_issue": "Reouvrir",
   "record_steps_taken": "Étape d'investigation",
   "record_resolution": "Enregistrez la résolution",
-  "record_not_resolve": "Mettre à non résolue",
+  "record_not_resolve": "Mettre à non résolution",
   "rate_appeal": "Réactions du citoyen",
   "escalate": "Remonter",
   "lodged_by": "Inscrite par:",
@@ -222,5 +230,11 @@
   "play_recorded_audio": "Écoutez l'audio enregistré",
   
   //login page
-  "error_message_for_code": "Veuillez renseigner toutes les cellules"
+  "error_message_for_code": "Veuillez renseigner toutes les cellules",
+
+
+  //Error message
+  "file_read_error": "Impossible de lire tous les fichiers.",
+  "file_read_error_try_again": "Impossible de lire tous les fichiers. Réessayez."
+
 }

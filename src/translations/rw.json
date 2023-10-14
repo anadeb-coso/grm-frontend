@@ -71,6 +71,8 @@
 	"step_1_method_2": "WhatsApp",
 
 	"step_1_method_3": "Imeri",
+	"step_1_method_4": "Phone call", //to complete
+	"step_1_method_5": "By letter (correspondence)", //to complete
 
 	"step_1_placeholder_1": "Uburyo bw’itumanaho",
 
@@ -128,6 +130,9 @@
 	"step_2_structure_in_charge_phone": "Phone number of the structure", //to complete
 	"step_2_structure_in_charge_email": "Structure's e-mail address", //to complete
 	"step_2_validation_email": "Email is Not Correct", //to complete
+	"step_2_citizen_or_group_label": "Complainant type", //to complete
+	"step_2_citizen_or_group_individual": "Individual", //to complete
+	"step_2_citizen_or_group_group": "Group", //to complete
 
 
 	//step 3
@@ -219,6 +224,8 @@
 	"information_not_available": "Nta makuru ahari",
 
 	"confidential": "Ibanga",
+	"level_label": "Level", //to complete
+	"error_message_for_update": "The last update of escalation has not been done", //to complete
 
 	//issue search
 	"registe_to_you_label": "Complaints registered by you", //to complete
@@ -253,6 +260,7 @@
 	"reported_by": "Reported by", //to complete
 	"me": "Me", //to complete
 	"issues": "Issues", //to complete
+	"escalate_to_label": "at level", //to complete
 
 	// issue detail
 	"are_you_accepting": "Uremera ko iki kibazo kijyanye n'uyu mushinga?",
@@ -300,5 +308,11 @@
 
 	
   //login page
-  "error_message_for_code": "Nyamuneka Hitamo utugari twose"
+  "error_message_for_code": "Nyamuneka Hitamo utugari twose",
+
+
+  //Error message
+  "file_read_error": "Cannot read all the files.", //to complete
+  "file_read_error_try_again": "Cannot read all the files. try again." //to complete
+
 }

@@ -27,9 +27,11 @@ function Content() {
   const [contactInfo, setContactInfo] = React.useState('');
   const [pickerValue, setPickerValue] = useState('email');
   const [items, setItems] = useState([
-    { label: t('step_1_method_1'), value: 'phone_number' },
-    { label: t('step_1_method_2'), value: 'whatsapp' },
     { label: t('step_1_method_3'), value: 'email' },
+    { label: t('step_1_method_4'), value: 'phone_number' },
+    { label: t('step_1_method_1'), value: 'sms' },
+    { label: t('step_1_method_2'), value: 'whatsapp' },
+    { label: t('step_1_method_5'), value: 'letter' },
   ]);
   useEffect(() => {
     if (value === 'channel-alert') {

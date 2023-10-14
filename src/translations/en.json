@@ -51,6 +51,8 @@
   "step_1_method_1": "Text / SMS",
   "step_1_method_2": "WhatsApp",
   "step_1_method_3": "Email",
+  "step_1_method_4": "Phone call",
+  "step_1_method_5": "By letter (correspondence)",
   "step_1_placeholder_1": "Method of contact",
   "step_1_placeholder_2": "Enter information here",
 
@@ -88,6 +90,9 @@
   "step_2_structure_in_charge_phone": "Phone number of the structure",
   "step_2_structure_in_charge_email": "Structure's e-mail address",
   "step_2_validation_email": "Email is Not Correct",
+  "step_2_citizen_or_group_label": "Complainant type",
+  "step_2_citizen_or_group_individual": "Individual",
+  "step_2_citizen_or_group_group": "Group",
 
 
   //step 3
@@ -144,6 +149,8 @@
   "comment_placeholder": "Write a comment...",
   "information_not_available": "information not available",
   "confidential": "Confidential",
+  "level_label": "Level",
+  "error_message_for_update": "The last update of escalation has not been done",
 
   //issue search
   "registe_to_you_label": "Complaints registered by you",
@@ -173,6 +180,7 @@
   "reported_by": "Reported by",
   "me": "Me",
   "issues": "Issues",
+  "escalate_to_label": "at level",
 
   // issue detail
   "are_you_accepting": "Are you accepting this is a grievance relevant to the project?",
@@ -220,5 +228,11 @@
   "play_recorded_audio": "Play Recorded Audio",
 
   //login page
-  "error_message_for_code": "Please fill in all cells"
+  "error_message_for_code": "Please fill in all cells",
+
+
+  //Error message
+  "file_read_error": "Cannot read all the files.",
+  "file_read_error_try_again": "Cannot read all the files. try again."
+
 }

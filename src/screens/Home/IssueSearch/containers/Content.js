@@ -24,7 +24,8 @@ function Content({ issues, eadl, statuses }) {
     const filteredIssuesCopy = { ...issues };
 
     filteredIssuesCopy.registe = issues.filter(
-      (issue) => ( issue?.status?.id === 1 && 
+      (issue) => ( 
+        //issue?.status?.id === 1 && 
         ((issue.reporter && issue.reporter.id === eadl.representative?.id) || eadl.administrative_region == "1")
         )
     );

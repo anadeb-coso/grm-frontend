@@ -4,6 +4,7 @@ import axios from 'axios';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import { getInfoAsync } from 'expo-file-system';
+import { useTranslation } from 'react-i18next';
 import LocalDatabase, { LocalGRMDatabase } from '../../../utils/databaseManager';
 import { colors } from '../../../utils/colors';
 import ImagesList from './components/ImagesList';
@@ -14,14 +15,19 @@ import CheckCircle from '../../../../assets/check-circle.svg';
 import { baseURL } from '../../../services/API';
 import { SyncToRemoteDatabase } from "../../../utils/databaseManager";
 
-const FILE_READ_ERROR = 'Cannot read all the files.';
-
 function SyncAttachments({ navigation }) {
+  const { t } = useTranslation();
+
+  const FILE_READ_ERROR = t('file_read_error');
+  const FILE_READ_ERROR_TRY_AGAIN = t('file_read_error_try_again');
+
+  
   const [loading, setLoading] = useState(true);
   const [attachments, setAttachments] = useState([]);
   const [successModal, setSuccessModal] = useState(false);
   const [fetchedContent, setFetchedContent] = useState(false);
   const [errorVisible, setErrorVisible] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState(FILE_READ_ERROR);
 
   const onDismissSnackBar = () => setErrorVisible(false);
 
@@ -143,12 +149,14 @@ function SyncAttachments({ navigation }) {
         );
         return {};
       }
+      setErrorMessage(FILE_READ_ERROR);
       setErrorVisible(true);
       return { error: FILE_READ_ERROR };
     } catch (e) {
       console.log(e);
+      setErrorMessage(FILE_READ_ERROR_TRY_AGAIN);
       setErrorVisible(true);
-      return { error: FILE_READ_ERROR };
+      return { error: FILE_READ_ERROR_TRY_AGAIN };
     }
   };
 
@@ -248,7 +256,7 @@ function SyncAttachments({ navigation }) {
         </View>
       )}
       <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
-        {FILE_READ_ERROR}
+        {errorMessage}
       </Snackbar>
     </View>
   );

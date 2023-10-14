@@ -82,6 +82,7 @@ function Content({ issue, eadl, issues }) {
       citizen_type: issue.citizen_type,
       citizen_group_1: issue.citizen_group_1,
       citizen_group_2: issue.citizen_group_2,
+      citizen_or_group: issue.citizen_or_group,
       location_info: {
         issue_location: issue.issueLocation,
         location_description: issue.locationDescription,
@@ -119,7 +120,8 @@ function Content({ issue, eadl, issues }) {
       },
       type: 'issue',
       source: 'mobile',
-      publish: false
+      publish: false,
+      notification_send: false
     };
     createIssue(_issue);
     // navigation.navigate("CitizenReportStep4");
