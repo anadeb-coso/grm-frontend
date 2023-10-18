@@ -17,3 +17,8 @@ Build the app for android
 `eas build -p android --profile preview `
 
 `eas build:run -p android --latest`
+
+
+# Versions
+### 1.2.1 (10)
+`https://docs.google.com/document/d/1xpcSGm7QH-MI-LEZBz7G-kiaLDiNANAL8mbTbWjaQgQ/edit`
