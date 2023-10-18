@@ -11,11 +11,19 @@ import {
   View,
   ImageBackground,
   ToastAndroid,
+  StyleSheet,
+  Animated,
+  Image,
 } from 'react-native';
 import { Button, Dialog, Paragraph, Portal, TextInput, IconButton } from 'react-native-paper';
 import { Audio } from 'expo-av';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import { Buffer } from "buffer";
+import * as Sharing from "expo-sharing";
+import * as FileSystem from 'expo-file-system';
+import * as Linking from 'expo-linking';
 import { colors } from '../../../../utils/colors';
 import { LocalGRMDatabase } from '../../../../utils/databaseManager';
 import { styles } from './Content.styles';
@@ -32,6 +40,22 @@ const theme = {
     text: '#707070',
   },
 };
+
+const styles_audio = StyleSheet.create({
+  container: {
+    height: 7,
+    backgroundColor: '#ccc',
+    borderRadius: 10,
+    margin: 10,
+    width: 150,
+  },
+  bar: {
+    height: 7,
+    backgroundColor: '#333',
+    borderRadius: 10,
+  },
+});
+
 
 function Content({ issue, navigation, statuses = [], eadl }) {
   const { t } = useTranslation();
@@ -175,8 +199,15 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const [isLoading, setLoading] = useState(false);
   const [sound, setSound] = React.useState();
   const [recordingURI, setRecordingURI] = useState();
+  const [recordingURIs, setRecordingURIs] = useState([]);
   const [recording, setRecording] = useState();
   const [attachments, setAttachments] = useState([]);
+  const [soundUrl, setSoundUrl] = React.useState();
+  const [duration, setDuration] = useState(null);
+  const [position, setPosition] = useState(null);
+  const [resolvePDF, setResolvePDF] = useState();
+  const [escalatePDF, setEscalatePDF] = useState();
+  
 
   React.useEffect(
     () =>
@@ -210,36 +241,89 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     })();
   }, []);
 
-  const startRecording = async () => {
-    try {
-      await Audio.requestPermissionsAsync();
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-      
-      const recording = new Audio.Recording();
-      await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
-      await recording.startAsync();
-      setRecording(recording);
-    } catch (err) {
 
+  
+  const startRecording = async () => {
+    if (recordingURIs.length < 4){
+      try {
+        // console.log("Requesting permissions..");
+        await Audio.requestPermissionsAsync();
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+        // console.log("Starting recording..");
+        const recording = new Audio.Recording();
+        await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+        await recording.startAsync();
+        setRecording(recording);
+        // console.log("Recording started");
+      } catch (err) {
+        // console.error("Failed to start recording", err);
+      }
+    }else{
+      ToastAndroid.show(`${t('error_message_for_limit_audio')}`, ToastAndroid.SHORT);
     }
   };
 
   const stopRecording = async () => {
+    // console.log("Stopping recording..");
     await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
     setRecordingURI(uri);
+    setRecordingURIs([...recordingURIs, uri]);
     setRecording(undefined);
+    // console.log("Recording stopped and stored at", uri);
   };
 
-  const playSound = async () => {
-    const { sound } = await Audio.Sound.createAsync({ uri: recordingURI });
-    setSound(sound);
+  const onPlaybackStatusUpdate = (status) => {
+    setDuration(status.durationMillis);
+    setPosition(status.positionMillis);
+    // setFinish(status.didJustFinish);
 
-    await sound.playAsync();
-  };
+    if(status.didJustFinish){
+      setSound(undefined);
+      setSoundUrl(undefined);
+    }
+}
+
+
+const playASound = async (sound_url) => {
+  // console.log("Loading Sound");
+  
+  const { sound } = await Audio.Sound.createAsync(
+    { uri: sound_url },
+    { shouldPlay: true },
+    onPlaybackStatusUpdate
+  );
+  setSound(sound);
+  setSoundUrl(recordingURI);
+  // console.log("Playing Sound");
+  await sound.playAsync();
+};
+
+const stopASound = async () => {
+  await sound.stopAsync();
+  setSound(undefined);
+  setSoundUrl(undefined);
+};
+
+const reomveARecordingURI = (recording_url) => {
+  if(soundUrl && recording_url == soundUrl){
+    stopASound();
+  }
+  
+  setRecordingURIs(recordingURIs.filter((elt) => elt != recording_url));
+}
+
+const getProgress = () => {
+  if (sound === undefined || sound === null || duration === null || position === null) {
+      return 0;
+  }
+
+  return (position / duration) * 150;
+}
+
 
   const openCamera = async () => {
     if (attachments.length < 3) {
@@ -266,38 +350,93 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     }
   };
 
-  const pickImage = async () => {
-    try {
-      if (attachments.length < 3) {
-        const result = await ImagePicker.launchImageLibraryAsync({
-          presentationStyle: 0,
-          mediaTypes: ImagePicker.MediaTypeOptions.All,
-          allowsEditing: false,
-
-          quality: 1,
+  const pickDocument = async (hasImage = false, forResolve = false, forEscalate = false) => {
+      try {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: hasImage ? [
+            "image/*", "application/pdf"
+          ] : [
+            "application/pdf"
+          ],
+          multiple: false,
         });
-        if (!result.cancelled) {
+        
+        if(result.type != "cancel"){
           setLoading(true);
-          const manipResult = await ImageManipulator.manipulateAsync(
-            result.localUri || result.uri,
-            [{ resize: {
-              width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000, 
-              height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000 
-             } }],
-            { compress: 1, format: ImageManipulator.SaveFormat.PNG }
-          );
-          setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+
+          if(forResolve){
+            setResolvePDF({ ...result, id: new Date() });
+          }else if(forEscalate){
+            setEscalatePDF({ ...result, id: new Date() });
+          }else{
+            setAttachments([...attachments, { ...result, id: new Date() }]);
+          }
+          
           setLoading(false);
         }
+        
+      } catch (err) {
+        console.warn(err);
       }
-    } catch (e) {
-      console.log(e);
-    }
+
+  };
+
+  const pickImage = async () => {
+    pickDocument(true);
+    // try {
+    //   if (attachments.length < 3) {
+    //     const result = await ImagePicker.launchImageLibraryAsync({
+    //       presentationStyle: 0,
+    //       mediaTypes: ImagePicker.MediaTypeOptions.All,
+    //       allowsEditing: false,
+
+    //       quality: 1,
+    //     });
+    //     if (!result.cancelled) {
+    //       setLoading(true);
+    //       const manipResult = await ImageManipulator.manipulateAsync(
+    //         result.localUri || result.uri,
+    //         [{ resize: {
+    //           width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000, 
+    //           height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000 
+    //          } }],
+    //         { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+    //       );
+    //       setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+    //       setLoading(false);
+    //     }
+    //   }
+    // } catch (e) {
+    //   console.log(e);
+    // }
   };
   function removeAttachment(index) {
     const array = [...attachments];
     array.splice(index, 1);
     setAttachments(array);
+  }
+
+  const openUrl = url => {
+    Linking.openURL(url);
+  };
+
+  const showDoc = async (attach) => {
+    if(attach.uri.includes("file://")){
+      const buff = Buffer.from(attach.uri, "base64");
+      const base64 = buff.toString("base64");
+      const fileUri = FileSystem.documentDirectory + `${encodeURI(attach.name ? attach.name : "pdf")}.pdf`;
+      
+      await FileSystem.writeAsStringAsync(fileUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+  
+      Sharing.shareAsync(attach.uri);
+      
+    }else{
+      openUrl(attach.uri.split("?")[0]);
+    }
+    
+
   }
 
   //End Media
@@ -370,12 +509,39 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       issue.escalate_flag = true;
       issue.escalation_reasons = issue.escalation_reasons ?? [];
       issue.escalation_administrativelevels = issue.escalation_administrativelevels ?? [];
-      issue.escalation_reasons?.unshift({
+
+      let r = null;
+      let escalate_reason = {
         id: eadl?.representative?.id,
         name: eadl?.representative?.name,
         comment: escalateComment,
         due_at: moment(),
-      });
+      };
+      if(escalatePDF){
+        r = {
+          name: escalatePDF?.uri.split('/').pop(),
+          url: '',
+          local_url: escalatePDF?.uri,
+          id: moment(),
+          uploaded: false,
+          bd_id: moment(),
+          user_id: eadl?.representative?.id,
+          user_name: eadl?.representative?.name,
+          subject: "escalation"
+        };
+        
+        escalate_reason.attachment = r;
+
+        r.type = "file";
+        issue.reasons = issue.reasons ?? []
+        issue.reasons?.unshift(r);
+
+        setEscalatePDF();
+      }
+
+      issue.escalation_reasons?.unshift(escalate_reason);
+
+
       issue.comments?.unshift({
         name: issue.reporter.name,
         id: eadl.representative?.id,
@@ -390,6 +556,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
         },
         due_at: moment()
       });
+
       saveIssueStatus();
       setDisableEscalation(true);
       setEscalatedDialog(true);
@@ -436,11 +603,11 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       });
     }
     setAttachments([]);
-    if(recordingURI){
+    for(let index=0; index < recordingURIs.length; index++){
       issue.reasons?.unshift({
-        name: recordingURI.split('/').pop(),
+        name: recordingURIs[index].split('/').pop(),
         url: '',
-        local_url: recordingURI,
+        local_url: recordingURIs[index],
         id: moment(),
         uploaded: false,
         bd_id: due_at,
@@ -450,6 +617,10 @@ function Content({ issue, navigation, statuses = [], eadl }) {
         isAudio: true,
         comment_id: due_at
       });
+    }
+    setRecordingURIs([]);
+
+    if(recordingURI){
       setRecordingURI();
     }
 
@@ -474,6 +645,31 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       comment: t('issue_was_resolved'),
       due_at: moment(),
     });
+    
+
+    if(resolvePDF){
+      let r = {
+        name: resolvePDF?.uri.split('/').pop(),
+        url: '',
+        local_url: resolvePDF?.uri,
+        id: moment(),
+        uploaded: false,
+        bd_id: moment(),
+        type: "file",
+        user_id: eadl?.representative?.id,
+        user_name: eadl?.representative?.name,
+        subject: "resolution"
+      };
+
+      issue.reasons = issue.reasons ?? []
+      issue.reasons?.unshift(r);
+
+      issue.resolution_files = issue.resolution_files ?? [];
+      issue.resolution_files?.unshift(r);
+
+      setResolvePDF();
+    }
+
     saveIssueStatus(newStatus, 'record_resolution');
     _hideRecordResolutionDialog();
     issue_status_stories(newStatus, `${t('issue_was_resolved')}\n${resolution}`);
@@ -848,13 +1044,94 @@ function Content({ issue, navigation, statuses = [], eadl }) {
               <Paragraph>{t('escalated_text')}</Paragraph>
             )}
             {!escalatedDialog && (
-              <TextInput
-                multiline
-                style={{ marginTop: 10 }}
-                mode="outlined"
-                theme={theme}
-                onChangeText={onChangeEscalateComment}
-              />
+              <>
+                <TextInput
+                  multiline
+                  style={{ marginTop: 10 }}
+                  mode="outlined"
+                  theme={theme}
+                  onChangeText={onChangeEscalateComment}
+                />
+                
+                <View style={{ paddingHorizontal: 5 }}>
+          <Text
+            style={{
+              fontFamily: 'Poppins_400Regular',
+              fontSize: 12,
+              fontWeight: 'normal',
+              fontStyle: 'normal',
+              lineHeight: 18,
+              letterSpacing: 0,
+              textAlign: 'left',
+              color: '#707070',
+              marginVertical: 13,
+            }}
+          >
+            {t('step_2_share_pv_escalate')}
+          </Text>
+          <View style={{ flexDirection: 'row' }}>
+            {escalatePDF && (
+                <ImageBackground
+                  key={escalatePDF.id}
+                  source={ escalatePDF.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: attachment.uri }}
+                  style={{
+                    height: 80,
+                    width: 80,
+                    marginHorizontal: 1,
+                    alignSelf: 'center',
+                    justifyContent: 'flex-end',
+                    marginVertical: 20,
+                  }}
+                >
+                  {escalatePDF.mimeType.includes('pdf') ? <TouchableOpacity
+                    onPress={() => showDoc(escalatePDF)}
+                    style={{
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: 60,
+                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                    }}
+                  >
+                    <Image
+                      resizeMode="stretch"
+                      style={{ width: 30, height: 30, borderRadius: 50 }}
+                      source={require('../../../../../assets/eye.png')}
+                    />
+                  </TouchableOpacity> : <></>}
+                  <TouchableOpacity
+                    onPress={() => { setEscalatePDF() }}
+                    style={{
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: 20,
+                      backgroundColor: 'rgba(255, 1, 1, 1)',
+                    }}
+                  >
+                    <Text style={{ color: 'white' }}>X</Text>
+                  </TouchableOpacity>
+                </ImageBackground>
+              )}
+          </View>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Button
+              theme={theme}
+              style={{ alignSelf: 'center' }}
+              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+              mode="contained"
+              onPress={() => {pickDocument(false, false, true)}}
+              uppercase={false}
+            >
+              {t('attach_pv')}
+            </Button>
+          </View>
+        </View>
+
+              </>
             )}
           </Dialog.Content>
           {!escalatedDialog ? (
@@ -938,7 +1215,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
               attachments.map((attachment, index) => (
                 <ImageBackground
                   key={attachment.id}
-                  source={{ uri: attachment.uri }}
+                  source={ attachment.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: attachment.uri }}
                   style={{
                     height: 80,
                     width: 80,
@@ -948,11 +1225,27 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                     marginVertical: 20,
                   }}
                 >
+                  {attachment.mimeType.includes('pdf') ? <TouchableOpacity
+                    onPress={() => showDoc(attachment)}
+                    style={{
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: 60,
+                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                    }}
+                  >
+                    <Image
+                      resizeMode="stretch"
+                      style={{ width: 30, height: 30, borderRadius: 50 }}
+                      source={require('../../../../../assets/eye.png')}
+                    />
+                  </TouchableOpacity> : <></>}
                   <TouchableOpacity
                     onPress={() => removeAttachment(index)}
                     style={{
+                      justifyContent: 'center',
                       alignItems: 'center',
-                      padding: 5,
+                      height: 20,
                       backgroundColor: 'rgba(255, 1, 1, 1)',
                     }}
                   >
@@ -990,7 +1283,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
             </View>
           </View>
         </View>
-        {recordingURI && (
+        {/* {recordingURI && (
           <View
             style={{
               flexDirection: 'row',
@@ -1021,7 +1314,60 @@ function Content({ issue, navigation, statuses = [], eadl }) {
               onPress={() => setRecordingURI()}
             />
           </View>
-        )}
+        )} */}
+        {recordingURIs && recordingURIs.map((recording_url, index) => (
+          <View
+            key={recording_url}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <IconButton icon={soundUrl == recording_url ? "pause" : "play"} color={colors.primary} size={24} onPress={
+              () => soundUrl == recording_url ? stopASound(recording_url) : playASound(recording_url)
+            } />
+            <View style={styles_audio.container}>
+              <Animated.View style={[styles_audio.bar, { width: soundUrl == recording_url ? getProgress() : 0 }]} />
+            </View>
+            <Text
+              style={{
+                fontFamily: 'Poppins_400Regular',
+                fontSize: 12,
+                fontWeight: 'normal',
+                fontStyle: 'normal',
+                lineHeight: 18,
+                letterSpacing: 0,
+                textAlign: 'left',
+                color: '#707070',
+                marginVertical: 13,
+              }}
+            >
+              {`(${index+1})`}
+            </Text>
+            <Text 
+              style={{
+                fontFamily: 'Poppins_400Regular',
+                fontSize: 12,
+                fontWeight: 'normal',
+                fontStyle: 'normal',
+                lineHeight: 18,
+                letterSpacing: 0,
+                textAlign: 'left',
+                marginVertical: 13,
+                marginLeft: 7
+              }}
+              >{parseInt(String(soundUrl == recording_url && position ? position/1000 : 0))}</Text>
+            <IconButton
+              icon="close"
+              color={colors.error}
+              size={24}
+              onPress={() => reomveARecordingURI(recording_url)}
+            />
+          </View>
+        ))}
+
+
 
 
               </>
@@ -1086,13 +1432,94 @@ function Content({ issue, navigation, statuses = [], eadl }) {
               <Paragraph>{t('please_confirm_resolution')}</Paragraph>
             )}
             {!recordedResolution ? (
-              <TextInput
-                multiline
-                style={{ marginTop: 10 }}
-                mode="outlined"
-                theme={theme}
-                onChangeText={onChangeResolution}
-              />
+              <>
+                <TextInput
+                  multiline
+                  style={{ marginTop: 10 }}
+                  mode="outlined"
+                  theme={theme}
+                  onChangeText={onChangeResolution}
+                />
+
+                <View style={{ paddingHorizontal: 5 }}>
+          <Text
+            style={{
+              fontFamily: 'Poppins_400Regular',
+              fontSize: 12,
+              fontWeight: 'normal',
+              fontStyle: 'normal',
+              lineHeight: 18,
+              letterSpacing: 0,
+              textAlign: 'left',
+              color: '#707070',
+              marginVertical: 13,
+            }}
+          >
+            {t('step_2_share_pv')}
+          </Text>
+          <View style={{ flexDirection: 'row' }}>
+            {resolvePDF && (
+                <ImageBackground
+                  key={resolvePDF.id}
+                  source={ resolvePDF.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: attachment.uri }}
+                  style={{
+                    height: 80,
+                    width: 80,
+                    marginHorizontal: 1,
+                    alignSelf: 'center',
+                    justifyContent: 'flex-end',
+                    marginVertical: 20,
+                  }}
+                >
+                  {resolvePDF.mimeType.includes('pdf') ? <TouchableOpacity
+                    onPress={() => showDoc(resolvePDF)}
+                    style={{
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: 60,
+                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                    }}
+                  >
+                    <Image
+                      resizeMode="stretch"
+                      style={{ width: 30, height: 30, borderRadius: 50 }}
+                      source={require('../../../../../assets/eye.png')}
+                    />
+                  </TouchableOpacity> : <></>}
+                  <TouchableOpacity
+                    onPress={() => { setResolvePDF() }}
+                    style={{
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      height: 20,
+                      backgroundColor: 'rgba(255, 1, 1, 1)',
+                    }}
+                  >
+                    <Text style={{ color: 'white' }}>X</Text>
+                  </TouchableOpacity>
+                </ImageBackground>
+              )}
+          </View>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Button
+              theme={theme}
+              style={{ alignSelf: 'center' }}
+              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+              mode="contained"
+              onPress={() => {pickDocument(false, true)}}
+              uppercase={false}
+            >
+              {t('attach_pv')}
+            </Button>
+          </View>
+        </View>
+
+              </>
             ) : (
               <Text>
                 {'\n'}"{resolution}"

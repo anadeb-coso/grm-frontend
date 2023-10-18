@@ -79,7 +79,9 @@
   "step_2_placeholder_2": "De quoi s’agit-il?",
   "step_2_placeholder_3": "Veuillez décrire la plainte ou la demande.",
   "step_2_placeholder_4": "Écrivez les détails ici",
-  "step_2_share_photos": "Partagez toute vidéo, photo ou audio à l’appui comme preuve ou clarification.\n",
+  "step_2_share_photos": "Partagez toute photo ou audio à l’appui comme preuve ou clarification.\n", // vidéo, 
+  "step_2_share_pv": "Partagez le PV de réconciliation à l’appui comme preuve ou clarification.\n",
+  "step_2_share_pv_escalate": "Partagez le PV de transfert à l’appui comme preuve ou clarification.\n",
   "step_2_upload_attachment": "Pièces jointes",
   "step_2_keep_name_confidential": "Gardez le nom confidentiel. Seule la personne chargée de résoudre la plainte verra le nom.",
   "step_2_on_behalf_of_someone": "Il s'agit d'une personne qui remplit ceci pour le compte d'une autre personne.",
@@ -153,6 +155,7 @@
   "confidential": "Confidentiel",
   "level_label": "Niveau",
   "error_message_for_update": "La mise à jour de la dernière remontée n'a pas été faite",
+  "attach_pv": "Joindre PV",
 
   //issue search
   "registe_to_you_label": "Plaintes qui sont enregistrées par vous",
@@ -235,6 +238,7 @@
 
   //Error message
   "file_read_error": "Impossible de lire tous les fichiers.",
-  "file_read_error_try_again": "Impossible de lire tous les fichiers. Réessayez."
+  "file_read_error_try_again": "Impossible de lire tous les fichiers. Réessayez.",
+  "error_message_for_limit_audio": "Vous n'avez que la possibilité de joindre quatre audios."
 
 }

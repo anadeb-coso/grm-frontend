@@ -80,7 +80,9 @@
   "step_2_placeholder_2": "Choose type of grievance",
   "step_2_placeholder_3": "Please summarize the issue.",
   "step_2_placeholder_4": "Please provide any additional details.",
-  "step_2_share_photos": "Share any supporting video, photos or audio as evidence or clarification",
+  "step_2_share_photos": "Share any supporting photos or audio as evidence or clarification", //video, 
+  "step_2_share_pv": "Share the supporting reconciliation minutes as proof or clarification.\n",
+  "step_2_share_pv_escalate": "Share supporting transfer certificate as proof or clarification.\n",
   "step_2_upload_attachment": "Select image",
   "step_2_keep_name_confidential": "Keep name confidential. Only the person resolving the issue will see the name.",
   "step_2_on_behalf_of_someone": "This is an individual filing on behalf of someone else.",
@@ -151,6 +153,7 @@
   "confidential": "Confidential",
   "level_label": "Level",
   "error_message_for_update": "The last update of escalation has not been done",
+  "attach_pv": "Join PV",
 
   //issue search
   "registe_to_you_label": "Complaints registered by you",
@@ -233,6 +236,7 @@
 
   //Error message
   "file_read_error": "Cannot read all the files.",
-  "file_read_error_try_again": "Cannot read all the files. try again."
+  "file_read_error_try_again": "Cannot read all the files. try again.",
+  "error_message_for_limit_audio": "You only have the option of attaching four audios."
 
 }

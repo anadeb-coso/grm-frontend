@@ -25,7 +25,7 @@ function ImagesList({ attachments }) {
               borderRadius: 10,
               marginHorizontal: 21,
             }}
-            source={{
+            source={attachment?.attachment?.local_url.includes('.pdf') ? require('../../../../../assets/pdf.png') : {
               uri: attachment?.attachment?.local_url,
             }}
           />
@@ -54,7 +54,9 @@ function ImagesList({ attachments }) {
           >
             {!attachment.taskOrdinal &&
               `Fichier appartenant à un problème${
-                attachment?.attachment?.isAudio ? ' [Audio Recording]' : '.'
+                attachment?.attachment?.isAudio ? 
+                  ' [Audio Recording]' 
+                : attachment?.attachment?.local_url?.includes('.pdf') ? ' [PDF]' :  '.'
               }`}
             {attachment.taskOrdinal &&
               `Attachment on task ${attachment?.taskOrdinal} of \n phase ${attachment?.phaseOrdinal}`}

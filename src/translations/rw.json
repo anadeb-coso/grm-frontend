@@ -117,7 +117,9 @@
 
 	"step_2_placeholder_4": "Tanga andi makuru y'ingenzi kuri iki kibazo",
 
-	"step_2_share_photos": "Shyiraho video, amafoto yangwa amajwi nk'ibimemyetso cg ibisobanuro",
+	"step_2_share_photos": "Shyiraho amafoto yangwa amajwi nk'ibimemyetso cg ibisobanuro", //video, 
+	"step_2_share_pv": "Share the supporting reconciliation minutes as proof or clarification.\n", //to complete
+	"step_2_share_pv_escalate": "Share supporting transfer certificate as proof or clarification.\n", //to complete
 
 	"step_2_upload_attachment": "Hitamo ifoto",
 
@@ -226,6 +228,7 @@
 	"confidential": "Ibanga",
 	"level_label": "Level", //to complete
 	"error_message_for_update": "The last update of escalation has not been done", //to complete
+	"attach_pv": "Join PV", //to complete
 
 	//issue search
 	"registe_to_you_label": "Complaints registered by you", //to complete
@@ -313,6 +316,7 @@
 
   //Error message
   "file_read_error": "Cannot read all the files.", //to complete
-  "file_read_error_try_again": "Cannot read all the files. try again." //to complete
+  "file_read_error_try_again": "Cannot read all the files. try again.", //to complete
+  "error_message_for_limit_audio": "You only have the option of attaching four audios." //to complete
 
 }

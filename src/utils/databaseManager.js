@@ -19,8 +19,31 @@ const LocalDatabase = new PouchDB('eadl', {
   adapter: 'asyncstorage',
 });
 
+LocalDatabase.createIndex({
+  index: {
+    fields: ['representative.email', 'representative.id', 'type']
+  }
+}).then(function () {
+  // Index created successfully
+}).catch(function (err) {
+  // Handle error
+  console.log(err);
+});
+
+
 export const LocalGRMDatabase = new PouchDB('grm', {
   adapter: 'asyncstorage',
+});
+
+LocalGRMDatabase.createIndex({
+  index: {
+    fields: ['issue', 'assignee.id', 'type', 'confirmed', 'publish', 'reporter.id']
+  }
+}).then(function () {
+  // Index created successfully
+}).catch(function (err) {
+  // Handle error
+  console.log(err);
 });
 
 // export const LocalADMINLEVELDatabase = new PouchDB('administrative_levels', {
@@ -87,7 +110,7 @@ export const SyncToRemoteDatabase = async ({ username, password }, userEmail) =>
 };
 
 // Function to fetch documents from CouchDB with a Mango query
-const fetchDocumentsByFilter = async (db_name,filter) => {
+const fetchDocumentsByFilter = async (db_name, filter) => {
   const password = await getEncryptedData('userPassword');
 
   if (!password) {

@@ -3,7 +3,8 @@ import { View, Platform, Modal, Text } from 'react-native';
 import axios from 'axios';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import { useSelector } from 'react-redux';
-import { getInfoAsync } from 'expo-file-system';
+import { getInfoAsync, uploadAsync } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 import { useTranslation } from 'react-i18next';
 import LocalDatabase, { LocalGRMDatabase } from '../../../utils/databaseManager';
 import { colors } from '../../../utils/colors';
@@ -21,7 +22,7 @@ function SyncAttachments({ navigation }) {
   const FILE_READ_ERROR = t('file_read_error');
   const FILE_READ_ERROR_TRY_AGAIN = t('file_read_error_try_again');
 
-  
+
   const [loading, setLoading] = useState(true);
   const [attachments, setAttachments] = useState([]);
   const [successModal, setSuccessModal] = useState(false);
@@ -32,84 +33,138 @@ function SyncAttachments({ navigation }) {
   const onDismissSnackBar = () => setErrorVisible(false);
 
   const { username, userPassword } = useSelector((state) => state.get('authentication').toObject());
+  const { userDocument: eadl } = useSelector((state) => state.get('userDocument').toObject());
 
   const getAndSetAttachments = async () => {
     if (!fetchedContent) {
       async function fetchContent() {
-        LocalDatabase.find({
-          selector: { 'representative.email': username },
-          // fields: ["_id", "phases"],
-        })
-          .then((result) => {
-            const phases = result?.docs[0]?.phases;
-            const docId = result?.docs[0]?._id;
-            const attachmentsArray = [];
-            for (let i = 0; i < phases.length; i++) {
-              const phaseOrdinal = phases[i]?.ordinal;
-              const tasks = phases[i]?.tasks;
-              for (let j = 0; j < tasks?.length; j++) {
-                const taskOrdinal = tasks[j]?.ordinal;
-                const attachments = tasks[j]?.attachments;
-                for (let k = 0; k < attachments?.length; k++) {
-                  const attachment = attachments[k];
-                  attachmentsArray.push({
-                    attachment,
-                    phaseOrdinal,
-                    taskOrdinal,
-                    docId,
-                  });
-                }
-              }
+        // LocalDatabase.find({
+        //   selector: { 'representative.email': username },
+        //   // fields: ["_id", "phases"],
+        // })
+        //   .then((result) => {
+        //     const phases = result?.docs[0]?.phases;
+        //     const docId = result?.docs[0]?._id;
+        //     const attachmentsArray = [];
+        //     for (let i = 0; i < phases.length; i++) {
+        //       const phaseOrdinal = phases[i]?.ordinal;
+        //       const tasks = phases[i]?.tasks;
+        //       for (let j = 0; j < tasks?.length; j++) {
+        //         const taskOrdinal = tasks[j]?.ordinal;
+        //         const attachments = tasks[j]?.attachments;
+        //         for (let k = 0; k < attachments?.length; k++) {
+        //           const attachment = attachments[k];
+        //           attachmentsArray.push({
+        //             attachment,
+        //             phaseOrdinal,
+        //             taskOrdinal,
+        //             docId,
+        //           });
+        //         }
+        //       }
+        //     }
+
+        //     // fetch EADL
+        //     const issuesAttachments = [];
+        //     const eadl = result;
+        //     // LocalDatabase.find({
+        //     //   selector: { 'representative.email': username },
+        //     //   // fields: ["_id", "commune", "phases"],
+        //     // })
+        //     //   .then((eadl) => {
+        //         // FETCH GRM ISSUES
+        //         LocalGRMDatabase.find({
+        //           selector: {
+        //             type: 'issue',
+        //             // 'reporter.id': eadl.docs[0].representative.id,
+        //             'assignee.id': eadl.docs[0].representative.id,
+        //             // "$or": [
+        //             //   {
+        //             //     "reporter.id": eadl.docs[0].representative.id
+        //             //   },
+        //             //   {
+        //             //     "assignee.id": eadl.docs[0].representative.id
+        //             //   }
+        //             // ]
+        //           },
+        //         }).then((res) => {
+        //           for (let i = 0; i < res.docs.length; i++) {
+        //             const attachments = res.docs[i]?.attachments;
+        //             for (let k = 0; k < attachments?.length; k++) {
+        //               issuesAttachments.push({
+        //                 attachment: attachments[k],
+        //                 docId: res?.docs[i]?._id,
+        //               });
+        //             }
+
+        //             const reasons = res.docs[i]?.reasons;
+        //             for (let index = 0; index < reasons?.length; index++) {
+        //               issuesAttachments.push({
+        //                 attachment: reasons[index],
+        //                 docId: res?.docs[i]?._id,
+        //               });
+        //             }
+
+        //             // console.log(res.docs[i].attachments)
+        //           }
+        //           setAttachments([...attachmentsArray.flat(2), ...issuesAttachments]);
+        //           setLoading(false);
+        //         });
+
+        //         // handle result
+        //       // })
+        //       // .catch((err) => {
+        //       //   setLoading(false);
+        //       // });
+
+        //     // handle result
+        //   })
+        //   .catch((err) => {
+        //     setLoading(false);
+        //   });
+
+
+
+        const attachmentsArray = [];
+        const issuesAttachments = [];
+        LocalGRMDatabase.find({
+          selector: {
+            type: 'issue',
+            // 'reporter.id': eadl.docs[0].representative.id,
+            'assignee.id': eadl.representative.id,
+            // "$or": [
+            //   {
+            //     "reporter.id": eadl.docs[0].representative.id
+            //   },
+            //   {
+            //     "assignee.id": eadl.docs[0].representative.id
+            //   }
+            // ]
+          },
+        }).then((res) => {
+          for (let i = 0; i < res.docs.length; i++) {
+            const attachments = res.docs[i]?.attachments;
+            for (let k = 0; k < attachments?.length; k++) {
+              issuesAttachments.push({
+                attachment: attachments[k],
+                docId: res?.docs[i]?._id,
+              });
             }
 
-            // fetch EADL
-            const issuesAttachments = [];
-            LocalDatabase.find({
-              selector: { 'representative.email': username },
-              // fields: ["_id", "commune", "phases"],
-            })
-              .then((eadl) => {
-                // FETCH GRM ISSUES
-                LocalGRMDatabase.find({
-                  selector: {
-                    type: 'issue',
-                    'reporter.id': eadl.docs[0].representative.id,
-                  },
-                }).then((res) => {
-                  for (let i = 0; i < res.docs.length; i++) {
-                    const attachments = res.docs[i]?.attachments;
-                    for (let k = 0; k < attachments?.length; k++) {
-                      issuesAttachments.push({
-                        attachment: attachments[k],
-                        docId: res?.docs[i]?._id,
-                      });
-                    }
-                    
-                    const reasons = res.docs[i]?.reasons;
-                    for (let index = 0; index < reasons?.length; index++) {
-                      issuesAttachments.push({
-                        attachment: reasons[index],
-                        docId: res?.docs[i]?._id,
-                      });
-                    }
-
-                    // console.log(res.docs[i].attachments)
-                  }
-                  setAttachments([...attachmentsArray.flat(2), ...issuesAttachments]);
-                  setLoading(false);
-                });
-
-                // handle result
-              })
-              .catch((err) => {
-                setLoading(false);
+            const reasons = res.docs[i]?.reasons;
+            for (let index = 0; index < reasons?.length; index++) {
+              issuesAttachments.push({
+                attachment: reasons[index],
+                docId: res?.docs[i]?._id,
               });
+            }
 
-            // handle result
-          })
-          .catch((err) => {
-            setLoading(false);
-          });
+            // console.log(res.docs[i].attachments)
+          }
+          setAttachments([...attachmentsArray.flat(2), ...issuesAttachments]);
+          setLoading(false);
+        });
+
         setLoading(false);
       }
       setLoading(true);
@@ -124,30 +179,75 @@ function SyncAttachments({ navigation }) {
     try {
       const tmp = await getInfoAsync(file?.attachment?.local_url);
       if (tmp.exists) {
-        const formData = new FormData();
-        formData.append('username', dbConfig?.username);
-        formData.append('password', dbConfig?.password);
-        formData.append('doc_id', file?.docId);
-        formData.append('phase', file?.phaseOrdinal);
-        formData.append('task', file?.taskOrdinal);
-        formData.append('attachment_id', file?.attachment?.id);
-        formData.append('file', {
-          uri:
+        // const formData = new FormData();
+        // formData.append('username', dbConfig?.username);
+        // formData.append('password', dbConfig?.password);
+        // formData.append('doc_id', file?.docId);
+        // formData.append('phase', file?.phaseOrdinal);
+        // formData.append('task', file?.taskOrdinal);
+        // formData.append('attachment_id', file?.attachment?.id);
+        // formData.append('file', {
+        //   uri:
+        //     Platform.OS === 'android'
+        //       ? file?.attachment?.local_url
+        //       : file?.attachment?.local_url.replace('file://', ''),
+        //   name: file?.attachment?.name,
+        //   type: 
+        //     file.attachment?.isAudio ? 
+        //       'audio/m4a' 
+        //     : (file?.attachment?.local_url.includes('.pdf') ? 'application/pdf' : 'image/*'), //'image/jpeg' // it may be necessary in Android.
+        // });
+
+        // await axios.post(
+        //   `${baseURL}${
+        //     file.taskOrdinal ? '/attachments/upload-to-task' : '/attachments/upload-to-issue'
+        //   }`,
+        //   formData,
+        //   { 'Content-Type': 'multipart/form-data' }
+        // );
+        // return {};
+
+
+
+
+
+        try {
+          const response = await uploadAsync(
+            `${baseURL}${file.taskOrdinal ? '/attachments/upload-to-task' : '/attachments/upload-to-issue'
+            }`,
             Platform.OS === 'android'
               ? file?.attachment?.local_url
               : file?.attachment?.local_url.replace('file://', ''),
-          name: file?.attachment?.name,
-          type: file.attachment?.isAudio ? 'audio/m4a' : 'image/jpeg', // it may be necessary in Android.
-        });
+            {
+              fieldName: 'file',
+              httpMethod: 'POST',
+              uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+              ContentType: 'multipart/form-data',
+              mimeType:
+                file.attachment?.isAudio ?
+                  'audio/m4a'
+                  : (file?.attachment?.local_url.includes('.pdf') ? 'application/pdf' : 'image/*'),
+              parameters: {
+                username: dbConfig?.username,
+                password: dbConfig?.password,
+                doc_id: file?.docId,
+                phase: file?.phaseOrdinal,
+                task: file?.taskOrdinal,
+                attachment_id: file?.attachment?.id
+              },
+            },
+          );
+          
+          if (response.status < 300) {
+            return {};
+          }
 
-        await axios.post(
-          `${baseURL}${
-            file.taskOrdinal ? '/attachments/upload-to-task' : '/attachments/upload-to-issue'
-          }`,
-          formData,
-          { 'Content-Type': 'multipart/form-data' }
-        );
-        return {};
+        } catch (e) {
+          setErrorMessage(FILE_READ_ERROR);
+          setErrorVisible(true);
+          return { error: FILE_READ_ERROR };
+        }
+
       }
       setErrorMessage(FILE_READ_ERROR);
       setErrorVisible(true);

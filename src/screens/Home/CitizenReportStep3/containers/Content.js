@@ -36,8 +36,11 @@ function Content({ issue, eadl, issues }) {
   const [sound, setSound] = useState();
   const [playing, setPlaying] = useState(false);
   const [attachments, setAttachments] = useState(
-    [...(issue?.attachments ? issue.attachments : []),
-    ...(issue?.recording ? [issue.recording] : [])]
+    [
+      ...(issue?.attachments ? issue.attachments : []),
+      ...(issue?.recordings ? issue.recordings : [])//,
+      // ...(issue?.recording ? [issue.recording] : [])
+    ]
   );
 
   function removeAttachment(id) {

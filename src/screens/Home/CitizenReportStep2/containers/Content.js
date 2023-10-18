@@ -14,6 +14,9 @@ import {
   Text,
   TouchableOpacity,
   View,
+  StyleSheet, 
+  Animated,
+  ToastAndroid,
 } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Button, Checkbox, IconButton, TextInput } from 'react-native-paper';
@@ -33,6 +36,22 @@ const theme = {
   },
 };
 
+
+const styles_audio = StyleSheet.create({
+  container: {
+    height: 7,
+    backgroundColor: '#ccc',
+    borderRadius: 10,
+    margin: 10,
+    width: 150,
+  },
+  bar: {
+    height: 7,
+    backgroundColor: '#333',
+    borderRadius: 10,
+  },
+});
+
 function Content({ stepOneParams, issueCategories, issueTypes }) {
   const { t } = useTranslation();
 
@@ -48,8 +67,13 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const [recording, setRecording] = useState();
   const [items, setItems] = useState(issueTypes ?? []);
   const [recordingURI, setRecordingURI] = useState();
+  const [recordingURIs, setRecordingURIs] = useState([]);
   const [items2, setItems2] = useState(issueCategories ?? []);
   const [sound, setSound] = React.useState();
+  const [soundUrl, setSoundUrl] = React.useState();
+  const [duration, setDuration] = useState(null);
+  const [position, setPosition] = useState(null);
+  // const [finish, setFinish] = useState<boolean>(true);
   const [issueTypeCategoryError, setIssueTypeCategoryError] = React.useState(false);
   const [selectedIssueType, setSelectedIssueType] = useState({
     id: 1,
@@ -70,7 +94,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     () =>
       sound
         ? () => {
-            // console.log("Unloading Sound");
+            console.log("Unloading Sound");
             sound.unloadAsync();
           }
         : undefined,
@@ -102,21 +126,25 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   };
 
   const startRecording = async () => {
-    try {
-      // console.log("Requesting permissions..");
-      await Audio.requestPermissionsAsync();
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-      // console.log("Starting recording..");
-      const recording = new Audio.Recording();
-      await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
-      await recording.startAsync();
-      setRecording(recording);
-      // console.log("Recording started");
-    } catch (err) {
-      // console.error("Failed to start recording", err);
+    if (recordingURIs.length < 4){
+      try {
+        // console.log("Requesting permissions..");
+        await Audio.requestPermissionsAsync();
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+        // console.log("Starting recording..");
+        const recording = new Audio.Recording();
+        await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+        await recording.startAsync();
+        setRecording(recording);
+        // console.log("Recording started");
+      } catch (err) {
+        // console.error("Failed to start recording", err);
+      }
+    }else{
+      ToastAndroid.show(`${t('error_message_for_limit_audio')}`, ToastAndroid.SHORT);
     }
   };
 
@@ -125,18 +153,69 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
     setRecordingURI(uri);
+    setRecordingURIs([...recordingURIs, uri]);
     setRecording(undefined);
     // console.log("Recording stopped and stored at", uri);
   };
 
-  const playSound = async () => {
-    // console.log("Loading Sound");
-    const { sound } = await Audio.Sound.createAsync({ uri: recordingURI });
-    setSound(sound);
+  // const playSound = async () => {
+  //   // console.log("Loading Sound");
+  //   const { sound } = await Audio.Sound.createAsync({ uri: recordingURI });
+  //   setSound(sound);
+  //   setSoundUrl(recordingURI);
+    
+  //   // console.log("Playing Sound");
+  //   await sound.playAsync();
+  // };
 
+
+  const onPlaybackStatusUpdate = (status) => {
+    setDuration(status.durationMillis);
+    setPosition(status.positionMillis);
+    // setFinish(status.didJustFinish);
+
+    if(status.didJustFinish){
+      setSound(undefined);
+      setSoundUrl(undefined);
+    }
+}
+
+  const playASound = async (sound_url) => {
+    // console.log("Loading Sound");
+    
+    const { sound } = await Audio.Sound.createAsync(
+      { uri: sound_url },
+      { shouldPlay: true },
+      onPlaybackStatusUpdate
+    );
+    setSound(sound);
+    setSoundUrl(recordingURI);
     // console.log("Playing Sound");
     await sound.playAsync();
   };
+
+  const stopASound = async () => {
+    await sound.stopAsync();
+    setSound(undefined);
+    setSoundUrl(undefined);
+  };
+
+  const reomveARecordingURI = (recording_url) => {
+    if(soundUrl && recording_url == soundUrl){
+      stopASound();
+    }
+    
+    setRecordingURIs(recordingURIs.filter((elt) => elt != recording_url));
+  }
+
+  const getProgress = () => {
+    if (sound === undefined || sound === null || duration === null || position === null) {
+        return 0;
+    }
+
+    return (position / duration) * 150;
+}
+
 
   useEffect(() => {
     (async () => {
@@ -175,34 +254,59 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     }
   };
 
-  const pickImage = async () => {
+  
+  const pickDocument = async (hasImage = false) => {
     try {
-      if (attachments.length < 3) {
-        const result = await ImagePicker.launchImageLibraryAsync({
-          presentationStyle: 0,
-          mediaTypes: ImagePicker.MediaTypeOptions.All,
-          allowsEditing: false,
-
-          quality: 1,
-        });
-        if (!result.cancelled) {
-          setLoading(true);
-          const manipResult = await ImageManipulator.manipulateAsync(
-            result.localUri || result.uri,
-            // [{ resize: { width: 1000, height: 1000 } }],
-            [{ resize: {
-              width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000, 
-              height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000 
-             } }],
-            { compress: 1, format: ImageManipulator.SaveFormat.PNG }
-          );
-          setAttachments([...attachments, { ...manipResult, id: new Date() }]);
-          setLoading(false);
-        }
+      // "image/*", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      const result = await DocumentPicker.getDocumentAsync({
+        type: hasImage ? [
+          "image/*", "application/pdf"
+        ] : [
+          "application/pdf"
+        ],
+        multiple: false,
+      });
+      if(result.type != "cancel"){
+        setLoading(true);
+        setAttachments([...attachments, { ...result, id: new Date() }]);
+        setLoading(false);
       }
-    } catch (e) {
-      console.log(e);
+      
+    } catch (err) {
+      console.warn(err);
     }
+
+};
+
+  const pickImage = async () => {
+    pickDocument(true);
+    // try {
+    //   if (attachments.length < 3) {
+    //     const result = await ImagePicker.launchImageLibraryAsync({
+    //       presentationStyle: 0,
+    //       mediaTypes: ImagePicker.MediaTypeOptions.All,
+    //       allowsEditing: false,
+
+    //       quality: 1,
+    //     });
+    //     if (!result.cancelled) {
+    //       setLoading(true);
+    //       const manipResult = await ImageManipulator.manipulateAsync(
+    //         result.localUri || result.uri,
+    //         // [{ resize: { width: 1000, height: 1000 } }],
+    //         [{ resize: {
+    //           width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000, 
+    //           height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000 
+    //          } }],
+    //         { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+    //       );
+    //       setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+    //       setLoading(false);
+    //     }
+    //   }
+    // } catch (e) {
+    //   console.log(e);
+    // }
   };
 
   const getCategory = (value) => {
@@ -253,6 +357,19 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                 name: recordingURI.split('/').pop(),
               }
             : undefined,
+          
+            recordings: recordingURIs.length != 0
+            ? recordingURIs.map((recording_url) => ({
+              url: '',
+              id: recording_url.split('/').pop(),
+              uploaded: false,
+              local_url: recording_url,
+              isAudio: true,
+              name: recording_url.split('/').pop(),
+            }))
+            : [],
+
+
           category: getCategory(pickerValue2),
           additionalDetails,
         },
@@ -526,7 +643,9 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             </View>
           </View>
         </View>
-        {recordingURI && (
+
+
+        {/* {recordingURI && (
           <View
             style={{
               flexDirection: 'row',
@@ -557,7 +676,73 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
               onPress={() => setRecordingURI()}
             />
           </View>
-        )}
+        )} */}
+
+
+
+
+{/* recordingURIs.map((recording_url) => ({
+              url: '',
+              id: recording_url.split('/').pop(),
+              uploaded: false,
+              local_url: recording_url,
+              isAudio: true,
+              name: recording_url.split('/').pop(),
+            }) */}
+        
+        {recordingURIs && recordingURIs.map((recording_url, index) => (
+          <View
+            key={recording_url}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <IconButton icon={soundUrl == recording_url ? "pause" : "play"} color={colors.primary} size={24} onPress={
+              () => soundUrl == recording_url ? stopASound(recording_url) : playASound(recording_url)
+            } />
+            <View style={styles_audio.container}>
+              <Animated.View style={[styles_audio.bar, { width: soundUrl == recording_url ? getProgress() : 0 }]} />
+            </View>
+            <Text
+              style={{
+                fontFamily: 'Poppins_400Regular',
+                fontSize: 12,
+                fontWeight: 'normal',
+                fontStyle: 'normal',
+                lineHeight: 18,
+                letterSpacing: 0,
+                textAlign: 'left',
+                color: '#707070',
+                marginVertical: 13,
+              }}
+            >
+              {`(${index+1})`}
+            </Text>
+            <Text 
+              style={{
+                fontFamily: 'Poppins_400Regular',
+                fontSize: 12,
+                fontWeight: 'normal',
+                fontStyle: 'normal',
+                lineHeight: 18,
+                letterSpacing: 0,
+                textAlign: 'left',
+                marginVertical: 13,
+                marginLeft: 7
+              }}
+              >{parseInt(String(soundUrl == recording_url && position ? position/1000 : 0))}</Text>
+            <IconButton
+              icon="close"
+              color={colors.error}
+              size={24}
+              onPress={() => reomveARecordingURI(recording_url)}
+            />
+          </View>
+        ))}
+
+
         <View style={{ paddingHorizontal: 50 }}>
           <Button
             disabled={!additionalDetails}
@@ -577,5 +762,6 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     </ScrollView>
   );
 }
+
 
 export default Content;
