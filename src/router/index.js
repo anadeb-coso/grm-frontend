@@ -9,7 +9,7 @@ import {
 } from '@expo-google-fonts/poppins';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, ToastAndroid } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { ActivityIndicator } from 'react-native-paper';
 import { init } from '../store/ducks/authentication.duck';
@@ -18,6 +18,8 @@ import { getUserDocs } from '../utils/databaseManager';
 import { getEncryptedData } from '../utils/storageManager';
 import PrivateRoutes from './privateRoutes';
 import PublicRoutes from './publicRoutes';
+import { logout } from '../store/ducks/authentication.duck';
+import { verify_account_on_couchdb } from '../services/CouchDBRequest';
 
 function Router({ theme }) {
   const dispatch = useDispatch();
@@ -26,6 +28,7 @@ function Router({ theme }) {
   const { userPassword, username: fetchedUser } = useSelector((state) =>
     state.get('authentication').toObject()
   );
+
 
   useEffect(() => {
     async function fetchData() {
@@ -51,6 +54,14 @@ function Router({ theme }) {
       dbCredentials = await getEncryptedData(
         `dbCredentials_${password}_${username.replace('@', '')}`
       );
+
+      if (username) {
+        if (!(await verify_account_on_couchdb(dbCredentials, username))) {
+          ToastAndroid.show("Nous n'arrivons pas avoir vos informations sur le serveur.", ToastAndroid.LONG);
+          dispatch(logout());
+        }
+      }
+
       dispatch(init(dbCredentials, { password, email: username }));
     }
     setLoading(false);

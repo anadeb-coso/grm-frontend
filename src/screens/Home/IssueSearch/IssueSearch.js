@@ -1,18 +1,48 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native';
+import { SafeAreaView, ToastAndroid } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { colors } from '../../../utils/colors';
 import { LocalGRMDatabase } from '../../../utils/databaseManager';
 import { styles } from './IssueSearch.style';
 import Content from './containers';
+import { logout } from '../../../store/ducks/authentication.duck';
+import { getEncryptedData } from '../../../utils/storageManager';
+import { verify_account_on_couchdb } from '../../../services/CouchDBRequest';
 
 function IssueSearch() {
+  const { t } = useTranslation();
   const customStyles = styles();
   const [issues, setIssues] = useState();
   const [statuses, setStatuses] = useState();
+  
+  
+  const dispatch = useDispatch();
+  const getDBConfig = async () => {
+    const password = await getEncryptedData('userPassword');
+    let dbCredentials;
+    let username;
+    if (password) {
+      username = await getEncryptedData(`username`);
+      dbCredentials = await getEncryptedData(
+        `dbCredentials_${password}_${username.replace('@', '')}`
+      );
+
+      if (username) {
+        if (!(await verify_account_on_couchdb(dbCredentials, username))) {
+          ToastAndroid.show("Nous n'arrivons pas avoir vos informations sur le serveur.", ToastAndroid.LONG);
+          dispatch(logout());
+        }
+      }
+    }
+  };
+  useEffect(() => {
+    getDBConfig();
+  }, []);
 
   const { userDocument: eadl } = useSelector((state) => state.get('userDocument').toObject());
+
 
   useEffect(() => {
     LocalGRMDatabase.find({
