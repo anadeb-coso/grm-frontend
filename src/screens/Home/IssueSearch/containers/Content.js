@@ -32,9 +32,9 @@ function Content({ issues, eadl, statuses }) {
 
     filteredIssuesCopy.assigned = issues.filter(
       (issue) => ( issue.assignee && issue.assignee.id && 
-        ((issue.assignee.id === eadl.representative?.id)  || eadl.administrative_region == "1")
+        ((issue.assignee.id === eadl.representative?.id))
         )
-    );
+    );//  || eadl.administrative_region == "1"
 
     // const openStatus = statuses.find((el) => el.open_status === true);
     // filteredIssuesCopy.open = issues.filter(
@@ -191,6 +191,7 @@ function Content({ issues, eadl, statuses }) {
       yourResolution={filteredIssues?.yourResolution?.length || 0}
       // rejected={filteredIssues?.rejected?.length || 0}
       // YourRejecte={filteredIssues?.YourRejecte?.length || 0}
+      seeAllIssues={eadl.administrative_region == "1"}
     />
   );
   return (

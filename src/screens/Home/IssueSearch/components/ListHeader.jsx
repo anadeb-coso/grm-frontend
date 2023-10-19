@@ -41,23 +41,39 @@ export default function ListHeader(props) {
           {t('assigned_to_you_label')}: {props.length}
         </Text> */}
 
-        <Text style={styles.statisticsText}>
-          {t('registe_to_you_label')}: {props.registe}
-        </Text>
-        <Text style={styles.statisticsText}>
-          {t('assigned_to_you_label')}: {props.assigned}
-        </Text>
-        <Text style={styles.statisticsText}>
-          {t('open_to_you_label')}: {props.open}
-        </Text>
-        <Text style={styles.statisticsText}>
-          {t('resolved_by_you_label')}:{' '}
-          {props.resolved ? <Text style>{props.resolved}</Text> : '--'}
-        </Text>
-        <Text style={styles.statisticsText}>
-          {t('your_complaints_resolved_to_you_label')}:{' '}
-          {props.yourResolution ? <Text style>{props.yourResolution}</Text> : '--'}
-        </Text>
+        {props.seeAllIssues ?
+          <>
+            <Text style={styles.statisticsText}>
+              {t('registe_label')}: {props.registe}
+            </Text>
+            <Text style={styles.statisticsText}>
+              {t('assigned_label')}: {props.assigned}
+            </Text>
+            <Text style={styles.statisticsText}>
+              {t('open_to_you_label')}: {props.open}
+            </Text>
+            <Text style={styles.statisticsText}>
+              {t('resolved_label')}:{' '}
+              {props.resolved ? <Text style>{props.resolved}</Text> : '--'}
+            </Text>
+          </>
+          : <><Text style={styles.statisticsText}>
+            {t('registe_to_you_label')}: {props.registe}
+          </Text>
+            <Text style={styles.statisticsText}>
+              {t('assigned_to_you_label')}: {props.assigned}
+            </Text>
+            <Text style={styles.statisticsText}>
+              {t('open_to_you_label')}: {props.open}
+            </Text>
+            <Text style={styles.statisticsText}>
+              {t('resolved_by_you_label')}:{' '}
+              {props.resolved ? <Text style>{props.resolved}</Text> : '--'}
+            </Text>
+            <Text style={styles.statisticsText}>
+              {t('your_complaints_resolved_to_you_label')}:{' '}
+              {props.yourResolution ? <Text style>{props.yourResolution}</Text> : '--'}
+            </Text></>}
         {/* <Text style={styles.statisticsText}>
           {t('reject_to_you_label')}:{' '}
           {props.rejected ? <Text style>{props.rejected}</Text> : '--'}

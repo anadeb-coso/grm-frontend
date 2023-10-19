@@ -156,16 +156,20 @@
   "level_label": "Niveau",
   "error_message_for_update": "La mise à jour de la dernière remontée n'a pas été faite",
   "attach_pv": "Joindre PV",
+  "resolve_description_label": "Preuve de résolution",
 
   //issue search
   "registe_to_you_label": "Plaintes qui sont enregistrées par vous",
+  "registe_label": "Plaintes enregistrées",
   "open_to_you_label": "Plaintes en cours",
   "your_complaints_resolved_to_you_label": "Vos plaintes Résolues",
   "your_complaints_reject_to_you_label": "Vos plaintes Rejetées",
   "reject_to_you_label": "Plaintes Rejetées par vous",
   "overdue_label": "Plaintes dont le traitement est en retard",
   "assigned_to_you_label": "Plaintes qui vous sont assignées",
+  "assigned_label": "Plaintes assignées",
   "resolved_by_you_label": "Plaintes Résolues par vous",
+  "resolved_label": "Plaintes Résolues",
   "average_days_label": "Nombre moyen de jours de résolution",
   "average_satisfaction_label": "Satisfaction moyenne",
   "your_issues_label": "Vos plaintes ouvertes",
@@ -239,6 +243,7 @@
   //Error message
   "file_read_error": "Impossible de lire tous les fichiers.",
   "file_read_error_try_again": "Impossible de lire tous les fichiers. Réessayez.",
-  "error_message_for_limit_audio": "Vous n'avez que la possibilité de joindre quatre audios."
+  "error_message_for_limit_audio": "Vous n'avez que la possibilité de joindre quatre audios.",
+  "error_message_for_auth": "Nous n'arrivons pas avoir vos informations sur le serveur."
 
 }

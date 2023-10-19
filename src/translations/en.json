@@ -154,16 +154,20 @@
   "level_label": "Level",
   "error_message_for_update": "The last update of escalation has not been done",
   "attach_pv": "Join PV",
+  "resolve_description_label": "Proof of resolution",
 
   //issue search
   "registe_to_you_label": "Complaints registered by you",
+  "registe_label": "Complaints registered",
   "open_to_you_label": "Complaints pending",
   "your_complaints_resolved_to_you_label": "Your resolved complaints",
   "your_complaints_reject_to_you_label": "Your rejected complaints",
   "reject_to_you_label": "Complaints rejected by you",
   "overdue_label": "Overdue Issues",
   "assigned_to_you_label": "Issues assigned to you",
+  "assigned_label": "Issues assigned",
   "resolved_by_you_label": "Issues resolved by you",
+  "resolved_label": "Issues resolved",
   "average_days_label": "Average days to resolve",
   "average_satisfaction_label": "Average Satisfaction",
   "your_issues_label": "Your Open Issues",
@@ -237,6 +241,7 @@
   //Error message
   "file_read_error": "Cannot read all the files.",
   "file_read_error_try_again": "Cannot read all the files. try again.",
-  "error_message_for_limit_audio": "You only have the option of attaching four audios."
+  "error_message_for_limit_audio": "You only have the option of attaching four audios.",
+  "error_message_for_auth": "We can't get your information on the server."
 
 }

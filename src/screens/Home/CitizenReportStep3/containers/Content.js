@@ -4,11 +4,18 @@ import * as ImagePicker from 'expo-image-picker';
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Image, Platform, ScrollView, Text, View, ImageBackground, TouchableOpacity } from 'react-native';
+import { 
+  Image, Platform, ScrollView, Text, View, ImageBackground, TouchableOpacity, ToastAndroid,
+  StyleSheet, Animated
+} from 'react-native';
 import { Button, IconButton } from 'react-native-paper';
 import { colors } from '../../../../utils/colors';
-import { LocalGRMDatabase } from '../../../../utils/databaseManager';
+import LocalDatabase, { LocalGRMDatabase } from '../../../../utils/databaseManager';
 import { styles } from './Content.styles';
+import { logout } from '../../../../store/ducks/authentication.duck';
+import { useDispatch } from 'react-redux';
+import { getEncryptedData } from '../../../../utils/storageManager';
+import { verify_account_on_couchdb } from '../../../../services/CouchDBRequest';
 
 const SAMPLE_WORDS = ['car', 'house', 'tree', 'ball'];
 const theme = {
@@ -21,10 +28,48 @@ const theme = {
   },
 };
 
+const styles_audio = StyleSheet.create({
+  container: {
+    height: 7,
+    backgroundColor: '#ccc',
+    borderRadius: 10,
+    margin: 10,
+    width: 150,
+  },
+  bar: {
+    height: 7,
+    backgroundColor: '#333',
+    borderRadius: 10,
+  },
+});
+
 function Content({ issue, eadl, issues }) {
   const { t } = useTranslation();
 
-  console.log('>???', { eadl: eadl?.representative?.name });
+  const dispatch = useDispatch();
+  const getDBConfig = async () => {
+    const password = await getEncryptedData('userPassword');
+    let dbCredentials;
+    let username;
+    if (password) {
+      username = await getEncryptedData(`username`);
+      dbCredentials = await getEncryptedData(
+        `dbCredentials_${password}_${username.replace('@', '')}`
+      );
+
+      if (username) {
+        if (!(await verify_account_on_couchdb(dbCredentials, username))) {
+          ToastAndroid.show("Nous n'arrivons pas avoir vos informations sur le serveur.", ToastAndroid.LONG);
+          dispatch(logout());
+        }
+      }
+    }
+  };
+  useEffect(() => {
+    getDBConfig();
+  }, []);
+
+
 
   const navigation = useNavigation();
   // const incrementId = () => {
@@ -34,6 +79,10 @@ function Content({ issue, eadl, issues }) {
   // };
   const randomWord = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const [sound, setSound] = useState();
+  const [soundOnPause, setSoundOnPause] = useState(false);
+  const [soundUrl, setSoundUrl] = React.useState();
+  const [duration, setDuration] = useState(null);
+  const [position, setPosition] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [attachments, setAttachments] = useState(
     [
@@ -44,9 +93,16 @@ function Content({ issue, eadl, issues }) {
   );
 
   function removeAttachment(id) {
+    setSoundOnPause(false);
+    let elt = attachments.find(elt => elt.id == id);
+    if(elt && elt.isAudio){
+      stopASound();
+    }
+
     const array = attachments.filter(elt => elt.id !== id);
     setAttachments(array);
   }
+
 
   const submitIssue = () => {
     
@@ -158,6 +214,68 @@ function Content({ issue, eadl, issues }) {
     // setPlaying(false)
   };
 
+  const onPlaybackStatusUpdate = (status) => {
+    setDuration(status.durationMillis);
+    setPosition(status.positionMillis);
+    // setFinish(status.didJustFinish);
+
+    if(status.didJustFinish){
+      setSound(undefined);
+      setSoundUrl(undefined);
+    }
+}
+
+  const stopASound = async () => {
+    setSoundOnPause(false);
+    await sound.stopAsync();
+    setSound(undefined);
+    setSoundUrl(undefined);
+  };
+
+  const pauseASound = async () => {
+    setSoundOnPause(true);
+    await sound.pauseAsync();
+  };
+
+  const playASoundOnCurrentPause = async () => {
+    setSoundOnPause(false);
+    await sound.playAsync();
+  };
+
+  
+  const playASound = async (sound_url) => {
+    setSoundOnPause(false);
+    // console.log("Loading Sound");
+    if(sound){
+      stopASound();
+      setSound(undefined);
+      setSoundUrl(undefined);
+    }
+    
+    const { sound } = await Audio.Sound.createAsync(
+      { uri: sound_url },
+      { shouldPlay: true },
+      onPlaybackStatusUpdate
+    );
+    setSound(sound);
+    setSoundUrl(sound_url);
+    // console.log("Playing Sound");
+    await sound.playAsync();
+      
+  };
+
+  
+  const getProgress = () => {
+    if (
+      sound === undefined || sound === null || 
+      duration === undefined || duration === null || 
+      position === undefined || position === null) {
+        return 0;
+    }
+
+    return (position / duration) * 150;
+}
+
   React.useEffect(
     () =>
       sound
@@ -266,7 +384,7 @@ function Content({ issue, eadl, issues }) {
                     // justifyContent: 'center',
                   }}
                 >
-                  <IconButton
+                  {/* <IconButton
                     icon="play"
                     color={playing ? colors.disabled : colors.primary}
                     size={24}
@@ -285,8 +403,42 @@ function Content({ issue, eadl, issues }) {
                       marginVertical: 13,
                     }}
                   >
-                    {t('play_recorded_audio')}
-                  </Text>
+                    {t('play_recorded_audio')} 
+                  </Text> */}
+                  <IconButton icon={!soundOnPause && soundUrl == attachment.local_url ? "pause" : "play"} color={colors.primary} size={24} onPress={
+              () => soundUrl == attachment.local_url ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(attachment.local_url)
+            } />
+            <View style={styles_audio.container}>
+              <Animated.View style={[styles_audio.bar, { width: soundUrl == attachment.local_url ? getProgress() ?? 0 : 0 }]} />
+            </View>
+            <Text
+              style={{
+                fontFamily: 'Poppins_400Regular',
+                fontSize: 12,
+                fontWeight: 'normal',
+                fontStyle: 'normal',
+                lineHeight: 18,
+                letterSpacing: 0,
+                textAlign: 'left',
+                color: '#707070',
+                marginVertical: 13,
+              }}
+            >
+              {`(${index+1})`}
+            </Text>
+            <Text 
+              style={{
+                fontFamily: 'Poppins_400Regular',
+                fontSize: 12,
+                fontWeight: 'normal',
+                fontStyle: 'normal',
+                lineHeight: 18,
+                letterSpacing: 0,
+                textAlign: 'left',
+                marginVertical: 13,
+                marginLeft: 7
+              }}
+              >{parseInt(String(soundUrl == attachment.local_url && position ? position/1000 : 0))}</Text>
                   <IconButton
                     icon="close"
                     color={colors.error}

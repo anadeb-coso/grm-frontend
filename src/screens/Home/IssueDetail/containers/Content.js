@@ -6,11 +6,18 @@ import moment from 'moment';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { Image, Platform, ScrollView, Text, TouchableOpacity, 
-  View, FlatList, SafeAreaView, RefreshControl, Alert } from 'react-native';
+import {
+  Image, Platform, ScrollView, Text, TouchableOpacity,
+  View, FlatList, SafeAreaView, RefreshControl, Alert,
+  StyleSheet, Animated, ImageBackground
+} from 'react-native';
 import Collapsible from 'react-native-collapsible';
 import { Button, IconButton, Divider, Dialog, Paragraph, Portal, ActivityIndicator } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
+import { Buffer } from "buffer";
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from "expo-sharing";
+import * as Linking from 'expo-linking';
 import CustomSeparator from '../../../../components/CustomSeparator/CustomSeparator';
 // import { baseURL } from '../../../../services/API';
 import { couchDBURLBase } from '../../../../utils/databaseManager';
@@ -34,6 +41,22 @@ const theme = {
   },
 };
 
+const styles_audio = StyleSheet.create({
+  container: {
+    height: 7,
+    backgroundColor: '#ccc',
+    borderRadius: 10,
+    margin: 10,
+    width: 150,
+  },
+  bar: {
+    height: 7,
+    backgroundColor: '#333',
+    borderRadius: 10,
+  },
+});
+
+
 function Content({ issue }) {
   const { t } = useTranslation();
   const [dbConfig, setDbConfig] = useState({});
@@ -43,14 +66,19 @@ function Content({ issue }) {
   const [currentDate, setCurrentDate] = useState(moment());
   const [newComment, setNewComment] = useState();
   const [isDescriptionCollapsed, setIsDescriptionCollapsed] = useState(true);
+  const [isResolveDescritionCollapsed, setIsResolveDescritionCollapsed] = useState(true);
   const [isDecisionCollapsed, setIsDecisionCollapsed] = useState(true);
   const [isSatisfactionCollapsed, setIsSatisfactionCollapsed] = useState(true);
   const [isAppealCollapsed, setIsAppealCollapsed] = useState(true);
-  const [_sound, setSound] = useState();
+  const [sound, setSound] = useState();
+  const [soundOnPause, setSoundOnPause] = useState(false);
+  const [soundUrl, setSoundUrl] = React.useState();
+  const [duration, setDuration] = useState(null);
+  const [position, setPosition] = useState(null);
   const [imageError, setImageError] = useState(false);
 
   const [playing, setPlaying] = useState(false);
-  
+
   const [editLocationDialog, setEditLocationDialog] = useState(false);
   const _showEditLocationDialog = () => setEditLocationDialog(true);
   const _hideEditLocationDialog = () => setEditLocationDialog(false);
@@ -78,21 +106,21 @@ function Content({ issue }) {
 
   const setVillagesInfos = (hideC, c) => {
     let v = [];
-    if((villages && [0, 1].includes(villages.length)) || (hideC == false && c == null)){
+    if ((villages && [0, 1].includes(villages.length)) || (hideC == false && c == null)) {
       setHideVillageField(true);
-      if(villages && villages.length == 1){
+      if (villages && villages.length == 1) {
         setVillage(villages[0]);
         setSelectedselectedVillage(villages[0]);
       }
-    }else{
-      if(villages){
-        for(let i=0; i<villages.length; i++){
-          if(c != null && c.id == villages[i].parent){
-            v.push({name: String(villages[i].name), id: String(villages[i].id)});
-          }else if(c  == null){
-            v.push({name: String(villages[i].name), id: String(villages[i].id)});
+    } else {
+      if (villages) {
+        for (let i = 0; i < villages.length; i++) {
+          if (c != null && c.id == villages[i].parent) {
+            v.push({ name: String(villages[i].name), id: String(villages[i].id) });
+          } else if (c == null) {
+            v.push({ name: String(villages[i].name), id: String(villages[i].id) });
           }
-          if(i+1==villages.length){
+          if (i + 1 == villages.length) {
             setVillagesItems(v);
           }
         }
@@ -114,21 +142,21 @@ function Content({ issue }) {
       }
       setCantons(response.cantons);
       setVillages(response.villages);
-      
+
       let d = [];
-      if(cantons && villages && cantons.length == 0 && villages.length == 0){
+      if (cantons && villages && cantons.length == 0 && villages.length == 0) {
         setHideCantonField(true);
         setHideVillageField(true);
-      }else if(cantons && [0, 1].includes(cantons.length)){
+      } else if (cantons && [0, 1].includes(cantons.length)) {
         setHideCantonField(true);
         setVillagesInfos(true, canton);
-      }else{
+      } else {
         setHideCantonField(false);
         setVillagesInfos(false, canton);
-        if(cantons){
-          for(let i=0; i<cantons.length; i++){
-            d.push({name: String(cantons[i].name), id: String(cantons[i].id)});
-            if(i+1==cantons.length){
+        if (cantons) {
+          for (let i = 0; i < cantons.length; i++) {
+            d.push({ name: String(cantons[i].name), id: String(cantons[i].id) });
+            if (i + 1 == cantons.length) {
               setCantonsItems(d);
             }
           }
@@ -140,12 +168,12 @@ function Content({ issue }) {
     });
 
     NetInfo.fetch().then((state) => {
-      if(!state.isConnected){
-        lert.alert('Not intervent', '', [{ text: 'OK' }], {
+      if (!state.isConnected) {
+        Alert.alert('Not intervent', '', [{ text: 'OK' }], {
           cancelable: false,
         });
       }
-  });
+    });
 
   };
 
@@ -205,7 +233,7 @@ function Content({ issue }) {
         console.log('Error', err);
       });
   };
-//End Administrative
+  //End Administrative
 
 
 
@@ -248,13 +276,13 @@ function Content({ issue }) {
   };
   React.useEffect(
     () =>
-      _sound
+      sound
         ? () => {
-            // console.log("Unloading Sound");
-            _sound.unloadAsync();
-          }
+          // console.log("Unloading Sound");
+          sound.unloadAsync();
+        }
         : undefined,
-    [_sound]
+    [sound]
   );
 
   const playSound = async (recordingUri, remoteUrl) => {
@@ -293,6 +321,99 @@ function Content({ issue }) {
     // setPlaying(false)
   };
 
+  const onPlaybackStatusUpdate = (status) => {
+    setDuration(status.durationMillis);
+    setPosition(status.positionMillis);
+    // setFinish(status.didJustFinish);
+
+    if (status.didJustFinish) {
+      setSound(undefined);
+      setSoundUrl(undefined);
+    }
+  }
+
+  const stopASound = async () => {
+    setSoundOnPause(false);
+    await sound.stopAsync();
+    setSound(undefined);
+    setSoundUrl(undefined);
+  };
+
+  const pauseASound = async () => {
+    setSoundOnPause(true);
+    await sound.pauseAsync();
+  };
+
+  const playASoundOnCurrentPause = async () => {
+    setSoundOnPause(false);
+    await sound.playAsync();
+  };
+
+
+
+  const playASound = async (recordingUri, remoteUrl) => {
+    setSoundOnPause(false);
+    // console.log("Loading Sound");
+    if (sound) {
+      stopASound();
+      setSound(undefined);
+      setSoundUrl(undefined);
+    }
+    // setPlaying(true);
+    try {
+      // console.log("Loading Sound");
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: recordingUri },
+        { shouldPlay: true },
+        onPlaybackStatusUpdate
+      );
+      setSound(sound);
+      setSoundUrl(recordingUri);
+      // console.log("Playing Sound");
+      await sound.playAsync();
+
+      // sound.setOnPlaybackStatusUpdate((status) => {
+      //   if (status.didJustFinish) {
+      //     setPlaying(false);
+      //   }
+      // });
+    } catch (e) {
+      console.log(e);
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: `${couchDBURLBase}${remoteUrl}` },
+          { shouldPlay: true },
+          onPlaybackStatusUpdate
+        );
+        setSound(sound);
+        setSoundUrl(remoteUrl);
+        // console.log("Playing Sound");
+        await sound.playAsync();
+
+        // sound.setOnPlaybackStatusUpdate((status) => {
+        //   if (status.didJustFinish) {
+        //     setPlaying(false);
+        //   }
+        // });
+      } catch (_e) {
+        console.log(_e);
+      }
+    }
+
+  };
+
+
+  const getProgress = () => {
+    if (
+      sound === undefined || sound === null ||
+      duration === undefined || duration === null ||
+      position === undefined || position === null) {
+      return 0;
+    }
+
+    return (position / duration) * 150;
+  }
+
   const onAddComment = () => {
     if (newComment) {
       const commentDate = moment().format('DD-MMM-YYYY');
@@ -319,7 +440,7 @@ function Content({ issue }) {
       // ]);
       issue.comments = cs;
       setComments(issue.comments);
-      
+
       setNewComment('');
       setTimeout(() => {
         scrollViewRef.current.scrollToEnd({ animated: true });
@@ -328,10 +449,34 @@ function Content({ issue }) {
     upsertNewComment();
   };
 
+  const openUrl = url => {
+    Linking.openURL(url);
+  };
+
+  const showDoc = async (attach) => {
+    let url = attach.local_url ?? attach.local_url;
+    if (url.includes("file://")) {
+      const buff = Buffer.from(url, "base64");
+      const base64 = buff.toString("base64");
+      const fileUri = FileSystem.documentDirectory + `${encodeURI(attach.name ? attach.name : "pdf")}.pdf`;
+
+      await FileSystem.writeAsStringAsync(fileUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      Sharing.shareAsync(url);
+
+    } else {
+      openUrl(url.split("?")[0]);
+    }
+
+
+  }
+
   const renderItemReason = ({ item, index }) => {
-    if(item.type == "comment"){
+    if (item.type == "comment") {
       return (
-        <View key={index} style={{...styles.commentCard, width: 200, height: 200}}>
+        <View key={index} style={{ borderColor: 'grey', borderWidth: 2, width: 300, height: 200 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
             <View style={styles.greenCircle} />
             <View>
@@ -342,23 +487,26 @@ function Content({ issue }) {
           <Text style={styles.stepNote}>{item.comment}</Text>
         </View>
       );
-    }else{
-      return(
-        <View key={index} style={{...styles.commentCard, width: 150, height: 200}}>
+    } else {
+      return (
+        <View key={index} style={{ width: 250, height: 200 }}>
           {(item.url.includes(".3gp") || item.local_url.includes(".3gp")) ? (
             <View
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                // justifyContent: 'center',
+                justifyContent: 'center',
+                alignSelf: 'center',
+                marginVertical: 20,
+                margin: 'auto'
               }}
             >
-              <IconButton
-                icon="play"
-                color={playing ? colors.disabled : colors.primary}
-                size={24}
-                onPress={() => playSound(item.local_url, item.url)}
-              />
+              <IconButton icon={!soundOnPause && [item.local_url, item.url].includes(soundUrl) ? "pause" : "play"} color={colors.primary} size={24} onPress={
+                () => [item.local_url, item.url].includes(soundUrl) ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(item.local_url, item.url)
+              } />
+              <View style={styles_audio.container}>
+                <Animated.View style={[styles_audio.bar, { width: [item.local_url, item.url].includes(soundUrl) ? getProgress() ?? 0 : 0 }]} />
+              </View>
               <Text
                 style={{
                   fontFamily: 'Poppins_400Regular',
@@ -372,72 +520,102 @@ function Content({ issue }) {
                   marginVertical: 13,
                 }}
               >
-                {t('play_recorded_audio')}
+                {`(${index + 1})`}
               </Text>
+              <Text
+                style={{
+                  fontFamily: 'Poppins_400Regular',
+                  fontSize: 12,
+                  fontWeight: 'normal',
+                  fontStyle: 'normal',
+                  lineHeight: 18,
+                  letterSpacing: 0,
+                  textAlign: 'left',
+                  marginVertical: 13,
+                  marginLeft: 7
+                }}
+              >{parseInt(String([item.local_url, item.url].includes(soundUrl) && position ? position / 1000 : 0))}</Text>
             </View>
           ) : (
             <View style={{
               flexDirection: 'row',
               alignItems: 'center',
-              // justifyContent: 'center',
+              justifyContent: 'center',
             }}>
-              {/* <Image
-                  source={{ uri: `${couchDBURLBase}${item.url}`, headers:{
-                    username: dbConfig?.username, // CouchDB username
-                    password: dbConfig?.password, // CouchDB password
-                  } }}
-                  onError={() => setImageError(true)}
-                  style={{
-                    height: 80,
-                    width: 80,
-                    justifyContent: 'flex-end',
-                    marginVertical: 20,
-                    marginLeft: 20,
-                  }}
-                /> */}
-              {imageError ? (
-                <Image
-                  key={`${couchDBURLBase}${item.url}`}
-                  source={{ uri: `${couchDBURLBase}${item.url}`, headers:{
-                    username: dbConfig?.username, // CouchDB username
-                    password: dbConfig?.password, // CouchDB password
-                  } }}
-                  onError={() => setImageError(true)}
-                  style={{
-                    height: 80,
-                    width: 80,
-                    justifyContent: 'flex-end',
-                    marginVertical: 20,
-                    marginLeft: 20,
-                  }}
-                />
-              ) : (
-                <Image
-                  key={item.local_url}
-                  source={{ uri: item.local_url }}
-                  onError={() => setImageError(true)}
-                  style={{
-                    height: 80,
-                    width: 80,
-                    justifyContent: 'flex-end',
-                    marginVertical: 20,
-                    marginLeft: 20,
-                  }}
-                />
-              )}
+              {((item.local_url && item.local_url.includes('.pdf')) || item.url && item.url.includes('.pdf')) ?
+                (
+                  <ImageBackground
+                    key={item.id}
+                    source={require('../../../../../assets/pdf.png')}
+                    style={{
+                      height: 200,
+                      width: 200,
+                      marginHorizontal: 1,
+                      alignSelf: 'center',
+                      justifyContent: 'flex-end',
+                    }}
+                  >
+                    <TouchableOpacity
+                      onPress={() => showDoc(item)}
+                      style={{
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                      }}
+                    >
+                      <Image
+                        resizeMode="stretch"
+                        style={{ width: 75, height: 75, borderRadius: 50, marginBottom: 5 }}
+                        source={require('../../../../../assets/eye.png')}
+                      />
+                    </TouchableOpacity>
+                  </ImageBackground>
+                )
+                : (!item.local_url ? (
+                  <Image
+                    key={`${couchDBURLBase}${item.url}`}
+                    source={{
+                      uri: `${couchDBURLBase}${item.url}`, headers: {
+                        username: dbConfig?.username, // CouchDB username
+                        password: dbConfig?.password, // CouchDB password
+                      }
+                    }}
+                    // onError={() => setImageError(true)}
+                    style={{
+                      height: 200,
+                      width: 200,
+                      justifyContent: 'flex-end',
+                      marginVertical: 20,
+                      marginLeft: 20,
+                    }}
+                  />
+                ) : (
+                  <Image
+                    key={item.local_url}
+                    source={{ uri: item.local_url }}
+                    // onError={() => setImageError(true)}
+                    style={{
+                      height: 200,
+                      width: 200,
+                      justifyContent: 'flex-end',
+                      marginVertical: 20,
+                      marginLeft: 20,
+                    }}
+                  />
+                ))}
             </View>
           )}
         </View>
       );
     }
-    
+
   };
 
   return (
-    <ScrollView ref={scrollViewRef} contentContainerStyle={{ alignItems: 'center', padding: 20 }} 
-    refreshControl={
-      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-    }>
+    <ScrollView ref={scrollViewRef} contentContainerStyle={{ alignItems: 'center', padding: 20 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
       <View style={styles.infoContainer}>
         <View style={{ flexDirection: 'row' }}>
           <View
@@ -495,23 +673,23 @@ function Content({ issue }) {
               </Text> */}
               {
                 issue.citizen_type === 1 && !isIssueAssignedToMe ?
-                <>
-                  <Text style={styles.subtitle}>
-                    {t('location')}{' '}
-                    <Text style={styles.text}>
-                      {' '} {t('confidential')}
-                    </Text>
-                  </Text>
-                </>
-                : 
-                  issue.administrative_region?.name ? 
                   <>
                     <Text style={styles.subtitle}>
                       {t('location')}{' '}
-                      <Text style={styles.text}>{' '} {issue.administrative_region?.name}</Text>
+                      <Text style={styles.text}>
+                        {' '} {t('confidential')}
+                      </Text>
                     </Text>
                   </>
-                  : <>
+                  :
+                  issue.administrative_region?.name ?
+                    <>
+                      <Text style={styles.subtitle}>
+                        {t('location')}{' '}
+                        <Text style={styles.text}>{' '} {issue.administrative_region?.name}</Text>
+                      </Text>
+                    </>
+                    : <>
                       <TouchableOpacity
                         onPress={_showEditLocationDialog}
                         style={{
@@ -524,10 +702,10 @@ function Content({ issue }) {
                         <Text style={styles.subtitle}>
                           {t('location')}{' '}
                           <Text style={styles.text}>{t('information_not_available')}</Text>
-                            <View 
+                          <View
                             style={{ flexDirection: 'row', alignItems: 'center' }}
-                            >
-                              {(cantons == null || villages == null) ? 
+                          >
+                            {(cantons == null || villages == null) ?
                               <ActivityIndicator color={colors.primary} size="small" />
                               : <AntDesign
                                 // style={{ marginRight: 5 }}
@@ -535,10 +713,10 @@ function Content({ issue }) {
                                 size={18}
                                 color={colors.primary}
                               />}
-                              
-                            </View>
+
+                          </View>
                         </Text>
-                        
+
                       </TouchableOpacity>
                     </>
               }
@@ -554,16 +732,16 @@ function Content({ issue }) {
               {t('assigned_to')}{' '}
               <Text style={styles.text}> {issue.assignee?.name ?? 'Pending Assigment'}</Text>
             </Text>
-            {issue.structure_in_charge && 
-              (issue.structure_in_charge.name || issue.structure_in_charge.phone || issue.structure_in_charge.email) ? 
+            {issue.structure_in_charge &&
+              (issue.structure_in_charge.name || issue.structure_in_charge.phone || issue.structure_in_charge.email) ?
               <Text style={styles.subtitle}>
-              {t('step_2_structure_in_charge')}{' '}
-              <Text style={styles.text}>
-                {issue.structure_in_charge.name ?? '-'}
-                {issue.structure_in_charge.phone ? ` | ${issue.structure_in_charge.phone}` : ''}
-                {issue.structure_in_charge.email ? ` | ${issue.structure_in_charge.email}` : ''}
-              </Text>
-            </Text> : <></>}
+                {t('step_2_structure_in_charge')}{' '}
+                <Text style={styles.text}>
+                  {issue.structure_in_charge.name ?? '-'}
+                  {issue.structure_in_charge.phone ? ` | ${issue.structure_in_charge.phone}` : ''}
+                  {issue.structure_in_charge.email ? ` | ${issue.structure_in_charge.email}` : ''}
+                </Text>
+              </Text> : <></>}
             {issue.attachments?.length > 0 &&
               issue.attachments.map((item, index) => (
                 <View>
@@ -575,7 +753,7 @@ function Content({ issue }) {
                         // justifyContent: 'center',
                       }}
                     >
-                      <IconButton
+                      {/* <IconButton
                         icon="play"
                         color={playing ? colors.disabled : colors.primary}
                         size={24}
@@ -595,7 +773,43 @@ function Content({ issue }) {
                         }}
                       >
                         {t('play_recorded_audio')}
+                      </Text> */}
+
+
+                      <IconButton icon={!soundOnPause && [item.local_url, item.url].includes(soundUrl) ? "pause" : "play"} color={colors.primary} size={24} onPress={
+                        () => [item.local_url, item.url].includes(soundUrl) ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(item.local_url, item.url)
+                      } />
+                      <View style={styles_audio.container}>
+                        <Animated.View style={[styles_audio.bar, { width: [item.local_url, item.url].includes(soundUrl) ? getProgress() : 0 }]} />
+                      </View>
+                      <Text
+                        style={{
+                          fontFamily: 'Poppins_400Regular',
+                          fontSize: 12,
+                          fontWeight: 'normal',
+                          fontStyle: 'normal',
+                          lineHeight: 18,
+                          letterSpacing: 0,
+                          textAlign: 'left',
+                          color: '#707070',
+                          marginVertical: 13,
+                        }}
+                      >
+                        {`(${index + 1})`}
                       </Text>
+                      <Text
+                        style={{
+                          fontFamily: 'Poppins_400Regular',
+                          fontSize: 12,
+                          fontWeight: 'normal',
+                          fontStyle: 'normal',
+                          lineHeight: 18,
+                          letterSpacing: 0,
+                          textAlign: 'left',
+                          marginVertical: 13,
+                          marginLeft: 7
+                        }}
+                      >{parseInt(String([item.local_url, item.url].includes(soundUrl) && position ? position / 1000 : 0))}</Text>
                     </View>
                   ) : (
                     <View>
@@ -660,79 +874,123 @@ function Content({ issue }) {
             </Text>
           </View>
         </Collapsible>
+
+        {issue.research_result && (<>
+          <CustomSeparator />
+          <TouchableOpacity
+            onPress={() => setIsResolveDescritionCollapsed(!isResolveDescritionCollapsed)}
+            style={styles.collapsibleTrigger}
+          >
+            <Text style={styles.subtitle}>{t('resolve_description_label')}</Text>
+            <MaterialCommunityIcons
+              name={isResolveDescritionCollapsed ? 'chevron-down-circle' : 'chevron-up-circle'}
+              size={24}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+          <Collapsible collapsed={isResolveDescritionCollapsed}>
+            <View style={styles.collapsibleContent}>
+              <Text
+              >
+                {issue.research_result}
+              </Text>
+
+              <View style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <ImageBackground
+                  key={issue.resolution_files[0].id}
+                  source={require('../../../../../assets/pdf.png')}
+                  style={{
+                    height: 200,
+                    width: 200,
+                    marginHorizontal: 1,
+                    alignSelf: 'center',
+                    justifyContent: 'flex-end',
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => showDoc(issue.resolution_files[0])}
+                    style={{
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                    }}
+                  >
+                    <Image
+                      resizeMode="stretch"
+                      style={{ width: 75, height: 75, borderRadius: 50, marginBottom: 5 }}
+                      source={require('../../../../../assets/eye.png')}
+                    />
+                  </TouchableOpacity>
+                </ImageBackground>
+              </View>
+            </View>
+          </Collapsible>
+        </>)}
         <CustomSeparator />
         <TouchableOpacity
-          onPress={() => setIsDecisionCollapsed(!isDecisionCollapsed)}
+          // onPress={() => setIsDecisionCollapsed(!isDecisionCollapsed)}
           style={styles.collapsibleTrigger}
         >
           <Text style={styles.subtitle}>{t('decision')}</Text>
           <MaterialCommunityIcons
-            name={isDecisionCollapsed ? 'chevron-down-circle' : 'chevron-up-circle'}
+            name={'chevron-down-circle'}//{isDecisionCollapsed ? 'chevron-down-circle' : 'chevron-up-circle'}
             size={24}
             color={colors.primary}
           />
         </TouchableOpacity>
-        <Collapsible collapsed={isDecisionCollapsed}>
-          <View style={styles.collapsibleContent}>
-            {issue.research_result ? <Text>{issue.research_result}</Text> : <></>}
-            <Text></Text>
-            <View
-              style={{
-                fontFamily: 'Poppins_400Regular',
-                fontSize: 12,
-                fontWeight: 'normal',
-                fontStyle: 'normal',
-                lineHeight: 15,
-                letterSpacing: 0,
-                textAlign: 'left',
-                color: '#707070',
-              }}
-            >
-              {/* {issue.research_result ?? t('information_not_available')} */}
-              {(issue.research_result || (issue.reasons && issue.reasons.length != 0)) 
-              ? 
-                <>
-                  {
-                    (issue.reasons && issue.reasons.length != 0) 
+        {/* <Collapsible collapsed={isDecisionCollapsed}> */}
+        <View style={styles.collapsibleContent}>
+          {issue.research_result ? <Text>{issue.research_result}</Text> : <></>}
+          <Text></Text>
+          <View
+            style={{
+              fontFamily: 'Poppins_400Regular',
+              fontSize: 12,
+              fontWeight: 'normal',
+              fontStyle: 'normal',
+              lineHeight: 15,
+              letterSpacing: 0,
+              textAlign: 'left',
+              color: '#707070',
+            }}
+          >
+            {(issue.research_result || (issue.reasons && issue.reasons.length != 0))
+              ?
+              <>
+                {
+                  (issue.reasons && issue.reasons.length != 0)
                     ?
-                      <>
-                        {/* {issue.research_result ? <Text>{t('other')}</Text> : <></>} */}
-                        <SafeAreaView style={{
-                            flex: 1,
-                            backgroundColor: "white",
-                          }}>
-                              {/* <FlatList
-                              horizontal
-                                ItemSeparatorComponent={() => <Divider style={{
-                                  marginTop: 7, marginBottom: 7
-                                }} />}
-                                style={{ flex: 1 }}
-                                data={issue.reasons}
-                                renderItem={renderItemReason}
-                                keyExtractor={(item) => `${item.id} ${item.local_url}` ?? `${item.due_at} ${item.local_url}`}
-                              /> */}
+                    <>
+                      <SafeAreaView style={{
+                        flex: 1,
+                        backgroundColor: "white",
+                      }}>
 
-                            <UpdatableList
-                                  // onFetchMoreData={handleFetchMoreData}
-                                  horizontal
-                                  ItemSeparatorComponent={() => <Divider style={{
-                                    marginTop: 7, marginBottom: 7
-                                  }} />}
-                                  style={{ flex: 1 }}
-                                  data={issue.reasons}
-                                  keyExtractor={(item) => `${item.id} ${item.local_url}` ?? `${item.due_at} ${item.local_url}`}
-                                  renderItem={renderItemReason}
-                                />
+                        <UpdatableList
+                          // onFetchMoreData={handleFetchMoreData}
+                          horizontal
+                          ItemSeparatorComponent={() => <Divider style={{
+                            marginTop: 7, marginBottom: 7
+                          }} />}
+                          style={{ flex: 1 }}
+                          data={issue.reasons}
+                          keyExtractor={(item) => `${item.id} ${item.local_url}` ?? `${item.due_at} ${item.local_url}`}
+                          renderItem={renderItemReason}
+                        />
 
-                        </SafeAreaView>
-                      </>
+                      </SafeAreaView>
+                    </>
                     : <></>
-                  }
-                </>
+                }
+              </>
               : <Text>{t('information_not_available')}</Text>}
-            </View>
           </View>
-        </Collapsible>
+        </View>
+        {/* </Collapsible> */}
+
         {/* <CustomSeparator />
         <TouchableOpacity
           onPress={() => setIsSatisfactionCollapsed(!isSatisfactionCollapsed)}
@@ -861,9 +1119,9 @@ function Content({ issue }) {
       <Portal>
         <Dialog visible={editLocationDialog} onDismiss={_hideEditLocationDialog}>
           <Dialog.Content>
-              <Paragraph>{t('location')}</Paragraph>
-              {
-                (cantons == null || villages == null) ? 
+            <Paragraph>{t('location')}</Paragraph>
+            {
+              (cantons == null || villages == null) ?
                 <ActivityIndicator color={colors.primary} size="small" />
                 :
                 <>
@@ -886,7 +1144,7 @@ function Content({ issue }) {
                       open={open}
                       setOpen={setOpen}
                     />
-                  </View> )}
+                  </View>)}
 
                   {!hideVillageField && villagesItems && (<View style={{ zIndex: 2000 }}>
                     <CustomDropDownPickerWithRender
@@ -904,50 +1162,50 @@ function Content({ issue }) {
                       open={openVillage}
                       setOpen={setOpenVillage}
                     />
-                  </View> )}
+                  </View>)}
 
                   {selectedVillage && (<View style={{ paddingHorizontal: 50, flexDirection: 'row', marginBottom: 15 }} >
-                    <Image source={require("../../../../../assets/location_icon.png")} 
-                    style={{
-                      resizeMode: 'contain',
-                      width: 50,
-                      height: 50,
-                      flex: 1
-                    }}/>
-                    <Text style={{...styles.stepDescription, flex: 4, marginTop: 15}}>{selectedVillage.name}</Text>
-                  </View> )}
+                    <Image source={require("../../../../../assets/location_icon.png")}
+                      style={{
+                        resizeMode: 'contain',
+                        width: 50,
+                        height: 50,
+                        flex: 1
+                      }} />
+                    <Text style={{ ...styles.stepDescription, flex: 4, marginTop: 15 }}>{selectedVillage.name}</Text>
+                  </View>)}
                 </>
-              }
-              
-            
+            }
+
+
           </Dialog.Content>
-            <Dialog.Actions>
+          <Dialog.Actions>
             <IconButton
-                icon="refresh"
-                color={playing ? colors.disabled : colors.primary}
-                size={24}
-                onPress={() => onRefresh()}
-              />
-              <Button
-                theme={theme}
-                style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
-                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-                mode="contained"
-                onPress={_hideEditLocationDialog}
-              >
-                {t('cancel')}
-              </Button>
-              <Button
-                disabled={cantons == null || villages == null}
-                theme={theme}
-                style={{ alignSelf: 'center', margin: 24 }}
-                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-                mode="contained"
-                onPress={saveADLIssue}
-              >
-                {t('save_button_text')}
-              </Button>
-            </Dialog.Actions>
+              icon="refresh"
+              color={playing ? colors.disabled : colors.primary}
+              size={24}
+              onPress={() => onRefresh()}
+            />
+            <Button
+              theme={theme}
+              style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
+              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+              mode="contained"
+              onPress={_hideEditLocationDialog}
+            >
+              {t('cancel')}
+            </Button>
+            <Button
+              disabled={cantons == null || villages == null}
+              theme={theme}
+              style={{ alignSelf: 'center', margin: 24 }}
+              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+              mode="contained"
+              onPress={saveADLIssue}
+            >
+              {t('save_button_text')}
+            </Button>
+          </Dialog.Actions>
         </Dialog>
       </Portal>
 

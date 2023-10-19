@@ -70,6 +70,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const [recordingURIs, setRecordingURIs] = useState([]);
   const [items2, setItems2] = useState(issueCategories ?? []);
   const [sound, setSound] = React.useState();
+  const [soundOnPause, setSoundOnPause] = useState(false);
   const [soundUrl, setSoundUrl] = React.useState();
   const [duration, setDuration] = useState(null);
   const [position, setPosition] = useState(null);
@@ -181,26 +182,44 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
 }
 
   const playASound = async (sound_url) => {
+    setSoundOnPause(false);
     // console.log("Loading Sound");
-    
+    if(sound){
+      stopASound();
+      setSound(undefined);
+      setSoundUrl(undefined);
+    }
     const { sound } = await Audio.Sound.createAsync(
       { uri: sound_url },
       { shouldPlay: true },
       onPlaybackStatusUpdate
     );
     setSound(sound);
-    setSoundUrl(recordingURI);
+    setSoundUrl(sound_url);
     // console.log("Playing Sound");
     await sound.playAsync();
+      
   };
 
   const stopASound = async () => {
+    setSoundOnPause(false);
     await sound.stopAsync();
     setSound(undefined);
     setSoundUrl(undefined);
   };
 
+  const pauseASound = async () => {
+    setSoundOnPause(true);
+    await sound.pauseAsync();
+  };
+
+  const playASoundOnCurrentPause = async () => {
+    setSoundOnPause(false);
+    await sound.playAsync();
+  };
+
   const reomveARecordingURI = (recording_url) => {
+    setSoundOnPause(false);
     if(soundUrl && recording_url == soundUrl){
       stopASound();
     }
@@ -209,7 +228,10 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   }
 
   const getProgress = () => {
-    if (sound === undefined || sound === null || duration === null || position === null) {
+    if (
+      sound === undefined || sound === null || 
+      duration === undefined || duration === null || 
+      position === undefined || position === null) {
         return 0;
     }
 
@@ -699,11 +721,11 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
               justifyContent: 'center',
             }}
           >
-            <IconButton icon={soundUrl == recording_url ? "pause" : "play"} color={colors.primary} size={24} onPress={
-              () => soundUrl == recording_url ? stopASound(recording_url) : playASound(recording_url)
+            <IconButton icon={!soundOnPause && soundUrl == recording_url ? "pause" : "play"} color={colors.primary} size={24} onPress={
+              () => soundUrl == recording_url ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(recording_url)
             } />
             <View style={styles_audio.container}>
-              <Animated.View style={[styles_audio.bar, { width: soundUrl == recording_url ? getProgress() : 0 }]} />
+              <Animated.View style={[styles_audio.bar, { width: soundUrl == recording_url ? getProgress() ?? 0 : 0 }]} />
             </View>
             <Text
               style={{

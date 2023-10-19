@@ -229,9 +229,11 @@
 	"level_label": "Level", //to complete
 	"error_message_for_update": "The last update of escalation has not been done", //to complete
 	"attach_pv": "Join PV", //to complete
+	"resolve_description_label": "Proof of resolution", //to complete
 
 	//issue search
 	"registe_to_you_label": "Complaints registered by you", //to complete
+	"registe_label": "Complaints registered", //to complete
 	"open_to_you_label": "Complaints pending", //to complete
 	"your_complaints_resolved_to_you_label": "Your resolved complaints", //to complete
 	"your_complaints_reject_to_you_label": "Your rejected complaints", //to complete
@@ -239,8 +241,10 @@
 	"overdue_label": "Ibibazo byarengeje igihe",
 
 	"assigned_to_you_label": "Ibibazo wahawe",
+	"assigned_label": "Issues assigned", //to complete
 
 	"resolved_by_you_label": "Ibibazo byakemuwe nawe",
+	"resolved_label": "Issues resolved", //to complete
 
 	"average_days_label": "Impuzandengo y'iminsi yo gukemura ibibazo",
 
@@ -317,6 +321,7 @@
   //Error message
   "file_read_error": "Cannot read all the files.", //to complete
   "file_read_error_try_again": "Cannot read all the files. try again.", //to complete
-  "error_message_for_limit_audio": "You only have the option of attaching four audios." //to complete
+  "error_message_for_limit_audio": "You only have the option of attaching four audios.", //to complete
+  "error_message_for_auth": "We can't get your information on the server." //to complete
 
 }
