@@ -12,7 +12,7 @@
 	"login": "Injira",
 	"email_provided": "Shyiramo imeri wahawe n'ukuyobora kandi ukoreshe n'ijambo ry'ibanga uzajya wibuka",
 	"choose_password": "Hitamo ijambo ry'ibanga",
-	"enter_new_password": "Shyiramo Ijambo ry'ibanga.  Rigomba kuba rigizwe byibura n'inyuguti 8",
+	"enter_new_password": "Shyiramo Ijambo ry'ibanga.  Rigomba kuba rigizwe byibura n'inyuguti 8", // , including at least one letter and one number. \n- Only numbers and letters are accepted. //to complete 
 	"last_validation": "Igenzura rya nyuma!",
 	"please_enter_code": "Shyiramo imibare wahawe n'umushinga",
 	"account_create_success": "Konti yawe yafunguwe neza!",

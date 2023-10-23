@@ -72,16 +72,16 @@ function IssueSearch() {
           }
         ]
       }
-      if(eadl.administrative_region == "1" && eadl.group  && eadl.group == "Admin"){
+      if(eadl.administrative_region == "1" && eadl.representative.groups  && (eadl.representative.groups.includes("ViewerOfAllIssues") || eadl.representative.groups.includes("Admin"))){
         selector = {
           type: 'issue',
-          confirmed: true,
-          publish: true
+          confirmed: true
         }
       }else if(eadl.administrative_region == "1"){
         selector = {
           type: 'issue',
-          confirmed: true
+          confirmed: true,
+          publish: true
         }
       }
 

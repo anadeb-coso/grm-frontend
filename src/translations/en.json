@@ -12,7 +12,7 @@
   "login": "Login",
   "email_provided": "Please enter the email provided by your supervisor and use a password of your preference.",
   "choose_password": "Choose your password",
-  "enter_new_password":  "Enter your new password. Must contain at least 8 characters long",
+  "enter_new_password":  "Enter your new password. \n- Must contain at least 8 characters long, including at least one letter and one number. \n- Only numbers and letters are accepted.",
   "last_validation": "We need a last validation!",
   "please_enter_code": "Please use the code provided by your supervisor",
   "account_create_success": "Your account has been successfully created",

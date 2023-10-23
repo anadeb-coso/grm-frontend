@@ -132,7 +132,7 @@ function Content({ issue }) {
   const getAdministrativeLevels = () => {
     setCantons(null);
     setVillages(null);
-    new API().administrativeLevelsFilterByAdministrativeRegion(userCommune.administrative_id, {}).then((response) => {
+    new API().administrativeLevelsFilterByAdministrativeRegion(username, userCommune.administrative_id, {}).then((response) => {
       if (response.error) {
         console.log(response.error);
         Alert.alert('Warning', response?.error?.toString(), [{ text: 'OK' }], {

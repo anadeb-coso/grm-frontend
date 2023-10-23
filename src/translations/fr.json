@@ -12,7 +12,7 @@
   "login": "Se connecter",
   "email_provided": "Veuillez entrer l'adresse email fournie par votre superviseur et utiliser un mot de passe de votre choix.",
   "choose_password": "Choisissez votre mot de passe",
-  "enter_new_password":  "Entrez votre nouveau mot de passe. Il doit contenir au moins 8 caractères.",
+  "enter_new_password":  "Entrez votre nouveau mot de passe. \n- Il doit contenir au moins 8 caractères, dont au moins une lettre et un chiffre. \n- Seuls les chiffres et les lettres sont acceptés.",
   "last_validation": "Une dernière validation est requise!",
   "please_enter_code": "Utilisez le code fourni par votre superviseur",
   "account_create_success": "Votre compte a été créé avec succès",

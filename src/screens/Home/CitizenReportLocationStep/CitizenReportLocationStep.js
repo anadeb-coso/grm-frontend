@@ -63,7 +63,7 @@ function CitizenReportLocationStep({ route }) {
 // });
 
   setLoading(true);
-  new API().administrativeLevelsFilterByAdministrativeRegion(userCommune.administrative_id, {}).then((response) => {
+  new API().administrativeLevelsFilterByAdministrativeRegion(username, userCommune.administrative_id, {}).then((response) => {
     if (response.error) {
       setCantons([]);
       setVillages([]);

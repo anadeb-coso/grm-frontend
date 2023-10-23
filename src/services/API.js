@@ -45,8 +45,8 @@ class API {
   }
 
 
-  async administrativeLevelsFilterByAdministrativeRegion(administrative_region, filter) {
-    
+  async administrativeLevelsFilterByAdministrativeRegion(username, administrative_region, filter) {
+    console.log(username);
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
     d = ""
@@ -57,11 +57,31 @@ class API {
       method: 'GET',
       headers: myHeaders
     };
-    const result = fetch(`${baseURL}/administrative-levels/filter-by-administrative-region/?administrative_region=${administrative_region}${d}`, requestOptions)
+    const result = fetch(`${baseURL}/administrative-levels/filter-by-administrative-region/?email=${username}&administrative_region=${administrative_region}${d}`, requestOptions)
       .then((response) => response.json())
       .then(handleErrors)
       .then((response) => response)
       .catch((error) => ({ error }));
+    return result;
+  }
+
+
+  async sync_datas(data) {
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: JSON.stringify(data),
+    };
+    const result = fetch(
+      `${baseURL}/issue/save-issue-datas/`,
+      requestOptions,
+    )
+      .then(response => response.json())
+      .then(handleErrors)
+      .then(a => a)
+      .catch(error => ({ error }));
     return result;
   }
 }

@@ -5,7 +5,7 @@ const MESSAGES = {
   minLength: `This input is below the minimum length`,
   maxLength: `This input exceed max length`,
   email: `Please enter a valid email address`,
-  password: `Minimum eight characters and at least one letter and one number`,
+  password: `At least eight characters, including at least one letter and one number`,
   onlyLetters: `This input is only for alphabetic values`,
   chargeRegex: "Only two decimals allowed.",
 };
