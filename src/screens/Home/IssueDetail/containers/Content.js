@@ -894,8 +894,8 @@ function Content({ issue }) {
               >
                 {issue.research_result}
               </Text>
-
-              <View style={{
+              
+              {issue.resolution_files && issue.resolution_files.length > 0 ? <View style={{
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
@@ -925,7 +925,7 @@ function Content({ issue }) {
                     />
                   </TouchableOpacity>
                 </ImageBackground>
-              </View>
+              </View> : <View></View>}
             </View>
           </Collapsible>
         </>)}

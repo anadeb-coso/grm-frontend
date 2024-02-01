@@ -22,19 +22,19 @@ export const verify_account_on_couchdb = async (dbCredentials, user_email) => {
                     }
                 }
             );
-            console.log("response.data")
-            console.log(response.data)
-            if(response.data && response.data.rows && response.data.rows.length != 0){
+            
+            if(response.data && response.data.rows && response.data.rows.length != 0 && response.data.rows[0].value.representative && response.data.rows[0].value.representative.is_active){
                 return true;
             }
         } catch (error) {
             console.log("post failed\n", error)
             console.log(error)
+            return true;
         }
     }else{
         return true;
     }
-
+    
     return false;
 }
 

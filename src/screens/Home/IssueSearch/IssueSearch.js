@@ -58,7 +58,7 @@ function IssueSearch() {
 
   useEffect(() => {
     // FETCH ISSUE CATEGORY
-    if (eadl) {
+    if (eadl && eadl.representative) {
       let selector = {
         type: 'issue',
         // 'reporter.id': eadl.representative.id,
