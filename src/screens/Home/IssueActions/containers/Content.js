@@ -29,6 +29,7 @@ import { LocalGRMDatabase } from '../../../../utils/databaseManager';
 import { styles } from './Content.styles';
 import LoadingScreen from '../../../../components/LoadingScreen/LoadingScreen';
 import { id_kara_centrale_cantons, administrative_levels } from '../../../../utils/utils';
+import { formatDuration } from '../../../../utils/functions';
 
 
 const theme = {
@@ -151,35 +152,35 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   };
 
 
-  
+
   const get_next_administrative_level = (current_escalate_to) => {
-    if(!current_escalate_to){
+    if (!current_escalate_to) {
       return "Canton";
     }
-    if(current_escalate_to.administrative_level == "Canton"){
-      if(current_escalate_to.administrative_id){
-        if(id_kara_centrale_cantons.includes(Number(current_escalate_to.administrative_id))){
+    if (current_escalate_to.administrative_level == "Canton") {
+      if (current_escalate_to.administrative_id) {
+        if (id_kara_centrale_cantons.includes(Number(current_escalate_to.administrative_id))) {
           return "Prefecture";
-        }else{
+        } else {
           return "Region";
         }
-      }else{
+      } else {
         ToastAndroid.show(`${t('error_message_for_update')}`, ToastAndroid.SHORT);
       }
     }
-    try{
+    try {
       return administrative_levels[administrative_levels.indexOf(current_escalate_to.administrative_level) - 1]
-    }catch(e){
+    } catch (e) {
       return "Country";
     }
   }
 
   const get_current_adl_obj = () => {
     let escalation_administrativelevels = issue.escalation_administrativelevels ?? [];
-    
-    if(escalation_administrativelevels.length != 0){
+
+    if (escalation_administrativelevels.length != 0) {
       setCurrentAdlObj(escalation_administrativelevels[0]);
-    }else{
+    } else {
       // setCurrentAdlObj({
       //   escalate_to: {
       //     administrative_id: issue.administrative_region.administrative_id,
@@ -208,14 +209,14 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const [position, setPosition] = useState(null);
   const [resolvePDF, setResolvePDF] = useState();
   const [escalatePDF, setEscalatePDF] = useState();
-  
+
 
   React.useEffect(
     () =>
       sound
         ? () => {
-            sound.unloadAsync();
-          }
+          sound.unloadAsync();
+        }
         : undefined,
     [sound]
   );
@@ -243,9 +244,35 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   }, []);
 
 
-  
+  const getImageDimensions = async (imageUri) => {
+    return new Promise((resolve, reject) => {
+      Image.getSize(
+        imageUri,
+        (width, height) => {
+          resolve({ width, height });
+        },
+        (error) => {
+          reject(error);
+        }
+      );
+    });
+  };
+
+  const getImageSize = async (imageUri) => {
+    let fileSizeInMB = 0;
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(imageUri);
+      const fileSizeInBytes = fileInfo.size;
+      fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
+      console.log('Image size:', fileSizeInMB, 'MB');
+    } catch (error) {
+      console.error('Error getting image size:', error);
+    }
+    return fileSizeInMB;
+  };
+
   const startRecording = async () => {
-    if (recordingURIs.length < 4){
+    if (recordingURIs.length < 4) {
       try {
         // console.log("Requesting permissions..");
         await Audio.requestPermissionsAsync();
@@ -262,7 +289,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       } catch (err) {
         // console.error("Failed to start recording", err);
       }
-    }else{
+    } else {
       ToastAndroid.show(`${t('error_message_for_limit_audio')}`, ToastAndroid.SHORT);
     }
   };
@@ -271,8 +298,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     // console.log("Stopping recording..");
     await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
+    const d = await getAudioDuration(uri);
     setRecordingURI(uri);
-    setRecordingURIs([...recordingURIs, uri]);
+    setRecordingURIs([...recordingURIs, { uri: uri, duration: formatDuration(d) }]);
     setRecording(undefined);
     // console.log("Recording stopped and stored at", uri);
   };
@@ -282,69 +310,117 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     setPosition(status.positionMillis);
     // setFinish(status.didJustFinish);
 
-    if(status.didJustFinish){
+    if (status.didJustFinish) {
       setSound(undefined);
       setSoundUrl(undefined);
     }
-}
+  }
 
 
-const playASound = async (sound_url) => {
-  setSoundOnPause(false);
-  // console.log("Loading Sound");
-  if(sound){
-    stopASound();
+  const playASound = async (sound_url) => {
+    setSoundOnPause(false);
+    // console.log("Loading Sound");
+    if (sound) {
+      stopASound();
+      setSound(undefined);
+      setSoundUrl(undefined);
+    }
+    const { sound } = await Audio.Sound.createAsync(
+      { uri: sound_url },
+      { shouldPlay: true },
+      onPlaybackStatusUpdate
+    );
+    setSound(sound);
+    setSoundUrl(sound_url);
+    // console.log("Playing Sound");
+    await sound.playAsync();
+
+  };
+
+  const stopASound = async () => {
+    setSoundOnPause(false);
+    await sound.stopAsync();
     setSound(undefined);
     setSoundUrl(undefined);
+  };
+
+  const pauseASound = async () => {
+    setSoundOnPause(true);
+    await sound.pauseAsync();
+  };
+
+  const playASoundOnCurrentPause = async () => {
+    setSoundOnPause(false);
+    await sound.playAsync();
+  };
+
+  const reomveARecordingURI = (recording_url) => {
+    setSoundOnPause(false);
+    if (soundUrl && recording_url == soundUrl) {
+      stopASound();
+    }
+
+    setRecordingURIs(recordingURIs.filter((elt) => elt.uri != recording_url));
   }
-  const { sound } = await Audio.Sound.createAsync(
-    { uri: sound_url },
-    { shouldPlay: true },
-    onPlaybackStatusUpdate
-  );
-  setSound(sound);
-  setSoundUrl(sound_url);
-  // console.log("Playing Sound");
-  await sound.playAsync();
-    
-};
 
-const stopASound = async () => {
-  setSoundOnPause(false);
-  await sound.stopAsync();
-  setSound(undefined);
-  setSoundUrl(undefined);
-};
-
-const pauseASound = async () => {
-  setSoundOnPause(true);
-  await sound.pauseAsync();
-};
-
-const playASoundOnCurrentPause = async () => {
-  setSoundOnPause(false);
-  await sound.playAsync();
-};
-
-const reomveARecordingURI = (recording_url) => {
-  setSoundOnPause(false);
-  if(soundUrl && recording_url == soundUrl){
-    stopASound();
-  }
-  
-  setRecordingURIs(recordingURIs.filter((elt) => elt != recording_url));
-}
-
-const getProgress = () => {
-  if (
-    sound === undefined || sound === null || 
-    duration === undefined || duration === null || 
-    position === undefined || position === null) {
+  const getProgress = () => {
+    if (
+      sound === undefined || sound === null ||
+      duration === undefined || duration === null ||
+      position === undefined || position === null) {
       return 0;
+    }
+
+    return (position / duration) * 150;
   }
 
-  return (position / duration) * 150;
-}
+  const getAudioDuration = async (sound_url) => {
+    const soundObject = new Audio.Sound();
+    let durationSecond;
+    try {
+      // Load the audio file (replace 'your-audio-file.mp3' with your actual file)
+      await soundObject.loadAsync({ uri: sound_url });
+
+      // Get the status of the audio
+      const status = await soundObject.getStatusAsync();
+
+      // Convert the duration from milliseconds to seconds
+      durationSecond = status.durationMillis / 1000;
+    } catch (error) {
+      console.error('Error loading audio:', error);
+    } finally {
+      // Unload the sound object to free up resources
+      await soundObject.unloadAsync();
+    }
+    return durationSecond;
+  };
+
+  const get_image_manipulate = async (localUri, width, height) => {
+    let manipResult;
+    const imageSize = await getImageSize(localUri);
+
+    if (!height || !width) {
+      const dimensions = await getImageDimensions(localUri);
+      width = width ?? dimensions.width;
+      height = height ?? dimensions.height;
+    }
+
+    if (imageSize && imageSize > 1) {
+      manipResult = await ImageManipulator.manipulateAsync(
+        localUri,
+        [{ resize: { width: width, height: height } }],
+        { compress: 0.2 }//, format: ImageManipulator.SaveFormat.PNG },
+      );
+
+    } else {
+      manipResult = await ImageManipulator.manipulateAsync(
+        localUri,
+        [{ resize: { width: width, height: height } }],
+        { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+      );
+    }
+    return manipResult;
+  }
 
   const openCamera = async () => {
     if (attachments.length < 3) {
@@ -356,22 +432,34 @@ const getProgress = () => {
 
       if (!result.cancelled) {
         setLoading(true);
-        const manipResult = await ImageManipulator.manipulateAsync(
-          result.localUri || result.uri,
-          [{ resize: { 
-            width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000, 
-            height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000 
-          } 
-          }],
-          { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+        let localUri = result.localUri || result.uri;
+        let manipResult = await get_image_manipulate(
+          localUri,
+          (result.assets && result.assets.length > 0) ? result.assets[0].width : null,
+          (result.assets && result.assets.length > 0) ? result.assets[0].height : null
         );
+
         setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+        // const manipResult = await ImageManipulator.manipulateAsync(
+        //   result.localUri || result.uri,
+        //   [{
+        //     resize: {
+        //       width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000,
+        //       height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000
+        //     }
+        //   }],
+        //   { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+        // );
+        // setAttachments([...attachments, { ...manipResult, id: new Date() }]);
         setLoading(false);
       }
+    } else {
+      ToastAndroid.show(`${t('step_2_only_three_files')}`, ToastAndroid.SHORT);
     }
   };
 
   const pickDocument = async (hasImage = false, forResolve = false, forEscalate = false) => {
+    if (attachments.length < 3) {
       try {
         const result = await DocumentPicker.getDocumentAsync({
           type: hasImage ? [
@@ -381,25 +469,37 @@ const getProgress = () => {
           ],
           multiple: false,
         });
-        
-        if(result.type != "cancel"){
+
+        if (result.type != "cancel") {
           setLoading(true);
 
-          if(forResolve){
+          if (forResolve) {
             setResolvePDF({ ...result, id: new Date() });
-          }else if(forEscalate){
+          } else if (forEscalate) {
             setEscalatePDF({ ...result, id: new Date() });
-          }else{
-            setAttachments([...attachments, { ...result, id: new Date() }]);
+          } else {
+            let localUri = result.localUri || result.uri;
+            if (result.mimeType && result.mimeType.toLowerCase().includes('image')) {
+              let manipResult = await get_image_manipulate(
+                localUri,
+                (result.assets && result.assets.length > 0) ? result.assets[0].width : null,
+                (result.assets && result.assets.length > 0) ? result.assets[0].height : null
+              );
+              setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+            } else {
+              setAttachments([...attachments, { ...result, id: new Date() }]);
+            }
           }
-          
+
           setLoading(false);
         }
-        
+
       } catch (err) {
         console.warn(err);
       }
-
+    } else {
+      ToastAndroid.show(`${t('step_2_only_three_files')}`, ToastAndroid.SHORT);
+    }
   };
 
   const pickImage = async () => {
@@ -442,21 +542,21 @@ const getProgress = () => {
   };
 
   const showDoc = async (attach) => {
-    if(attach.uri.includes("file://")){
+    if (attach.uri.includes("file://")) {
       const buff = Buffer.from(attach.uri, "base64");
       const base64 = buff.toString("base64");
       const fileUri = FileSystem.documentDirectory + `${encodeURI(attach.name ? attach.name : "pdf")}.pdf`;
-      
+
       await FileSystem.writeAsStringAsync(fileUri, base64, {
         encoding: FileSystem.EncodingType.Base64,
       });
-  
+
       Sharing.shareAsync(attach.uri);
-      
-    }else{
+
+    } else {
       openUrl(attach.uri.split("?")[0]);
     }
-    
+
 
   }
 
@@ -467,11 +567,11 @@ const getProgress = () => {
   const issue_status_stories = (status, coment_message) => {
     issue.issue_status_stories = issue.issue_status_stories ?? []
     issue.issue_status_stories?.unshift({
-      status: {name: status.name, id: status.id},
+      status: { name: status.name, id: status.id },
       user: {
-          id: eadl?.representative?.id,
-          username: null,
-          full_name: eadl?.representative?.name
+        id: eadl?.representative?.id,
+        username: null,
+        full_name: eadl?.representative?.name
       },
       comment: coment_message,
       datetime: moment()
@@ -481,7 +581,7 @@ const getProgress = () => {
       return doc;
     })
       .then(() => {
-        
+
       })
       .catch((err) => {
         console.log('Error', err);
@@ -497,7 +597,7 @@ const getProgress = () => {
       due_at: moment(),
     });
     saveIssueStatus(newStatus, 'accept');
-    issue_status_stories(newStatus, 
+    issue_status_stories(newStatus,
       `${((issue.status.id === 3 || issue.status.id === 4) ? t('issue_was_re_opened') : t('issue_was_accepted'))}\n${reason}`
     );
   };
@@ -518,18 +618,20 @@ const getProgress = () => {
   const escalateIssue = () => {
 
     let current_escalate_to = null;
-    if(issue.escalation_administrativelevels.length != 0){
+    issue.escalation_reasons = issue.escalation_reasons ?? [];
+    issue.escalation_administrativelevels = issue.escalation_administrativelevels ?? [];
+    if (issue.escalation_administrativelevels.length != 0) {
       current_escalate_to = issue.escalation_administrativelevels[0].escalate_to;
     }
 
-    if(current_escalate_to && !current_escalate_to.administrative_id){
+    if (current_escalate_to && !current_escalate_to.administrative_id) {
       ToastAndroid.show(`${t('error_message_for_update')}`, ToastAndroid.SHORT);
-    }else{
+    } else {
       let administrative_level_to_escalate = get_next_administrative_level(current_escalate_to);
 
       issue.escalate_flag = true;
-      issue.escalation_reasons = issue.escalation_reasons ?? [];
-      issue.escalation_administrativelevels = issue.escalation_administrativelevels ?? [];
+      // issue.escalation_reasons = issue.escalation_reasons ?? [];
+      // issue.escalation_administrativelevels = issue.escalation_administrativelevels ?? [];
 
       let r = null;
       let escalate_reason = {
@@ -538,7 +640,7 @@ const getProgress = () => {
         comment: escalateComment,
         due_at: moment(),
       };
-      if(escalatePDF){
+      if (escalatePDF) {
         r = {
           name: escalatePDF?.uri.split('/').pop(),
           url: '',
@@ -550,7 +652,7 @@ const getProgress = () => {
           user_name: eadl?.representative?.name,
           subject: "escalation"
         };
-        
+
         escalate_reason.attachment = r;
 
         r.type = "file";
@@ -609,7 +711,7 @@ const getProgress = () => {
       comment_id: due_at,
     });
 
-    for(let i=0; i < attachments.length; i++){
+    for (let i = 0; i < attachments.length; i++) {
       issue.reasons?.unshift({
         name: attachments[i]?.uri.split('/').pop(),
         url: '',
@@ -624,11 +726,11 @@ const getProgress = () => {
       });
     }
     setAttachments([]);
-    for(let index=0; index < recordingURIs.length; index++){
+    for (let index = 0; index < recordingURIs.length; index++) {
       issue.reasons?.unshift({
-        name: recordingURIs[index].split('/').pop(),
+        name: recordingURIs[index].uri.split('/').pop(),
         url: '',
-        local_url: recordingURIs[index],
+        local_url: recordingURIs[index].uri,
         id: moment(),
         uploaded: false,
         bd_id: due_at,
@@ -641,7 +743,7 @@ const getProgress = () => {
     }
     setRecordingURIs([]);
 
-    if(recordingURI){
+    if (recordingURI) {
       setRecordingURI();
     }
 
@@ -666,9 +768,9 @@ const getProgress = () => {
       comment: t('issue_was_resolved'),
       due_at: moment(),
     });
-    
 
-    if(resolvePDF){
+
+    if (resolvePDF) {
       let r = {
         name: resolvePDF?.uri.split('/').pop(),
         url: '',
@@ -734,7 +836,7 @@ const getProgress = () => {
         } else if (type === 'record_resolution') {
           setRecordedResolution(false);
           _hideRecordResolutionDialog();
-        }else if(type == 'not_resolve'){
+        } else if (type == 'not_resolve') {
           setNotResolveDialog(false);
           _hideNotresolveDialog();
         }
@@ -1005,7 +1107,7 @@ const getProgress = () => {
           </Dialog.Content>
           {!acceptedDialog ? (
             <Dialog.Actions>
-               {/* {
+              {/* {
                 (issue.status.id === 3 || issue.status.id === 4) 
                   ? 
                     <></>
@@ -1071,86 +1173,87 @@ const getProgress = () => {
                   style={{ marginTop: 10 }}
                   mode="outlined"
                   theme={theme}
+                  placeholder={t('comment_placeholder')}
                   onChangeText={onChangeEscalateComment}
                 />
-                
+
                 <View style={{ paddingHorizontal: 5 }}>
-          <Text
-            style={{
-              fontFamily: 'Poppins_400Regular',
-              fontSize: 12,
-              fontWeight: 'normal',
-              fontStyle: 'normal',
-              lineHeight: 18,
-              letterSpacing: 0,
-              textAlign: 'left',
-              color: '#707070',
-              marginVertical: 13,
-            }}
-          >
-            {t('step_2_share_pv_escalate')}
-          </Text>
-          <View style={{ flexDirection: 'row' }}>
-            {escalatePDF && (
-                <ImageBackground
-                  key={escalatePDF.id}
-                  source={ escalatePDF.mimeType && escalatePDF.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: attachment.uri }}
-                  style={{
-                    height: 80,
-                    width: 80,
-                    marginHorizontal: 1,
-                    alignSelf: 'center',
-                    justifyContent: 'flex-end',
-                    marginVertical: 20,
-                  }}
-                >
-                  {escalatePDF.mimeType && escalatePDF.mimeType.includes('pdf') ? <TouchableOpacity
-                    onPress={() => showDoc(escalatePDF)}
+                  <Text
                     style={{
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: 60,
-                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                      fontFamily: 'Poppins_400Regular',
+                      fontSize: 12,
+                      fontWeight: 'normal',
+                      fontStyle: 'normal',
+                      lineHeight: 18,
+                      letterSpacing: 0,
+                      textAlign: 'left',
+                      color: '#707070',
+                      marginVertical: 13,
                     }}
                   >
-                    <Image
-                      resizeMode="stretch"
-                      style={{ width: 30, height: 30, borderRadius: 50 }}
-                      source={require('../../../../../assets/eye.png')}
-                    />
-                  </TouchableOpacity> : <></>}
-                  <TouchableOpacity
-                    onPress={() => { setEscalatePDF() }}
+                    {t('step_2_share_pv_escalate')}
+                  </Text>
+                  <View style={{ flexDirection: 'row' }}>
+                    {escalatePDF && (
+                      <ImageBackground
+                        key={escalatePDF.id}
+                        source={escalatePDF.mimeType && escalatePDF.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: attachment.uri }}
+                        style={{
+                          height: 80,
+                          width: 80,
+                          marginHorizontal: 1,
+                          alignSelf: 'center',
+                          justifyContent: 'flex-end',
+                          marginVertical: 20,
+                        }}
+                      >
+                        {escalatePDF.mimeType && escalatePDF.mimeType.includes('pdf') ? <TouchableOpacity
+                          onPress={() => showDoc(escalatePDF)}
+                          style={{
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            height: 60,
+                            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                          }}
+                        >
+                          <Image
+                            resizeMode="stretch"
+                            style={{ width: 30, height: 30, borderRadius: 50 }}
+                            source={require('../../../../../assets/eye.png')}
+                          />
+                        </TouchableOpacity> : <></>}
+                        <TouchableOpacity
+                          onPress={() => { setEscalatePDF() }}
+                          style={{
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            height: 20,
+                            backgroundColor: 'rgba(255, 1, 1, 1)',
+                          }}
+                        >
+                          <Text style={{ color: 'white' }}>X</Text>
+                        </TouchableOpacity>
+                      </ImageBackground>
+                    )}
+                  </View>
+                  <View
                     style={{
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: 20,
-                      backgroundColor: 'rgba(255, 1, 1, 1)',
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
                     }}
                   >
-                    <Text style={{ color: 'white' }}>X</Text>
-                  </TouchableOpacity>
-                </ImageBackground>
-              )}
-          </View>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Button
-              theme={theme}
-              style={{ alignSelf: 'center' }}
-              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-              mode="contained"
-              onPress={() => {pickDocument(false, false, true)}}
-              uppercase={false}
-            >
-              {t('attach_pv')}
-            </Button>
-          </View>
-        </View>
+                    <Button
+                      theme={theme}
+                      style={{ alignSelf: 'center' }}
+                      labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+                      mode="contained"
+                      onPress={() => { pickDocument(false, false, true) }}
+                      uppercase={false}
+                    >
+                      {t('attach_pv')}
+                    </Button>
+                  </View>
+                </View>
 
               </>
             )}
@@ -1215,96 +1318,96 @@ const getProgress = () => {
                   onChangeText={onChangeComment}
                 />
 
-<View style={{ paddingHorizontal: 5 }}>
-          <Text
-            style={{
-              fontFamily: 'Poppins_400Regular',
-              fontSize: 12,
-              fontWeight: 'normal',
-              fontStyle: 'normal',
-              lineHeight: 18,
-              letterSpacing: 0,
-              textAlign: 'left',
-              color: '#707070',
-              marginVertical: 13,
-            }}
-          >
-            {t('step_2_share_photos')}
-          </Text>
-          <View style={{ flexDirection: 'row' }}>
-            {attachments.length > 0 &&
-              attachments.map((attachment, index) => (
-                <ImageBackground
-                  key={attachment.id}
-                  source={ attachment.mimeType && attachment.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: attachment.uri }}
-                  style={{
-                    height: 80,
-                    width: 80,
-                    marginHorizontal: 1,
-                    alignSelf: 'center',
-                    justifyContent: 'flex-end',
-                    marginVertical: 20,
-                  }}
-                >
-                  {attachment.mimeType && attachment.mimeType.includes('pdf') ? <TouchableOpacity
-                    onPress={() => showDoc(attachment)}
+                <View style={{ paddingHorizontal: 5 }}>
+                  <Text
                     style={{
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: 60,
-                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                      fontFamily: 'Poppins_400Regular',
+                      fontSize: 12,
+                      fontWeight: 'normal',
+                      fontStyle: 'normal',
+                      lineHeight: 18,
+                      letterSpacing: 0,
+                      textAlign: 'left',
+                      color: '#707070',
+                      marginVertical: 13,
                     }}
                   >
-                    <Image
-                      resizeMode="stretch"
-                      style={{ width: 30, height: 30, borderRadius: 50 }}
-                      source={require('../../../../../assets/eye.png')}
-                    />
-                  </TouchableOpacity> : <></>}
-                  <TouchableOpacity
-                    onPress={() => removeAttachment(index)}
+                    {t('step_2_share_photos')}
+                  </Text>
+                  <View style={{ flexDirection: 'row' }}>
+                    {attachments.length > 0 &&
+                      attachments.map((attachment, index) => (
+                        <ImageBackground
+                          key={attachment.id}
+                          source={attachment.mimeType && attachment.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: attachment.uri }}
+                          style={{
+                            height: 80,
+                            width: 80,
+                            marginHorizontal: 1,
+                            alignSelf: 'center',
+                            justifyContent: 'flex-end',
+                            marginVertical: 20,
+                          }}
+                        >
+                          {attachment.mimeType && attachment.mimeType.includes('pdf') ? <TouchableOpacity
+                            onPress={() => showDoc(attachment)}
+                            style={{
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              height: 60,
+                              backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                            }}
+                          >
+                            <Image
+                              resizeMode="stretch"
+                              style={{ width: 30, height: 30, borderRadius: 50 }}
+                              source={require('../../../../../assets/eye.png')}
+                            />
+                          </TouchableOpacity> : <></>}
+                          <TouchableOpacity
+                            onPress={() => removeAttachment(index)}
+                            style={{
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              height: 20,
+                              backgroundColor: 'rgba(255, 1, 1, 1)',
+                            }}
+                          >
+                            <Text style={{ color: 'white' }}>X</Text>
+                          </TouchableOpacity>
+                        </ImageBackground>
+                      ))}
+                  </View>
+                  <View
                     style={{
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: 20,
-                      backgroundColor: 'rgba(255, 1, 1, 1)',
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
                     }}
                   >
-                    <Text style={{ color: 'white' }}>X</Text>
-                  </TouchableOpacity>
-                </ImageBackground>
-              ))}
-          </View>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Button
-              theme={theme}
-              style={{ alignSelf: 'center' }}
-              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-              mode="contained"
-              onPress={pickImage}
-              uppercase={false}
-            >
-              {t('step_2_upload_attachment')}
-            </Button>
-            <View style={styles.iconButtonStyle}>
-              <IconButton icon="camera" color={colors.primary} size={24} onPress={openCamera} />
-            </View>
-            <View style={styles.iconButtonStyle}>
-              <IconButton
-                icon={recording ? 'record-circle-outline' : 'microphone'}
-                color={recording ? '#f80102' : colors.primary}
-                size={24}
-                onPress={recording ? stopRecording : startRecording}
-              />
-            </View>
-          </View>
-        </View>
-        {/* {recordingURI && (
+                    <Button
+                      theme={theme}
+                      style={{ alignSelf: 'center' }}
+                      labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+                      mode="contained"
+                      onPress={pickImage}
+                      uppercase={false}
+                    >
+                      {t('step_2_upload_attachment')}
+                    </Button>
+                    <View style={styles.iconButtonStyle}>
+                      <IconButton icon="camera" color={colors.primary} size={24} onPress={openCamera} />
+                    </View>
+                    <View style={styles.iconButtonStyle}>
+                      <IconButton
+                        icon={recording ? 'record-circle-outline' : 'microphone'}
+                        color={recording ? '#f80102' : colors.primary}
+                        size={24}
+                        onPress={recording ? stopRecording : startRecording}
+                      />
+                    </View>
+                  </View>
+                </View>
+                {/* {recordingURI && (
           <View
             style={{
               flexDirection: 'row',
@@ -1336,57 +1439,70 @@ const getProgress = () => {
             />
           </View>
         )} */}
-        {recordingURIs && recordingURIs.map((recording_url, index) => (
-          <View
-            key={recording_url}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <IconButton icon={!soundOnPause && soundUrl == recording_url ? "pause" : "play"} color={colors.primary} size={24} onPress={
-              () => soundUrl == recording_url ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(recording_url)
-            } />
-            <View style={styles_audio.container}>
-              <Animated.View style={[styles_audio.bar, { width: soundUrl == recording_url ? getProgress() ?? 0 : 0 }]} />
-            </View>
-            <Text
-              style={{
-                fontFamily: 'Poppins_400Regular',
-                fontSize: 12,
-                fontWeight: 'normal',
-                fontStyle: 'normal',
-                lineHeight: 18,
-                letterSpacing: 0,
-                textAlign: 'left',
-                color: '#707070',
-                marginVertical: 13,
-              }}
-            >
-              {`(${index+1})`}
-            </Text>
-            <Text 
-              style={{
-                fontFamily: 'Poppins_400Regular',
-                fontSize: 12,
-                fontWeight: 'normal',
-                fontStyle: 'normal',
-                lineHeight: 18,
-                letterSpacing: 0,
-                textAlign: 'left',
-                marginVertical: 13,
-                marginLeft: 7
-              }}
-              >{parseInt(String(soundUrl == recording_url && position ? position/1000 : 0))}</Text>
-            <IconButton
-              icon="close"
-              color={colors.error}
-              size={24}
-              onPress={() => reomveARecordingURI(recording_url)}
-            />
-          </View>
-        ))}
+                {recordingURIs && recordingURIs.map((recording_url, index) => (
+                  <View
+                    key={recording_url.uri}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <IconButton icon={!soundOnPause && soundUrl == recording_url.uri ? "pause" : "play"} color={colors.primary} size={24} onPress={
+                      () => soundUrl == recording_url.uri ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(recording_url.uri)
+                    } />
+                    <Text
+                      style={{
+                        fontFamily: 'Poppins_400Regular',
+                        fontSize: 12,
+                        fontWeight: 'normal',
+                        fontStyle: 'normal',
+                        lineHeight: 18,
+                        letterSpacing: 0,
+                        textAlign: 'left',
+                        marginVertical: 13,
+                        marginLeft: 7
+                      }}
+                    >{recording_url.duration}</Text>
+                    <View style={styles_audio.container}>
+                      <Animated.View style={[styles_audio.bar, { width: soundUrl == recording_url.uri ? getProgress() ?? 0 : 0 }]} />
+                    </View>
+                    <Text
+                      style={{
+                        fontFamily: 'Poppins_400Regular',
+                        fontSize: 12,
+                        fontWeight: 'normal',
+                        fontStyle: 'normal',
+                        lineHeight: 18,
+                        letterSpacing: 0,
+                        textAlign: 'left',
+                        color: '#707070',
+                        marginVertical: 13,
+                      }}
+                    >
+                      {`(${index + 1})`}
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: 'Poppins_400Regular',
+                        fontSize: 12,
+                        fontWeight: 'normal',
+                        fontStyle: 'normal',
+                        lineHeight: 18,
+                        letterSpacing: 0,
+                        textAlign: 'left',
+                        marginVertical: 13,
+                        marginLeft: 7
+                      }}
+                    >{parseInt(String(soundUrl == recording_url.uri && position ? position / 1000 : 0))}</Text>
+                    <IconButton
+                      icon="close"
+                      color={colors.error}
+                      size={24}
+                      onPress={() => reomveARecordingURI(recording_url.uri)}
+                    />
+                  </View>
+                ))}
 
 
 
@@ -1459,86 +1575,87 @@ const getProgress = () => {
                   style={{ marginTop: 10 }}
                   mode="outlined"
                   theme={theme}
+                  placeholder={t('comment_placeholder')}
                   onChangeText={onChangeResolution}
                 />
 
                 <View style={{ paddingHorizontal: 5 }}>
-          <Text
-            style={{
-              fontFamily: 'Poppins_400Regular',
-              fontSize: 12,
-              fontWeight: 'normal',
-              fontStyle: 'normal',
-              lineHeight: 18,
-              letterSpacing: 0,
-              textAlign: 'left',
-              color: '#707070',
-              marginVertical: 13,
-            }}
-          >
-            {t('step_2_share_pv')}
-          </Text>
-          <View style={{ flexDirection: 'row' }}>
-            {resolvePDF && (
-                <ImageBackground
-                  key={resolvePDF.id}
-                  source={resolvePDF.mimeType && resolvePDF.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: attachment.uri }}
-                  style={{
-                    height: 80,
-                    width: 80,
-                    marginHorizontal: 1,
-                    alignSelf: 'center',
-                    justifyContent: 'flex-end',
-                    marginVertical: 20,
-                  }}
-                >
-                  {resolvePDF.mimeType && resolvePDF.mimeType.includes('pdf') ? <TouchableOpacity
-                    onPress={() => showDoc(resolvePDF)}
+                  <Text
                     style={{
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: 60,
-                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                      fontFamily: 'Poppins_400Regular',
+                      fontSize: 12,
+                      fontWeight: 'normal',
+                      fontStyle: 'normal',
+                      lineHeight: 18,
+                      letterSpacing: 0,
+                      textAlign: 'left',
+                      color: '#707070',
+                      marginVertical: 13,
                     }}
                   >
-                    <Image
-                      resizeMode="stretch"
-                      style={{ width: 30, height: 30, borderRadius: 50 }}
-                      source={require('../../../../../assets/eye.png')}
-                    />
-                  </TouchableOpacity> : <></>}
-                  <TouchableOpacity
-                    onPress={() => { setResolvePDF() }}
+                    {t('step_2_share_pv')}
+                  </Text>
+                  <View style={{ flexDirection: 'row' }}>
+                    {resolvePDF && (
+                      <ImageBackground
+                        key={resolvePDF.id}
+                        source={resolvePDF.mimeType && resolvePDF.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: attachment.uri }}
+                        style={{
+                          height: 80,
+                          width: 80,
+                          marginHorizontal: 1,
+                          alignSelf: 'center',
+                          justifyContent: 'flex-end',
+                          marginVertical: 20,
+                        }}
+                      >
+                        {resolvePDF.mimeType && resolvePDF.mimeType.includes('pdf') ? <TouchableOpacity
+                          onPress={() => showDoc(resolvePDF)}
+                          style={{
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            height: 60,
+                            backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                          }}
+                        >
+                          <Image
+                            resizeMode="stretch"
+                            style={{ width: 30, height: 30, borderRadius: 50 }}
+                            source={require('../../../../../assets/eye.png')}
+                          />
+                        </TouchableOpacity> : <></>}
+                        <TouchableOpacity
+                          onPress={() => { setResolvePDF() }}
+                          style={{
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            height: 20,
+                            backgroundColor: 'rgba(255, 1, 1, 1)',
+                          }}
+                        >
+                          <Text style={{ color: 'white' }}>X</Text>
+                        </TouchableOpacity>
+                      </ImageBackground>
+                    )}
+                  </View>
+                  <View
                     style={{
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      height: 20,
-                      backgroundColor: 'rgba(255, 1, 1, 1)',
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
                     }}
                   >
-                    <Text style={{ color: 'white' }}>X</Text>
-                  </TouchableOpacity>
-                </ImageBackground>
-              )}
-          </View>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Button
-              theme={theme}
-              style={{ alignSelf: 'center' }}
-              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-              mode="contained"
-              onPress={() => {pickDocument(false, true)}}
-              uppercase={false}
-            >
-              {t('attach_pv')}
-            </Button>
-          </View>
-        </View>
+                    <Button
+                      theme={theme}
+                      style={{ alignSelf: 'center' }}
+                      labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+                      mode="contained"
+                      onPress={() => { pickDocument(false, true) }}
+                      uppercase={false}
+                    >
+                      {t('attach_pv')}
+                    </Button>
+                  </View>
+                </View>
 
               </>
             ) : (
@@ -1599,46 +1716,47 @@ const getProgress = () => {
           )}
         </Dialog>
       </Portal>
-          
+
       {/* Dialog NOt resolve */}
       <Portal>
         <Dialog visible={notResolveDialog} onDismiss={_hideNotresolveDialog}>
           <Dialog.Content>
-            
+
             <Paragraph>{t('record_not_resolve')}</Paragraph>
 
             <TextInput
-                multiline
-                style={{ marginTop: 10 }}
-                mode="outlined"
-                theme={theme}
-                onChangeText={onChangeNotResolutionComment}
-              />
+              multiline
+              style={{ marginTop: 10 }}
+              mode="outlined"
+              theme={theme}
+              placeholder={t('comment_placeholder')}
+              onChangeText={onChangeNotResolutionComment}
+            />
 
           </Dialog.Content>
-          
-            <Dialog.Actions>
-              <Button
-                theme={theme}
-                style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
-                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-                mode="contained"
-                onPress={_hideNotresolveDialog}
-              >
-                {t('cancel')}
-              </Button>
-              <Button
-                disabled={notResolutionComment === ''}
-                theme={theme}
-                style={{ alignSelf: 'center', margin: 24 }}
-                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-                mode="contained"
-                onPress={notResolve}
-              >
-                {t('submit')}
-              </Button>
-            </Dialog.Actions>
-            
+
+          <Dialog.Actions>
+            <Button
+              theme={theme}
+              style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
+              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+              mode="contained"
+              onPress={_hideNotresolveDialog}
+            >
+              {t('cancel')}
+            </Button>
+            <Button
+              disabled={notResolutionComment === ''}
+              theme={theme}
+              style={{ alignSelf: 'center', margin: 24 }}
+              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+              mode="contained"
+              onPress={notResolve}
+            >
+              {t('submit')}
+            </Button>
+          </Dialog.Actions>
+
         </Dialog>
       </Portal>
       {/* Dialog NOt resolve */}
