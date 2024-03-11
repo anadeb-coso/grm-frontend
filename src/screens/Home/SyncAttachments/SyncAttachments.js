@@ -131,7 +131,16 @@ function SyncAttachments({ navigation }) {
           selector: {
             type: 'issue',
             // 'reporter.id': eadl.docs[0].representative.id,
-            'assignee.id': eadl.representative.id,
+            // 'assignee.id': eadl.representative.id,
+            "$or": [
+              {
+                "assignee.id": eadl.representative.id
+              },
+              {
+                "reporter.id": eadl.representative.id
+              }
+                
+            ]
             // "$or": [
             //   {
             //     "reporter.id": eadl.docs[0].representative.id
@@ -145,18 +154,22 @@ function SyncAttachments({ navigation }) {
           for (let i = 0; i < res.docs.length; i++) {
             const attachments = res.docs[i]?.attachments;
             for (let k = 0; k < attachments?.length; k++) {
-              issuesAttachments.push({
-                attachment: attachments[k],
-                docId: res?.docs[i]?._id,
-              });
+              if(attachments[k].user_id == eadl.representative.id){
+                issuesAttachments.push({
+                  attachment: attachments[k],
+                  docId: res?.docs[i]?._id,
+                });
+              }
             }
 
             const reasons = res.docs[i]?.reasons;
             for (let index = 0; index < reasons?.length; index++) {
-              issuesAttachments.push({
-                attachment: reasons[index],
-                docId: res?.docs[i]?._id,
-              });
+              if(reasons[index].user_id == eadl.representative.id){
+                issuesAttachments.push({
+                  attachment: reasons[index],
+                  docId: res?.docs[i]?._id,
+                });
+              }
             }
 
             // console.log(res.docs[i].attachments)
@@ -237,7 +250,7 @@ function SyncAttachments({ navigation }) {
               },
             },
           );
-          
+          // console.log(response);
           if (response.status < 300) {
             return {};
           }
