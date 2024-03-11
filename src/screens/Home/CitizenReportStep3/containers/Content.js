@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
+import {
   Image, Platform, ScrollView, Text, View, ImageBackground, TouchableOpacity, ToastAndroid,
   StyleSheet, Animated
 } from 'react-native';
@@ -45,6 +45,7 @@ const styles_audio = StyleSheet.create({
 
 function Content({ issue, eadl, issues }) {
   const { t } = useTranslation();
+  let _index = 0;
 
   const dispatch = useDispatch();
   const getDBConfig = async () => {
@@ -95,7 +96,7 @@ function Content({ issue, eadl, issues }) {
   function removeAttachment(id) {
     setSoundOnPause(false);
     let elt = attachments.find(elt => elt.id == id);
-    if(elt && elt.isAudio){
+    if (elt && elt.isAudio) {
       stopASound();
     }
 
@@ -105,12 +106,12 @@ function Content({ issue, eadl, issues }) {
 
 
   const submitIssue = () => {
-    
+
     const isAssignee =
       issue.category?.assigned_department === eadl?.department
       && issue.administrative_region?.administrative_id === eadl?.administrative_region;
-      //  &&
-      // issue.category?.administrative_level === eadl?.administrative_level;
+    //  &&
+    // issue.category?.administrative_level === eadl?.administrative_level;
     // submit params
     const randomCodeNumber = Math.floor(Math.random() * 1000);
     // const newId = incrementId();
@@ -219,11 +220,11 @@ function Content({ issue, eadl, issues }) {
     setPosition(status.positionMillis);
     // setFinish(status.didJustFinish);
 
-    if(status.didJustFinish){
+    if (status.didJustFinish) {
       setSound(undefined);
       setSoundUrl(undefined);
     }
-}
+  }
 
   const stopASound = async () => {
     setSoundOnPause(false);
@@ -242,16 +243,16 @@ function Content({ issue, eadl, issues }) {
     await sound.playAsync();
   };
 
-  
+
   const playASound = async (sound_url) => {
     setSoundOnPause(false);
     // console.log("Loading Sound");
-    if(sound){
+    if (sound) {
       stopASound();
       setSound(undefined);
       setSoundUrl(undefined);
     }
-    
+
     const { sound } = await Audio.Sound.createAsync(
       { uri: sound_url },
       { shouldPlay: true },
@@ -261,28 +262,28 @@ function Content({ issue, eadl, issues }) {
     setSoundUrl(sound_url);
     // console.log("Playing Sound");
     await sound.playAsync();
-      
+
   };
 
-  
+
   const getProgress = () => {
     if (
-      sound === undefined || sound === null || 
-      duration === undefined || duration === null || 
+      sound === undefined || sound === null ||
+      duration === undefined || duration === null ||
       position === undefined || position === null) {
-        return 0;
+      return 0;
     }
 
     return (position / duration) * 150;
-}
+  }
 
   React.useEffect(
     () =>
       sound
         ? () => {
-            // console.log("Unloading Sound");
-            sound.unloadAsync();
-          }
+          // console.log("Unloading Sound");
+          sound.unloadAsync();
+        }
         : undefined,
     [sound]
   );
@@ -374,8 +375,9 @@ function Content({ issue, eadl, issues }) {
         {attachments &&
           attachments.length > 0 &&
           attachments.map((attachment, index) => {
-            if(attachment.isAudio){
-              return(
+            if (attachment.isAudio) {
+              _index++;
+              return (
                 <View
                   key={`${attachment.id} ${attachment.local_url}`}
                   style={{
@@ -406,39 +408,39 @@ function Content({ issue, eadl, issues }) {
                     {t('play_recorded_audio')} 
                   </Text> */}
                   <IconButton icon={!soundOnPause && soundUrl == attachment.local_url ? "pause" : "play"} color={colors.primary} size={24} onPress={
-              () => soundUrl == attachment.local_url ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(attachment.local_url)
-            } />
-            <View style={styles_audio.container}>
-              <Animated.View style={[styles_audio.bar, { width: soundUrl == attachment.local_url ? getProgress() ?? 0 : 0 }]} />
-            </View>
-            <Text
-              style={{
-                fontFamily: 'Poppins_400Regular',
-                fontSize: 12,
-                fontWeight: 'normal',
-                fontStyle: 'normal',
-                lineHeight: 18,
-                letterSpacing: 0,
-                textAlign: 'left',
-                color: '#707070',
-                marginVertical: 13,
-              }}
-            >
-              {`(${index+1})`}
-            </Text>
-            <Text 
-              style={{
-                fontFamily: 'Poppins_400Regular',
-                fontSize: 12,
-                fontWeight: 'normal',
-                fontStyle: 'normal',
-                lineHeight: 18,
-                letterSpacing: 0,
-                textAlign: 'left',
-                marginVertical: 13,
-                marginLeft: 7
-              }}
-              >{parseInt(String(soundUrl == attachment.local_url && position ? position/1000 : 0))}</Text>
+                    () => soundUrl == attachment.local_url ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(attachment.local_url)
+                  } />
+                  <View style={styles_audio.container}>
+                    <Animated.View style={[styles_audio.bar, { width: soundUrl == attachment.local_url ? getProgress() ?? 0 : 0 }]} />
+                  </View>
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins_400Regular',
+                      fontSize: 12,
+                      fontWeight: 'normal',
+                      fontStyle: 'normal',
+                      lineHeight: 18,
+                      letterSpacing: 0,
+                      textAlign: 'left',
+                      color: '#707070',
+                      marginVertical: 13,
+                    }}
+                  >
+                    {`(${_index})`}
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins_400Regular',
+                      fontSize: 12,
+                      fontWeight: 'normal',
+                      fontStyle: 'normal',
+                      lineHeight: 18,
+                      letterSpacing: 0,
+                      textAlign: 'left',
+                      marginVertical: 13,
+                      marginLeft: 7
+                    }}
+                  >{parseInt(String(soundUrl == attachment.local_url && position ? position / 1000 : 0))}</Text>
                   <IconButton
                     icon="close"
                     color={colors.error}
@@ -446,11 +448,11 @@ function Content({ issue, eadl, issues }) {
                     onPress={() => removeAttachment(attachment.id)}
                   />
                 </View>
-              )
+              );
             }
-            })
+          })
 
-          }
+        }
 
 
         {attachments &&
@@ -468,8 +470,8 @@ function Content({ issue, eadl, issues }) {
           //   />
           // ))
           attachments.map((attachment, index) => {
-            if(!attachment.isAudio){
-              return(
+            if (!attachment.isAudio) {
+              return (
                 <ImageBackground
                   key={`${attachment.id} ${attachment.local_url}`}
                   source={{ uri: attachment.local_url }}
@@ -495,9 +497,9 @@ function Content({ issue, eadl, issues }) {
                 </ImageBackground>
               )
             }
-            })
+          })
 
-          }
+        }
       </View>
       <View style={{ paddingHorizontal: 50 }}>
         <Button

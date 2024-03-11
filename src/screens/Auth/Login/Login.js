@@ -33,7 +33,7 @@ function Login() {
     const dbConfig = await getEncryptedData(
       `dbCredentials_${data?.password}_${data?.email.replace('@', '')}`
     );
-    console.log(dbConfig);
+    // console.log(dbConfig);
     if (dbConfig) {
       const { userDoc, userCommune } = await getUserDocs(data?.email);
       if (userDoc) {
@@ -47,7 +47,7 @@ function Login() {
       new API()
         .login({ email: data?.email, password: data?.password })
         .then(async (response) => {
-          console.log(response);
+          // console.log(response);
           if (response.error) {
             setLoading(false); //Hidd loading widget when the credentials are wrong
             return;

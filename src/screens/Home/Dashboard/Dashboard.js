@@ -11,7 +11,7 @@ const Dashboard = () => {
     (async () => {
       let { status } = await Location.requestPermissionsAsync();
       if (status !== "granted") {
-        console.log("Permission to access location was denied");
+        // console.log("Permission to access location was denied");
         return;
       }
     })();

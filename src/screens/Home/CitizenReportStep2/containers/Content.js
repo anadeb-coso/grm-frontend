@@ -2,9 +2,12 @@ import { useNavigation } from '@react-navigation/native';
 import { Audio } from 'expo-av';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSelector } from 'react-redux';
 import {
   ImageBackground,
   KeyboardAvoidingView,
@@ -14,9 +17,10 @@ import {
   Text,
   TouchableOpacity,
   View,
-  StyleSheet, 
+  StyleSheet,
   Animated,
   ToastAndroid,
+  Image
 } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Button, Checkbox, IconButton, TextInput } from 'react-native-paper';
@@ -25,6 +29,7 @@ import CustomDropDownPickerWithRender from '../../../../components/CustomDropDow
 import { colors } from '../../../../utils/colors';
 import { styles } from './Content.styles';
 import LoadingScreen from '../../../../components/LoadingScreen/LoadingScreen';
+import { formatDuration } from '../../../../utils/functions';
 
 const theme = {
   roundness: 12,
@@ -54,6 +59,7 @@ const styles_audio = StyleSheet.create({
 
 function Content({ stepOneParams, issueCategories, issueTypes }) {
   const { t } = useTranslation();
+  const { userDocument: eadl } = useSelector((state) => state.get('userDocument').toObject());
 
   const navigation = useNavigation();
   const [pickerValue, setPickerValue] = useState(null);
@@ -95,9 +101,9 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     () =>
       sound
         ? () => {
-            console.log("Unloading Sound");
-            sound.unloadAsync();
-          }
+          // console.log("Unloading Sound");
+          sound.unloadAsync();
+        }
         : undefined,
     [sound]
   );
@@ -113,6 +119,33 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     })();
   }, []);
 
+  const getImageDimensions = async (imageUri) => {
+    return new Promise((resolve, reject) => {
+      Image.getSize(
+        imageUri,
+        (width, height) => {
+          resolve({ width, height });
+        },
+        (error) => {
+          reject(error);
+        }
+      );
+    });
+  };
+
+  const getImageSize = async (imageUri) => {
+    let fileSizeInMB = 0;
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(imageUri);
+      const fileSizeInBytes = fileInfo.size;
+      fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
+      console.log('Image size:', fileSizeInMB, 'MB');
+    } catch (error) {
+      console.error('Error getting image size:', error);
+    }
+    return fileSizeInMB;
+  };
+
   const showDatePicker = () => {
     setDatePickerVisibility(true);
   };
@@ -127,7 +160,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   };
 
   const startRecording = async () => {
-    if (recordingURIs.length < 4){
+    if (recordingURIs.length < 4) {
       try {
         // console.log("Requesting permissions..");
         await Audio.requestPermissionsAsync();
@@ -144,7 +177,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
       } catch (err) {
         // console.error("Failed to start recording", err);
       }
-    }else{
+    } else {
       ToastAndroid.show(`${t('error_message_for_limit_audio')}`, ToastAndroid.SHORT);
     }
   };
@@ -153,8 +186,9 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     // console.log("Stopping recording..");
     await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
+    const d = await getAudioDuration(uri);
     setRecordingURI(uri);
-    setRecordingURIs([...recordingURIs, uri]);
+    setRecordingURIs([...recordingURIs, { uri: uri, duration: formatDuration(d) }]);
     setRecording(undefined);
     // console.log("Recording stopped and stored at", uri);
   };
@@ -164,7 +198,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   //   const { sound } = await Audio.Sound.createAsync({ uri: recordingURI });
   //   setSound(sound);
   //   setSoundUrl(recordingURI);
-    
+
   //   // console.log("Playing Sound");
   //   await sound.playAsync();
   // };
@@ -175,16 +209,16 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     setPosition(status.positionMillis);
     // setFinish(status.didJustFinish);
 
-    if(status.didJustFinish){
+    if (status.didJustFinish) {
       setSound(undefined);
       setSoundUrl(undefined);
     }
-}
+  }
 
   const playASound = async (sound_url) => {
     setSoundOnPause(false);
     // console.log("Loading Sound");
-    if(sound){
+    if (sound) {
       stopASound();
       setSound(undefined);
       setSoundUrl(undefined);
@@ -198,7 +232,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     setSoundUrl(sound_url);
     // console.log("Playing Sound");
     await sound.playAsync();
-      
+
   };
 
   const stopASound = async () => {
@@ -220,23 +254,45 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
 
   const reomveARecordingURI = (recording_url) => {
     setSoundOnPause(false);
-    if(soundUrl && recording_url == soundUrl){
+    if (soundUrl && recording_url == soundUrl) {
       stopASound();
     }
-    
-    setRecordingURIs(recordingURIs.filter((elt) => elt != recording_url));
+
+    setRecordingURIs(recordingURIs.filter((elt) => elt.uri != recording_url));
+
   }
 
   const getProgress = () => {
     if (
-      sound === undefined || sound === null || 
-      duration === undefined || duration === null || 
+      sound === undefined || sound === null ||
+      duration === undefined || duration === null ||
       position === undefined || position === null) {
-        return 0;
+      return 0;
     }
 
     return (position / duration) * 150;
-}
+  }
+
+  const getAudioDuration = async (sound_url) => {
+    const soundObject = new Audio.Sound();
+    let durationSecond;
+    try {
+      // Load the audio file (replace 'your-audio-file.mp3' with your actual file)
+      await soundObject.loadAsync({ uri: sound_url });
+
+      // Get the status of the audio
+      const status = await soundObject.getStatusAsync();
+
+      // Convert the duration from milliseconds to seconds
+      durationSecond = status.durationMillis / 1000;
+    } catch (error) {
+      console.error('Error loading audio:', error);
+    } finally {
+      // Unload the sound object to free up resources
+      await soundObject.unloadAsync();
+    }
+    return durationSecond;
+  };
 
 
   useEffect(() => {
@@ -250,6 +306,32 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     })();
   }, []);
 
+  const get_image_manipulate = async (localUri, width, height) => {
+    let manipResult;
+    const imageSize = await getImageSize(localUri);
+
+    if (!height || !width) {
+      const dimensions = await getImageDimensions(localUri);
+      width = width ?? dimensions.width;
+      height = height ?? dimensions.height;
+    }
+
+    if (imageSize && imageSize > 1) {
+      manipResult = await ImageManipulator.manipulateAsync(
+        localUri,
+        [{ resize: { width: width, height: height } }],
+        { compress: 0.2 }//, format: ImageManipulator.SaveFormat.PNG },
+      );
+
+    } else {
+      manipResult = await ImageManipulator.manipulateAsync(
+        localUri,
+        [{ resize: { width: width, height: height } }],
+        { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+      );
+    }
+    return manipResult;
+  }
   const openCamera = async () => {
     if (attachments.length < 3) {
       const result = await ImagePicker.launchCameraAsync({
@@ -260,45 +342,64 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
 
       if (!result.cancelled) {
         setLoading(true);
-        const manipResult = await ImageManipulator.manipulateAsync(
-          result.localUri || result.uri,
-          // [{ resize: { width: 1000, height: 1000 } }],
-          [{ resize: { 
-            width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000, 
-            height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000 
-          } 
-          }],
-          { compress: 1, format: ImageManipulator.SaveFormat.PNG }
+
+        let localUri = result.localUri || result.uri;
+        let manipResult = await get_image_manipulate(
+          localUri,
+          (result.assets && result.assets.length > 0) ? result.assets[0].width : null,
+          (result.assets && result.assets.length > 0) ? result.assets[0].height : null
         );
+
         setAttachments([...attachments, { ...manipResult, id: new Date() }]);
         setLoading(false);
       }
+    } else {
+      ToastAndroid.show(`${t('step_2_only_three_files')}`, ToastAndroid.SHORT);
     }
   };
 
-  
+
   const pickDocument = async (hasImage = false) => {
-    try {
-      // "image/*", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      const result = await DocumentPicker.getDocumentAsync({
-        type: hasImage ? [
-          "image/*", "application/pdf"
-        ] : [
-          "application/pdf"
-        ],
-        multiple: false,
-      });
-      if(result.type != "cancel"){
-        setLoading(true);
-        setAttachments([...attachments, { ...result, id: new Date() }]);
-        setLoading(false);
+    if (attachments.length < 3) {
+      try {
+        // "image/*", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        const result = await DocumentPicker.getDocumentAsync({
+          type: hasImage ? [
+            "image/*", "application/pdf"
+          ] : [
+            "application/pdf"
+          ],
+          multiple: false,
+        });
+        if (result.type != "cancel") {
+          setLoading(true);
+
+          let localUri = result.localUri || result.uri;
+          if (result.mimeType && result.mimeType.toLowerCase().includes('image')) {
+            let manipResult = await get_image_manipulate(
+              localUri,
+              (result.assets && result.assets.length > 0) ? result.assets[0].width : null,
+              (result.assets && result.assets.length > 0) ? result.assets[0].height : null
+            );
+            setAttachments([...attachments, { ...manipResult, id: new Date() }]);
+          } else {
+            setAttachments([...attachments, { ...result, id: new Date() }]);
+          }
+
+
+
+
+          setLoading(false);
+        }
+
+      } catch (err) {
+        console.warn(err);
       }
-      
-    } catch (err) {
-      console.warn(err);
+    } else {
+      ToastAndroid.show(`${t('step_2_only_three_files')}`, ToastAndroid.SHORT);
     }
 
-};
+  };
 
   const pickImage = async () => {
     pickDocument(true);
@@ -362,32 +463,38 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
           attachments:
             attachments.length > 0
               ? attachments.map((attachment) => ({
-                  url: '',
-                  id: attachment?.id,
-                  uploaded: false,
-                  local_url: attachment?.uri,
-                  name: attachment?.uri.split('/').pop(),
-                }))
+                url: '',
+                id: attachment?.id,
+                uploaded: false,
+                local_url: attachment?.uri,
+                name: attachment?.uri.split('/').pop(),
+                user_id: eadl?.representative?.id,
+                user_name: eadl?.representative?.name,
+              }))
               : undefined,
           recording: recordingURI
             ? {
-                url: '',
-                id: recordingURI.split('/').pop(),
-                uploaded: false,
-                local_url: recordingURI,
-                isAudio: true,
-                name: recordingURI.split('/').pop(),
-              }
+              url: '',
+              id: recordingURI.split('/').pop(),
+              uploaded: false,
+              local_url: recordingURI,
+              isAudio: true,
+              name: recordingURI.split('/').pop(),
+              user_id: eadl?.representative?.id,
+              user_name: eadl?.representative?.name,
+            }
             : undefined,
-          
-            recordings: recordingURIs.length != 0
+
+          recordings: recordingURIs.length != 0
             ? recordingURIs.map((recording_url) => ({
               url: '',
-              id: recording_url.split('/').pop(),
+              id: recording_url.uri.split('/').pop(),
               uploaded: false,
-              local_url: recording_url,
+              local_url: recording_url.uri,
               isAudio: true,
-              name: recording_url.split('/').pop(),
+              name: recording_url.uri.split('/').pop(),
+              user_id: eadl?.representative?.id,
+              user_name: eadl?.representative?.name,
             }))
             : [],
 
@@ -703,7 +810,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
 
 
 
-{/* recordingURIs.map((recording_url) => ({
+        {/* recordingURIs.map((recording_url) => ({
               url: '',
               id: recording_url.split('/').pop(),
               uploaded: false,
@@ -711,21 +818,34 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
               isAudio: true,
               name: recording_url.split('/').pop(),
             }) */}
-        
+
         {recordingURIs && recordingURIs.map((recording_url, index) => (
           <View
-            key={recording_url}
+            key={recording_url.uri}
             style={{
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <IconButton icon={!soundOnPause && soundUrl == recording_url ? "pause" : "play"} color={colors.primary} size={24} onPress={
-              () => soundUrl == recording_url ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(recording_url)
+            <IconButton icon={!soundOnPause && soundUrl == recording_url.uri ? "pause" : "play"} color={colors.primary} size={24} onPress={
+              () => soundUrl == recording_url.uri ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(recording_url.uri)
             } />
+            <Text
+              style={{
+                fontFamily: 'Poppins_400Regular',
+                fontSize: 12,
+                fontWeight: 'normal',
+                fontStyle: 'normal',
+                lineHeight: 18,
+                letterSpacing: 0,
+                textAlign: 'left',
+                marginVertical: 13,
+                marginLeft: 7
+              }}
+            >{recording_url.duration}</Text>
             <View style={styles_audio.container}>
-              <Animated.View style={[styles_audio.bar, { width: soundUrl == recording_url ? getProgress() ?? 0 : 0 }]} />
+              <Animated.View style={[styles_audio.bar, { width: soundUrl == recording_url.uri ? getProgress() ?? 0 : 0 }]} />
             </View>
             <Text
               style={{
@@ -740,9 +860,9 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                 marginVertical: 13,
               }}
             >
-              {`(${index+1})`}
+              {`(${index + 1})`}
             </Text>
-            <Text 
+            <Text
               style={{
                 fontFamily: 'Poppins_400Regular',
                 fontSize: 12,
@@ -754,12 +874,12 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                 marginVertical: 13,
                 marginLeft: 7
               }}
-              >{parseInt(String(soundUrl == recording_url && position ? position/1000 : 0))}</Text>
+            >{parseInt(String(soundUrl == recording_url.uri && position ? position / 1000 : 0))}</Text>
             <IconButton
               icon="close"
               color={colors.error}
               size={24}
-              onPress={() => reomveARecordingURI(recording_url)}
+              onPress={() => reomveARecordingURI(recording_url.uri)}
             />
           </View>
         ))}
@@ -767,7 +887,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
 
         <View style={{ paddingHorizontal: 50 }}>
           <Button
-            disabled={!additionalDetails}
+            disabled={!additionalDetails || !date || !pickerValue2}
             theme={theme}
             style={{ alignSelf: 'center', margin: 24 }}
             labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
