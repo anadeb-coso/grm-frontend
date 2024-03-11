@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 export default function ListHeader(props) {
   const { t } = useTranslation();
-  console.log({ props });
+  // console.log({ props });
   return (
     <View>
       <View
@@ -17,10 +17,10 @@ export default function ListHeader(props) {
             width: 0,
             height: 3,
           },
-          shadowRadius: 15,
-          shadowOpacity: 1,
-          margin: 17,
-          padding: 10,
+          // shadowRadius: 15,
+          // shadowOpacity: 1,
+          marginHorizontal: 17,
+          paddingHorizontal: 10,
         }}
       >
         {/* <Text

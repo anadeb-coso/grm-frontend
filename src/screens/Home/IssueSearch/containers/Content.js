@@ -6,8 +6,10 @@ import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'r
 import { ToggleButton } from 'react-native-paper';
 import { colors } from '../../../../utils/colors';
 import ListHeader from '../components/ListHeader';
+import SearchBar from "../../../../components/Search/SearchBar";
+import CustomDropDownPickerWithRender from '../../../../components/CustomDropDownPicker/CustomDropDownPickerWithRender';
 
-function Content({ issues, eadl, statuses }) {
+function Content({ issues, eadl, statuses, issueCategories }) {
   const { t } = useTranslation();
 
   const navigation = useNavigation();
@@ -15,6 +17,10 @@ function Content({ issues, eadl, statuses }) {
   const [status, setStatus] = useState('assigned');
   const [_issues, setIssues] = useState([]);
   const [filteredIssues, setFilteredIssues] = useState({});
+  const [__issues, set_Issues] = useState([]);
+  
+  const [pickerValue2, setPickerValue2] = useState(null);
+  const [items2, setItems2] = useState(issueCategories ?? []);
 
   useEffect(() => {
     setIssues(issues);
@@ -110,6 +116,7 @@ function Content({ issues, eadl, statuses }) {
         selectedTabIssues = _issues.map((issue) => issue);
     }
     setIssues(selectedTabIssues);
+    set_Issues(selectedTabIssues);
   }, [status, issues, statuses, eadl.representative?.id]);
 
   function Item({ item, onPress, backgroundColor, textColor }) {
@@ -194,6 +201,62 @@ function Content({ issues, eadl, statuses }) {
       seeAllIssues={eadl.administrative_region == "1"}
     />
   );
+
+
+  //Search
+  const [searchPhrase, setSearchPhrase] = useState("");
+  const [clicked, setClicked] = useState(false);
+
+  const check_character = (liste, elt) => {
+    let l;
+    let eltUpper = elt.toUpperCase();
+    for(let i=0; i<liste.length; i++){
+      l = liste[i];
+      if(l && eltUpper.includes(l)){
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const onChangeSearchFunction = async (searchPhraseCopy = searchPhrase) => {
+    let issuessSearch = [];
+    if(searchPhrase && searchPhraseCopy.trim()){
+      set_Issues([]);
+      let _ = [..._issues];
+      let elt;
+      let searchPhraseSplit = [searchPhraseCopy.toUpperCase().trim()] //.split(" "); //.replace(/\s/g, "").split(" ");
+      console.log(searchPhraseSplit)
+      for(let i=0; i<_.length; i++){
+        elt = _[i];
+        if(
+          (elt && elt.tracking_code && check_character(searchPhraseSplit, elt.tracking_code)) || 
+          (elt && elt.internal_code && check_character(searchPhraseSplit, elt.internal_code)) || 
+          (elt && elt.description && check_character(searchPhraseSplit, elt.description)) || 
+          (elt && elt.category && elt.category.name && check_character(searchPhraseSplit, elt.category.name)) || 
+          (elt && elt.category && elt.category.id && check_character(searchPhraseSplit, String(elt.category.id))) ||
+          (elt && elt.administrative_region && elt.administrative_region.name && check_character(searchPhraseSplit, elt.administrative_region.name))
+          ){
+          issuessSearch.push(elt);
+        }
+      }
+      set_Issues(issuessSearch);
+    }else{
+      set_Issues(_issues);
+      issuessSearch = _issues;
+    }
+    return issuessSearch;
+  };
+
+  const onSearchIssuesByCategory = async (category) => {
+    let issuessSearch = await onChangeSearchFunction();
+    let _ = [...issuessSearch];
+    issuessSearch = _.filter(issue => issue.category && issue.category.id === category.id);
+    set_Issues(issuessSearch)
+  }
+  //End Search
+
+
   return (
     <>
       <ToggleButton.Row
@@ -248,9 +311,47 @@ function Content({ issues, eadl, statuses }) {
           value="rejected"
         /> */}
       </ToggleButton.Row>
+
+      
+      <View style={{flexDirection: 'row'}}>
+      <View style={{flex: 0.8}}>
+      <SearchBar
+            searchPhrase={searchPhrase}
+            setSearchPhrase={setSearchPhrase}
+            clicked={clicked}
+            setClicked={setClicked}
+            onChangeFunction={(v) => {
+              setPickerValue2(null);
+              onChangeSearchFunction(v);
+            }}
+          />
+      </View>
+      <View style={{flex: 0.2}}>
+          <CustomDropDownPickerWithRender
+            schema={{
+              label: 'id',
+              value: 'id',
+              id: 'id',
+              confidentiality_level: 'confidentiality_level',
+              assigned_department: 'assigned_department',
+            }}
+            placeholder={'Cat'}
+            value={pickerValue2}
+            items={issueCategories}
+            setPickerValue={setPickerValue2}
+            setItems={setItems2}
+            onSelectItem={onSearchIssuesByCategory}
+            zIndex={5}
+            customDropdownWrapperStyle={{marginTop: 5, marginHorizontal: 0}}
+          />
+      </View>
+      </View>
+
+
+
       <FlatList
         style={{ flex: 1 }}
-        data={_issues}
+        data={__issues}
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         keyExtractor={(item) => item._id}

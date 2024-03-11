@@ -62,9 +62,9 @@ function SyncDatas({ navigation }) {
             await new API()
               .sync_datas({issues: issues, email: eadl.representative.email})
               .then(response => {
-                console.log(response.status);
-                if (!response.status || response.status != 'ok') {
-                  console.error(response.error);
+                // console.log(response.status != 'ok');
+                if (response.status != 'ok') {
+                  // console.error(response.error);
                   setErrorVisible(true);
                 }else if (response.has_error) {
                   succes = true;

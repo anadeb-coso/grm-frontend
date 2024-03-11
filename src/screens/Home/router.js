@@ -32,6 +32,7 @@ import WorkInProgress from './WorkInProgress';
 import CitizenReportLocationStep from './CitizenReportLocationStep/CitizenReportLocationStep';
 import IssueActions from './IssueActions/IssueActions';
 import IssueHistory from './IssueHistory/IssueHistory';
+import IssuesStatistic from './Statistic';
 
 const iconConfig = {
   focused: {
@@ -179,6 +180,11 @@ function DashboardStackScreen() {
         name="SyncDatas"
         component={SyncDatas}
         options={({ navigation, route }) => customHeaderOptions(t('sync_datas_abbreviation'))}
+      />
+      <HomeStack.Screen
+        name="IssuesStatistic"
+        component={IssuesStatistic}
+        options={({ navigation, route }) => customHeaderOptions(t('diagnostics'))}
       />
       {/* <HomeStack.Screen name="Details" component={WorkInProgress} /> */}
     </HomeStack.Navigator>
