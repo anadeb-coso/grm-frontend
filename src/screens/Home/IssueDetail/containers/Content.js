@@ -134,7 +134,7 @@ function Content({ issue }) {
     setVillages(null);
     new API().administrativeLevelsFilterByAdministrativeRegion(username, userCommune.administrative_id, {}).then((response) => {
       if (response.error) {
-        console.log(response.error);
+        // console.log(response.error);
         Alert.alert('Warning', response?.error?.toString(), [{ text: 'OK' }], {
           cancelable: false,
         });
@@ -163,7 +163,6 @@ function Content({ issue }) {
         }
       }
     }).catch((error) => {
-      console.log("7777777777777777777777777777");
       console.log(error);
     });
 
@@ -187,7 +186,7 @@ function Content({ issue }) {
       ));
 
       if (!userCommune) {
-        console.log(username)
+        // console.log(username)
         const { userDoc, userCommune: usrC } = await getUserDocs(username);
         if (userDoc) {
           dispatch(setDocument(userDoc)); // Dispatch setDocument action
@@ -413,6 +412,26 @@ function Content({ issue }) {
 
     return (position / duration) * 150;
   }
+  const getAudioDuration = async (sound_url) => {
+    const soundObject = new Audio.Sound();
+    let durationSecond;
+    try {
+      // Load the audio file (replace 'your-audio-file.mp3' with your actual file)
+      await soundObject.loadAsync({ uri: sound_url });
+  
+      // Get the status of the audio
+      const status = await soundObject.getStatusAsync();
+      
+      // Convert the duration from milliseconds to seconds
+      durationSecond = status.durationMillis / 1000;
+    } catch (error) {
+      console.error('Error loading audio:', error);
+    } finally {
+      // Unload the sound object to free up resources
+      await soundObject.unloadAsync();
+    }
+    return durationSecond;
+  };
 
   const onAddComment = () => {
     if (newComment) {
