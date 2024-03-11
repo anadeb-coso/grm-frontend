@@ -46,7 +46,8 @@ class API {
 
 
   async administrativeLevelsFilterByAdministrativeRegion(username, administrative_region, filter) {
-    console.log(username);
+    // console.log(username);
+    // console.log(baseURL)
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
     d = ""

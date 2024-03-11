@@ -15,7 +15,7 @@ const couchDBURLBase = "http://54.183.195.20:5984";
 // const couchDBURLBase = "http://10.0.2.2:5984";
 export { couchDBURLBase };
 
-const LocalDatabase = new PouchDB('eadl', {
+export const LocalDatabase = new PouchDB('eadl', {
   adapter: 'asyncstorage',
 });
 
@@ -99,9 +99,17 @@ export const SyncToRemoteDatabase = async ({ username, password }, userEmail) =>
   // });
   const syncStates = ['change', 'paused', 'active', 'denied', 'complete', 'error'];
   syncStates.forEach((state) => {
-    sync.on(state, (currState) => console.log(`[Sync EADL: ]`));
+    sync.on(state, (currState) => {
+      if (__DEV__) {
+        console.log(`[Sync EADL: ]`);
+      }
+    });
 
-    syncGRM.on(state, (currState) => console.log(`[Sync GRM: ]`));
+    syncGRM.on(state, (currState) => {
+      if (__DEV__) {
+        console.log(`[Sync GRM: ]`);
+      }
+    });
 
     // syncADMINLEVEL.on(state, (currState) => console.log(`[Sync GRM: ]`));
   });
@@ -157,13 +165,13 @@ export const getUserDocs = async (email) => {
   userCommune = await getData('userCommune');
 
   if (userDoc && userCommune && JSON.parse(userDoc) !== null && JSON.parse(userCommune) !== null) {
-    console.log(
-      'Returning',
-      JSON.parse(userDoc),
-      userCommune,
-      userDoc !== null,
-      userCommune !== null
-    );
+    // console.log(
+    //   'Returning',
+    //   JSON.parse(userDoc),
+    //   userCommune,
+    //   userDoc !== null,
+    //   userCommune !== null
+    // );
     return { userDoc: JSON.parse(userDoc), userCommune: JSON.parse(userCommune) };
   }
   const getUserDoc = await fetchDocumentsByFilter("eadls", {

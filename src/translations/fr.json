@@ -19,6 +19,12 @@
   "logout": "Se déconnecter",
   "signup": "S'enregistrer",
   "privacy_policy": "Politique de confidentialité",
+  "number_issues_saved": "Nombre de plaintes enregistrées",
+  "number_issues_in_follow_up": "Nombre de plaintes en cours de suivi",
+  "number_issues_tracked": "Nombre de plaintes suivies",
+  "number_issues_tracked_and_resolved": "Nombre de plaintes suivies et résolues",
+  "my_statistics": "Mes statistiques",
+  "my_localities": "Mes localités",
   //GRM
   "diagnostics": "Statistiques",
   "information": "Information",
@@ -94,6 +100,7 @@
   "step_2_citizen_or_group_label": "Type de plaignant",
   "step_2_citizen_or_group_individual": "Individuel",
   "step_2_citizen_or_group_group": "Groupe",
+  "step_2_only_three_files": "Vous ne pouvez que joindre 3 fichiers",
 
 
   //step 3
@@ -190,6 +197,7 @@
   "me": "Moi",
   "issues": "Plaintes",
   "escalate_to_label": "au niveau",
+  "search_label": "Rechercher...",
 
   // issue detail
   "are_you_accepting": "Acceptez-vous qu'il s'agisse d'une plainte / demande liée au projet ?",
@@ -244,6 +252,11 @@
   "file_read_error": "Impossible de lire tous les fichiers.",
   "file_read_error_try_again": "Impossible de lire tous les fichiers. Réessayez.",
   "error_message_for_limit_audio": "Vous n'avez que la possibilité de joindre quatre audios.",
-  "error_message_for_auth": "Nous n'arrivons pas avoir vos informations sur le serveur."
+  "error_message_for_auth": "Nous n'arrivons pas avoir vos informations sur le serveur.",
+
+
+  //statistics
+  "statistics": "Statistiques",
+  "number_issues_not_opened": "Nombre de plaintes non ouvertes"
 
 }

@@ -19,6 +19,12 @@
 	"logout": "Sohoka",
 	"signup": "Iyandikishe",
 	"privacy_policy": "Privacy policy", //to complete
+	"number_issues_saved": "Number of complaints recorded", //to complete
+	"number_issues_in_follow_up": "Number of complaints in follow-up", //to complete
+	"number_issues_tracked": "Number of complaints tracked", //to complete
+	"number_issues_tracked_and_resolved": "Number of complaints tracked and resolved", //to complete
+	"my_statistics": "My statistics", //to complete
+	"my_localities": "My localities", //to complete
 	//GRM
 	"diagnostics": "Isuzumabikorwa",
 
@@ -135,6 +141,7 @@
 	"step_2_citizen_or_group_label": "Complainant type", //to complete
 	"step_2_citizen_or_group_individual": "Individual", //to complete
 	"step_2_citizen_or_group_group": "Group", //to complete
+	"step_2_only_three_files": "You can only attach 3 files", //to complete
 
 
 	//step 3
@@ -268,6 +275,7 @@
 	"me": "Me", //to complete
 	"issues": "Issues", //to complete
 	"escalate_to_label": "at level", //to complete
+	"search_label": "Search...", //to complete
 
 	// issue detail
 	"are_you_accepting": "Uremera ko iki kibazo kijyanye n'uyu mushinga?",
@@ -322,6 +330,11 @@
   "file_read_error": "Cannot read all the files.", //to complete
   "file_read_error_try_again": "Cannot read all the files. try again.", //to complete
   "error_message_for_limit_audio": "You only have the option of attaching four audios.", //to complete
-  "error_message_for_auth": "We can't get your information on the server." //to complete
+  "error_message_for_auth": "We can't get your information on the server.", //to complete
+
+
+  //statistics
+  "statistics": "Statistics", //to complete
+  "number_issues_not_opened": "Number of complaints not opened" //to complete
 
 }

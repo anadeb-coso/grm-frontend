@@ -19,6 +19,12 @@
   "logout": "logout",
   "signup": "Sign Up",
   "privacy_policy": "Privacy policy",
+  "number_issues_saved": "Number of complaints recorded",
+  "number_issues_in_follow_up": "Number of complaints in follow-up",
+  "number_issues_tracked": "Number of complaints tracked",
+  "number_issues_tracked_and_resolved": "Number of complaints tracked and resolved",
+  "my_statistics": "My statistics",
+  "my_localities": "My localities",
   //GRM
   "diagnostics": "Diagnostics",
   "information": "Information",
@@ -95,6 +101,7 @@
   "step_2_citizen_or_group_label": "Complainant type",
   "step_2_citizen_or_group_individual": "Individual",
   "step_2_citizen_or_group_group": "Group",
+  "step_2_only_three_files": "You can only attach 3 files",
 
 
   //step 3
@@ -188,6 +195,7 @@
   "me": "Me",
   "issues": "Issues",
   "escalate_to_label": "at level",
+  "search_label": "Search...",
 
   // issue detail
   "are_you_accepting": "Are you accepting this is a grievance relevant to the project?",
@@ -242,6 +250,10 @@
   "file_read_error": "Cannot read all the files.",
   "file_read_error_try_again": "Cannot read all the files. try again.",
   "error_message_for_limit_audio": "You only have the option of attaching four audios.",
-  "error_message_for_auth": "We can't get your information on the server."
+  "error_message_for_auth": "We can't get your information on the server.",
 
+
+  //statistics
+  "statistics": "Statistics",
+  "number_issues_not_opened": "Number of complaints not opened"
 }
