@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, ToastAndroid } from 'react-native';
-import { ActivityIndicator } from 'react-native-paper';
+import { SafeAreaView, ToastAndroid, RefreshControl, ScrollView } from 'react-native';
+import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import { useSelector, useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import NetInfo from '@react-native-community/netinfo';
 import { colors } from '../../../utils/colors';
 import { LocalGRMDatabase } from '../../../utils/databaseManager';
 import { styles } from './IssueSearch.style';
@@ -16,8 +17,15 @@ function IssueSearch() {
   const customStyles = styles();
   const [issues, setIssues] = useState();
   const [statuses, setStatuses] = useState();
-  
-  
+  const [issueCategories, setIssueCategories] = useState();
+
+  const [refreshing, setRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+  const [connected, setConnected] = useState(true);
+  const [errorVisible, setErrorVisible] = React.useState(false);
+  const onDismissSnackBar = () => setErrorVisible(false);
+
+
   const dispatch = useDispatch();
   const getDBConfig = async () => {
     const password = await getEncryptedData('userPassword');
@@ -54,10 +62,22 @@ function IssueSearch() {
       .catch((err) => {
         alert(`Unable to retrieve statuses. ${JSON.stringify(err)}`);
       });
+
+
+      LocalGRMDatabase.find({
+        selector: { type: "issue_category" },
+      })
+        .then(function (result) {
+          setIssueCategories((result?.docs ?? []).filter((obj) => !([4, 7].includes(obj.id))));
+        })
+        .catch(function (err) {
+          console.log(err);
+        });
+
   }, []);
 
-  useEffect(() => {
-    // FETCH ISSUE CATEGORY
+  const get_issues = () => {
+    setIssues([]);
     if (eadl && eadl.representative) {
       let selector = {
         type: 'issue',
@@ -72,12 +92,12 @@ function IssueSearch() {
           }
         ]
       }
-      if(eadl.administrative_region == "1" && eadl.representative.groups  && (eadl.representative.groups.includes("ViewerOfAllIssues") || eadl.representative.groups.includes("Admin"))){
+      if (eadl.administrative_region == "1" && eadl.representative.groups && (eadl.representative.groups.includes("ViewerOfAllIssues") || eadl.representative.groups.includes("Admin"))) {
         selector = {
           type: 'issue',
           confirmed: true
         }
-      }else if(eadl.administrative_region == "1"){
+      } else if (eadl.administrative_region == "1") {
         selector = {
           type: 'issue',
           confirmed: true,
@@ -91,27 +111,68 @@ function IssueSearch() {
         .then((result) => {
           let docs = result?.docs ?? [];
           docs.sort((a, b) => {
-            if(a.created_date && b.created_date){
+            if (a.created_date && b.created_date) {
               return a.created_date < b.created_date ? 1 : -1; // descending
               // return a.created_date > b.created_date ? 1 : -1; // ascending
             }
           });
 
 
-          setIssues(result?.docs);
+          // setIssues(result?.docs);
+          setIssues(docs);
+          setRefreshing(false);
         })
         .catch((err) => {
           console.log(err);
+          setRefreshing(false);
         });
     }
+  }
+  useEffect(() => {
+    // FETCH ISSUE CATEGORY
+    get_issues();
   }, [eadl]);
 
-  if (!issues)
+
+  const check_network = async () => {
+    NetInfo.fetch().then((state) => {
+      if (!state.isConnected) {
+        setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+        setErrorVisible(true);
+        setConnected(false);
+      }
+    });
+  }
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setConnected(true);
+    await check_network();
+    //Get Issues
+    get_issues();
+    //End Get Issues
+
+  };
+
+
+
+  if (!issues || refreshing || !issueCategories)
     return <ActivityIndicator style={{ marginTop: 50 }} color={colors.primary} size="small" />;
+
+  console.log(issueCategories)
   return (
-    <SafeAreaView style={customStyles.container}>
-      <Content issues={issues} eadl={eadl} statuses={statuses} />
-    </SafeAreaView>
+    <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}  style={customStyles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
+      <SafeAreaView>
+
+        <Content issues={issues} eadl={eadl} statuses={statuses} issueCategories={issueCategories} />
+
+        <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
+          {errorMessage}
+        </Snackbar>
+      </SafeAreaView>
+    </ScrollView>
   );
 }
 
