@@ -1,0 +1,389 @@
+{
+	//Headers
+	"citizen_input_header": "Kwakira ikibazo",
+	"summary_of_your_work": "Incamake",
+	//Onboarding
+	"used_app_before": "Wigeze ukoresha iyi porogaramu mbere?",
+	"yes": "YEGO",
+	"no": "OYA",
+	"welcome_login": "Murakaza Neza! Injirira hano.",
+	"email": "Imeri",
+	"password": "Ijambo ry'ibanga",
+	"login": "Injira",
+	"email_provided": "Shyiramo imeri wahawe n'ukuyobora kandi ukoreshe n'ijambo ry'ibanga uzajya wibuka",
+	"choose_password": "Hitamo ijambo ry'ibanga",
+	"enter_new_password": "Shyiramo Ijambo ry'ibanga.  Rigomba kuba rigizwe byibura n'inyuguti 8", // , including at least one letter and one number. \n- Only numbers and letters are accepted. //to complete 
+	"last_validation": "Igenzura rya nyuma!",
+	"please_enter_code": "Shyiramo imibare wahawe n'umushinga",
+	"account_create_success": "Konti yawe yafunguwe neza!",
+	"logout": "Sohoka",
+	"signup": "Iyandikishe",
+	"privacy_policy": "Privacy policy", //to complete
+	"number_issues_saved": "Number of complaints recorded", //to complete
+	"number_issues_in_follow_up": "Number of complaints in follow-up", //to complete
+	"number_issues_tracked": "Number of complaints tracked", //to complete
+	"number_issues_tracked_and_resolved": "Number of complaints tracked and resolved", //to complete
+	"my_statistics": "My statistics", //to complete
+	"my_localities": "My localities", //to complete
+	"operate_country": "You operate throughout the country.", //to complete
+	//GRM
+	"diagnostics": "Isuzumabikorwa",
+
+	"information": "Amakuru",
+
+	"collect_reports": "Gukusanya raporo",
+
+	"search_reports": "Shakisha raporo",
+
+	"sync_files": "Guhuza dosiye",
+	"sync_in_progress": "Synchronizing...", //to complete
+	"synchronized": "Synchronized", //to complete
+	"waiting_for_synchronization": "Waiting for synchronization", //to complete
+	"sync_datas": "Sync Datas", //to complete
+	"sync_files_abbreviation": "Sync Files", //to complete
+	"sync_datas_abbreviation": "Sync Datas", //to complete
+  	"sync": "Sync", //to complete
+  	"starting_download": "Starting the download", //to complete
+ 	"downloaded_file": "Downloaded file", //to complete
+	"sync_datas_text": "This page is at your disposal for manual data synchronization, to avoid data loss in the event of non-synchronization.", //to complete
+
+	//GRM-Intro
+	"intro_text_0": "Icyitonderwa ku bakangurambaga: ",
+
+	"intro_text_1": "Kuvuga ingingo zifasha abenegihugu gushyira mu ngiro. Mu gutangira, reka abantu bamenye ibi bikurikira:",
+
+	"intro_text_2": "Mbashimiye ibitekerezo muduhaye mutugaragariza  ibikorwa neza n'ibitagenda neza mu mushinga wacu.  uru rutonde rw'ibibazo rugizwe n'ibice 6. Biri bwihute kandi biraba byoroshye. Mbere yo gutangira hari ibintu bike mugomba kumenya.",
+
+	"intro_text_3": "Mwemerewe kudatanga umwirondoro wanyu niba mubishaka, Gusa kuduha amakuru ni ingenzi mu kubafasha gukemura ikibazo cyanyu",
+
+	"intro_text_4": "Amakuru yose muduha aradufasha kubasha kumva no gukemura ikibazo mufite. ariko ntibibahangayikishe niba ntacyo mwaba mwibuka.",
+
+	"intro_text_5": "Ikibazo cyawe kirabikwa muri sisiteme kandi kizakemurwa na komite nkemurampaka(GRC) mu minsi mike",
+
+	"intro_text_6": "Tugerageza gukemura ibibazo mwatugejejeho mugihe cy’iminsi {x}.",
+
+	//step 1
+	"welcome_citizen_input": "Murakaza neza!",
+
+	"step_1_subtitle": "Duha agaciro gakomeye ibyo mutugezaho, kandi twiuza gukorana mu gukemura ikibazo icyo aricyo cyose cyangwa mu kunoza umurimo wacu",
+
+	"step_1": "Intambwe ya 1",
+
+	"stay_touch_question": "Uburyo buhari  bw’itumanaho",
+
+	"step_1_hint_1": "Umukangurambaga:”Niba ubyifuza, dushobora kukugezaho amakuru ku kibazo cyanyu dukoresheje imeri, ubutumwa bugufi kuri telephone cyangwa watsapu. Ariko niba udashaka kugaragaza imyirondoro, turaguha kodi wakoresha ukurikirana ikibazo cyawe cyangwa se ukaba waza kundeba nkagufasha. Ushaka gukoresha ubuhe buryo?”",
+
+	"step_1_option_1": "Kutagaragaza imyirondoro",
+
+	"step_1_option_2": " Kwakira amakuru ku kibazo binyuze k'umukangurambaga",
+
+	"step_1_option_3": "Kohererezwa amakuru",
+
+	"step_1_method_1": " Ubutumwa bugufi (Text / SMS)",
+
+	"step_1_method_2": "WhatsApp",
+
+	"step_1_method_3": "Imeri",
+	"step_1_method_4": "Phone call", //to complete
+	"step_1_method_5": "By letter (correspondence)", //to complete
+
+	"step_1_placeholder_1": "Uburyo bw’itumanaho",
+
+	"step_1_placeholder_2": " Injiza umwirondoro hano",
+
+	//contact step
+	"contact_step_title": "Imyirondoro",
+
+	"contact_step_subtitle": "Izina ry’umuntu cyangwa itsinda",
+
+	"contact_step_explanation": "Umukangurambaga ku muntu utifuza gutangaza imyirondoro ye: “Wifuje kudatangaza imyirondoro yawe, niyo mpamvu ngiye kwandika “Anonymous” hano” \n\n Umukangurambaga kubifuza ko imyirondoro yabo itangazwa: “Ngiye kwandika izina ryawe hano”",
+
+	"contact_step_placeholder_1": "Injiza izina ry’ufite ikibazo",
+
+	"contact_step_placeholder_2": "Injiza ikiciro cy'imyaka (Singombwa)",
+
+	"contact_step_placeholder_3": "Hitamo igitsina (Singombwa)",
+
+	"contact_step_placeholder_4": "Uyu muntu ari kuzuriza ikibazo undi muntu.",
+
+	//step 2//step 2
+	"step_2": "Intambwe ya 2",
+
+	"step_2_select_date": "Kanda hano uhitemo itariki",
+
+	"step_2_subtitle": "Ikibazo cyangwa ibisubizo muburyo burambuye",
+
+	"step_2_explanation": "Umukangurambaga: “Nshaka kwandika itariki ibi byabereye. Niba utibuka itariki neza ntuhangayike ikibazo cyawe kizakuriranwa”",
+
+	"step_2_ongoing_hint": "Byabaye inshuro nyinshi zitandukanye?",
+	
+	// "step_2_ongoing_hint": "On going event",
+	"step_2_recurrence": "Event has occurred several times", //to complete
+
+	"step_2_set_today": "Itariki y'uyu munsi",
+
+	"step_2_placeholder_1": "Ni ayahe makuru uzanye?",
+
+	"step_2_placeholder_2": "Hitamo ubwoko bw'ikibazo",
+
+	"step_2_placeholder_3": "Andika ikibazo mu magambo make",
+
+	"step_2_placeholder_4": "Tanga andi makuru y'ingenzi kuri iki kibazo",
+
+	"step_2_share_photos": "Shyiraho amafoto yangwa amajwi nk'ibimemyetso cg ibisobanuro", //video, 
+	"step_2_share_pv": "Share the supporting reconciliation minutes as proof or clarification.\n", //to complete
+	"step_2_share_pv_escalate": "Share supporting transfer certificate as proof or clarification.\n", //to complete
+
+	"step_2_upload_attachment": "Hitamo ifoto",
+
+	"step_2_keep_name_confidential": "Hisha amazina yanjye. (Keretse umuntu uzakemura iki kibazo niwe gusa uzabona amazina).",
+	"step_2_on_behalf_of_someone": "Ikibazo gitanzwe n'umuntu uhagarariye undi.",
+	"step_2_organization_behalf_someone": "Ikibazo gitanzwe n'itsinda rihagarariye undi muntu.",
+
+	"step_2_structure_in_charge": "Structure in charge", //to complete
+	"step_2_structure_in_charge_name": "Name of structure in charge of this issue", //to complete
+	"step_2_structure_in_charge_phone": "Phone number of the structure", //to complete
+	"step_2_structure_in_charge_email": "Structure's e-mail address", //to complete
+	"step_2_validation_email": "Email is Not Correct", //to complete
+	"step_2_citizen_or_group_label": "Complainant type", //to complete
+	"step_2_citizen_or_group_individual": "Individual", //to complete
+	"step_2_citizen_or_group_group": "Group", //to complete
+	"step_2_only_three_files": "You can only attach 3 files", //to complete
+
+
+	//step 3
+	"step_3": "Intambwe ya 3",
+
+	"step_3_confirmation": "Kwemeza amakuru",
+
+	"step_3_subtitle": "Genzura ko amakuru watanze ariyo maze ubyemeze. Niba ukeneye guhindura amakuru ayo ari yo yose, kanda buto yo gusubira inyuma.",
+
+	"step_3_field_title_1": "Itariki y'ikibazo:",
+
+	"step_3_field_title_2": "Iki ni:",
+
+	"step_3_field_title_3": "Iki kibazo kijyanye:",
+
+	"step_3_field_title_4": "Ubusobanuro ku kibazo:",
+
+	"step_3_attachments": "Umugereka:",
+  	"attachment_error": "An error has occurred! The attachment {{name}} may not be found on your mobile device, or the server is not responding.", //to complete
+	"attachment_synchronized": "The attachment has been successfully synchronized.", //to complete
+	"attachments_synchronized": "The attachments have been successfully synchronized.", //to complete
+	"attach_all_attachments": "Please attach all attachments.", //to complete
+	"unable_access_internet": "We are unable to access the internet. Please check your connection!", //to complete
+	"unable_retrieve_your_information": "We are unable to retrieve your information from the server.", //to complete
+
+	//location step
+	"step_4": "Intambwe ya 4",
+
+	"step_location_description": "Ibi byabereye he?",
+
+	"step_location_body": "Umukangurambaga: Ugomba gusobanura neza mu buryo bwumvikana aho ikibazo cyabereye\nMu gukemura ikibazo. Akarere, umudugudu, ubusobanuro ndetse n'ibiranga aho ikibazo cyabereye \nbirafasha cyane. Niba iki ari ikibazo cy'ibanga,\nhitamo kugeza ku mudugudu andi makuru uyihorere.",
+
+	"step_location_dropdown_placeholder": "Kanda kugirango uhitemo",
+
+	"step_location_input_explanation": "Injiza andi makuru yaho byabereye ashobora mu gufasha gukemura ikibazo(Urugero: Munsi y'ikiraro ku giti cy'umwembe,...).",
+
+	"step_4_subtitle": "Birarangiye!",
+
+	"step_4_description": "Ikibazo cyashyizwe muri sisiteme kandi cyagejejwe ku mukozi ubishinzwe. Kumenya aho ikibazo kigeze gikemuka, uzakoresha iyi code iri hano hepfo. \n (Umukangurambaga: Shishikariza Umwenegihugu kwandika iyi kode cyangwa kuyisubiramo akayifata)",
+
+	"step_4_issue_code": "Kode y'ikibazo:",
+
+	"step_4_short_code": "Kode ngufi",
+
+	"step_4_two_word_code": "Code y'amagambo abiri",
+
+	"step_4_back_text": "Subira ahabanza",
+
+	"step_en": "Step 5",
+	"step_5": "Intambwe ya 5",
+
+	"step_6": "Intambwe ya 6",
+	"warning_message_location_not_load": "Localities have not been loaded. Please reload the page.", //to complete
+
+	"step_adl": "Niveau administrative", //to complete
+
+
+
+	//general
+	"save_button_text": "BIKA & UKOMEZE",
+
+	"next": "IBIKURIKIRA",
+
+	"submit_button_text": "OHEREZA",
+
+	"male": "Gabo",
+	"female": "Gore",
+	"other": "Ikindi",
+	"rather_not_say":  "Sinshaka kubivuga",
+	"loading":  "Loading...", //to complete
+
+	//issue detail
+	"description_label": "Ibisobanuro",
+
+	"reported_label": "Byatanzwe",
+
+	"status_label": "Aho bigeze",
+
+	"assigned_to_label": "Ugishinzwe",
+
+	"reporter_label": "Uwatanze amakuru",
+
+	"citizen_label": "Umwenegihugu",
+
+	"privacy_label": "Kugirirwa ibanga",
+
+	"category_label": "Icyiciro",
+
+	"issue_type_label": "Ubwoko bw'ikibazo",
+
+	"attachments_label": "Umugereka",
+
+	"comment_placeholder": "Andika igitekerezo...",
+
+	"information_not_available": "Nta makuru ahari",
+
+	"confidential": "Ibanga",
+	"level_label": "Level", //to complete
+	"error_message_for_update": "The last update of escalation has not been done", //to complete
+	"attach_pv": "Join PV", //to complete
+	"resolve_description_label": "Proof of resolution", //to complete
+  	"investigations": "Investigations", //to complete
+
+	//issue search
+	"registe_to_you_label": "Complaints registered by you", //to complete
+	"registe_label": "Complaints registered", //to complete
+	"open_to_you_label": "Complaints pending", //to complete
+	"your_complaints_resolved_to_you_label": "Your resolved complaints", //to complete
+	"your_complaints_reject_to_you_label": "Your rejected complaints", //to complete
+	"reject_to_you_label": "Complaints rejected by you", //to complete
+	"overdue_label": "Ibibazo byarengeje igihe",
+
+	"assigned_to_you_label": "Ibibazo wahawe",
+	"assigned_label": "Issues assigned", //to complete
+
+	"resolved_by_you_label": "Ibibazo byakemuwe nawe",
+	"resolved_label": "Issues resolved", //to complete
+
+	"average_days_label": "Impuzandengo y'iminsi yo gukemura ibibazo",
+
+	"average_satisfaction_label": "Impuzandengo yo kunyurwa",
+
+	"your_issues_label": "Ibibazo biri mu nshingano zawe",
+	"open": "Ibitarakemuka",
+	"initial_status": "Registe", //to complete
+	"open_status": "In process", //to complete
+	"final_status": "Resolved", //to complete
+	"rejected_status": "Rejected", //to complete
+	"assigned": "Ibyo nshinzwe",
+	"resolved": "Ibyakemutse",
+	"issue_was_accepted": "Cyemewe",
+	"issue_was_rejected": "Ntikijyanye n'umushinga",
+	"issue_was_escalated": "Cyamenyeshejwe inzego zo hejuru",
+	"issue_was_resolved": "Cyakemutse",
+	"issue_was_not_resolved": "The issue wasn't resolved", //to complete
+	"issue_was_re_opened": "The issue was reopened", //to complete
+	"reported_by": "Reported by", //to complete
+	"me": "Me", //to complete
+	"issues": "Issues", //to complete
+	"escalate_to_label": "at level", //to complete
+	"search_label": "Search...", //to complete
+
+	// issue detail
+	"are_you_accepting": "Uremera ko iki kibazo kijyanye n'uyu mushinga?",
+	"are_you_accepting_or_rejeting": "Uremera ko iki kibazo kijyanye n'uyu mushinga? cyangwa  ntaho gihuriye n'umushinga?",
+	"you_have_accepted": "Wemeye Iki kibazo muri porogaramu. Ubutumwa bwohererejwe umuturage bdetse nuwashyize ikibazo muri porogaramu.",
+	"finished": "Byarangiye",
+	"actions": "IBIKORWA",
+	"details": "BIRAMBUYE",
+	"history": "AMATEKA",
+	"days_ago": "iminsi",
+	"view_details": "Reba birambuye",
+	"accept_or_rejet_issue": "Accept or rejet Issue", //to complete
+	"accept_issue": "Emera Ikibazo",
+	"re_open_issue": "Re-open", //to complete
+	"record_steps_taken": "Shyiraho Ibyakozwe",
+	"record_resolution": "Shyiraho imyanzuro",
+	"record_not_resolve": "Set to unresolve", //to complete
+	"rate_appeal": "Kunyurwa Cyangwa kujurira",
+	"escalate": "Inzego zikurikiyeho",
+	"lodged_by": "Cyashyizwemo na:",
+	"name": "Amazina:",
+	"age": "Imyaka:",
+	"location": "Aho aherereye:",
+	"category": "Ikiciro:",
+	"assigned_to": "Cyashinzwe:",
+	"decision": "Icyemezo",
+  	"decisions": "Icyemezos",
+	"satisfaction": "Kunyurwa",
+	"appeal_reason": "Impamvu yo kujurira",
+	"back": "Subira Inyuma",
+	"record_steps_text": "Sobanura igikorwa hano hepfo. Hano wavuga ku bwumvikane cyangwa amasezerano yabayeho, Ibikorwa by'igenzura cyangwa iperereza, cyangwa se andi makuru yabonetse ku kibazo. Wibuke gushyiraho amatariki yingenzi. Ubu busobanuro buzabonwa n'ikipe mukorana, umuturage nyiri ikibazo, ndetse n'uwagishyize muri porogaramu.",
+	"recorded_comment": "Igitekerezo cyawe cyanditswe ndetse cyashyizwe no muri porogaramu.",
+	"cancel": "Hagarika",
+	"submit": "Ohereza",
+	"view_history": "Reba ibyahise",
+	"summarize_resolution": "Andika mu magambo make umwanzuro wafashwe.",
+	"please_confirm_resolution": "Emeza ko iki kibazo cyakemutse.",
+	"confirm": "Emeza",
+	"you_are_escalating": "Iki kibazo ugiye kugishinga inzego zo hejuru. Sobanura neza impamvu itumye ucyohereza mu nzego zigukuriye",
+	"escalated_text": "Iki kibazo cyoherejwe ku nzego zo hejuru. Ubutumwa burohererezwa uwagishyize muri porogaramu ndetse no ku muturage.",
+	"accept": "Cyemere",
+	"reject": "Cyange",
+	"you_are_rejecting": "Wagaragaje ko iki kibazo kitajyanye n'uyu mushinga.\nSobanura neza impamvu.",
+	"complaint_rejected": "Iki kibazo ntabwo kijyanye n'umushinga. Ubutumwa burohererezwa uwagishyize muri porogaramu ndetse n'umuturage.",
+	"play_recorded_audio": "Kanda wumve amajwi",
+
+	
+  //login page
+  "error_message_for_code": "Nyamuneka Hitamo utugari twose",
+  "password_forget": "Forgot your password", //to complete
+  "edit_password": "Change your password", //to complete
+
+
+  //Error message
+  "file_read_error": "Cannot read all the files.", //to complete
+  "file_read_error_try_again": "Cannot read all the files. try again.", //to complete
+  "error_message_for_limit_audio": "You only have the option of attaching four audios.", //to complete
+  "error_message_for_auth": "We can't get your information on the server.", //to complete
+
+
+  //statistics
+  "statistics": "Statistics", //to complete
+  "number_issues_not_opened": "Number of complaints not opened", //to complete
+
+  //Password Loss
+  "password_loss": "Your password has been successfully reset", //to complete
+
+  //Change password
+  "change_password": "Change Password", //to complete
+  "confirm_code": "Confirmation code", //to complete
+  "current_password": "Current password", //to complete
+  "new_password": "New password", //to complete
+  "help_new_password": "Enter your new password.\n- It must contain at least 8 characters, including at least one letter and one number.\n- Only numbers and letters are accepted.", //to complete
+  "new_password_confirmation": "Confirm new password", //to complete
+  "help_new_password_confirmation": "The confirmation password must be the same as the new password.", //to complete
+  "edit": "EDIT", //to complete
+  "infos_about_password_change": "To ensure account security, we are required to send an email containing a validation code to your email address. Note: If you have accounts on the CDD and/or MIS platforms, their passwords will also be changed.", //to complete
+  "code_mail_send": "An email is being sent to your email address.", //to complete
+  "code_mail_sended": "A confirmation code has been sent to your email address", //to complete
+  "send_me_code": "SEND ME THE CODE", //to complete
+
+
+  //Components
+  "see": "See", //to complete
+  "new_version_alert_message": "There is a newer version available. \nPlease update the application!", //to complete
+  "files_not_sync_alert_message": "We found file(s) that are not yet synchronized. Please go and synchronize them.", //to complete
+
+
+  "error_found_file": "We can't find this file", //to complete
+  "datas_sync_error": "We were unable to synchronize all your data.", //to complete
+  "some_datas_sync_error": "Some of your data could not be synchronized successfully.", //to complete
+  "sync_success": "Synchronization \n successful!", //to complete
+  "sync_unsuccess": "Synchronization \n unsuccessful!", //to complete
+  "sync_in_progress_take_time": "Synchronization in progress...\nThis may take a few seconds!", //to complete
+  "done": "Done", //to complete
+  "exit": "Exit" //to complete
+}
