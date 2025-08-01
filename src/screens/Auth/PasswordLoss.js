@@ -29,7 +29,7 @@ const PasswordLoss = ({ navigation }) => {
         <View style={styles.container}>
             <WebView
                 ref={webViewRef}
-                source={{ uri: `${cddBaseURL}reset-password-ask-email/` }}
+                source={{ uri: `${cddBaseURL}/reset-password-ask-email/` }}
                 style={styles.webview}
                 onNavigationStateChange={handleNavigationChange}
             />

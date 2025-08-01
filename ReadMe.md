@@ -27,8 +27,8 @@ EXPO_PUBLIC_GRM_DB_NAME_ENV=''
 ```
 
 ### Build the App
-Clean first `cd android && ./gradlew clean && cd ..`
-Build the app for android `cd android && .\gradlew assembleRelease && cd ..`
+Clean first (on windows) : `cd android && .\gradlew clean && cd ..`
+Build the app for android (on windows) : `cd android && .\gradlew assembleRelease && cd ..`
 You'll see the apk on `\android\app\build\outputs\apk`
 
 # Versions
