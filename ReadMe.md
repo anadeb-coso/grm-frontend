@@ -71,7 +71,9 @@ You'll see the apk on `\android\app\build\outputs\apk`
 ### 1.5.0 (20)
 - `Update projet to Expo 51 and Eject`
 - `Assignment of the registered issue to the reporter automatically`
-- `Synchronization of attached files when saving or adding files`
+- `Ask to synchronize attached files when saving or adding files`
 - `Alert on unsynchronized files`
 - `Customizing the display of user statistics`
 - `Retrieval and updating of data (issues) only related to the logged in user, with the exception of a user operating throughout the national territory`
+- `Password change`
+- `Password reset`
