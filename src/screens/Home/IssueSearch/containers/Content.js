@@ -266,37 +266,37 @@ function Content({ issues, eadl, statuses, issueCategories }) {
         value={status}
       >
         <ToggleButton
-          style={{ flex: 1 }}
+          style={{ flex: 1, backgroundColor: status === 'registe' ? colors.primary : 'transparent' }}
           icon={() => (
             <View>
-              <Text style={{ color: colors.primary }}>{t('initial_status')}</Text>
+              <Text style={{ color: status === 'registe' ? 'white' : colors.primary }}>{t('initial_status')}</Text>
             </View>
           )}
           value="registe"
         />
         <ToggleButton
-          style={{ flex: 1 }}
+          style={{ flex: 1, backgroundColor: status === 'assigned' ? colors.primary : 'transparent' }}
           icon={() => (
             <View>
-              <Text style={{ color: colors.primary }}>{t('assigned')}</Text>
+              <Text style={{ color: status === 'assigned' ? 'white' : colors.primary }}>{t('assigned')}</Text>
             </View>
           )}
           value="assigned"
         />
         <ToggleButton
-          style={{ flex: 1 }}
+          style={{ flex: 1, backgroundColor: status === 'open' ? colors.primary : 'transparent' }}
           icon={() => (
             <View>
-              <Text style={{ color: colors.primary }}>{t('open')}</Text>
+              <Text style={{ color: status === 'open' ? 'white' : colors.primary }}>{t('open')}</Text>
             </View>
           )}
           value="open"
         />
         <ToggleButton
-          style={{ flex: 1 }}
+          style={{ flex: 1, backgroundColor: status === 'resolved' ? colors.primary : 'transparent' }}
           icon={() => (
             <View>
-              <Text style={{ color: colors.primary }}>{t('resolved')}</Text>
+              <Text style={{ color: status === 'resolved' ? 'white' : colors.primary }}>{t('resolved')}</Text>
             </View>
           )}
           value="resolved"

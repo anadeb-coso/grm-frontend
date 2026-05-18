@@ -77,3 +77,22 @@ You'll see the apk on `\android\app\build\outputs\apk`
 - `Retrieval and updating of data (issues) only related to the logged in user, with the exception of a user operating throughout the national territory`
 - `Password change`
 - `Password reset`
+
+### 1.5.1 (21) : 2026.01.25
+- `Change subdomain "cosomis-2.eba-mxictqba.us-west-1.elasticbeanstalk.com" to "sig.coso-togo.com" to apply secure https option`
+- `Change subdomain "cdd-env.eba-mz2nppu7.us-west-1.elasticbeanstalk.com" to "dcc.coso-togo.com" to apply secure https option`
+- `Change subdomain "grm-2-env.eba-speiyafz.us-west-1.elasticbeanstalk.com" to "mgp.coso-togo.com" to apply secure https option`
+
+
+## Devices commands to know
+
+`adb devices`
+`adb kill-server`
+`adb start-server`
+`emulator -list-avds`
+<!-- `avdmanager delete avd -n emulator-5554` -->
+`netstat -a -n | find "5554"`
+`emulator -avd NomDeTonAVD -port 5554`
+`set ANDROID_SERIAL=emulator-5554` windows
+`ANDROID_SERIAL=emulator-5574` Linux/macOS
+`yarn expo run:android --device emulator-5554`

@@ -30,10 +30,14 @@ function SyncDatas({ navigation }) {
   
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
-      if(!state.isConnected){
-        setErrorMessage(t('unable_access_internet'));
-        setErrorVisible(true);
-        setConnected(false);
+      if (!state.isConnected) {
+          setErrorMessage(t('unable_access_wifi'));
+          setErrorVisible(true);
+          setConnected(false);
+      }else if(!state.isInternetReachable){
+          setErrorMessage(t('unable_access_internet'));
+          setErrorVisible(true);
+          setConnected(false);
       }
   });
   }

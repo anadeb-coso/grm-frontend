@@ -1,18 +1,18 @@
 import NetInfo from '@react-native-community/netinfo';
 import API from "../services/API";
-import { LocalGRMDatabase } from './databaseManager';
+import { LocalGRMDatabase, SyncToRemoteDatabase } from './databaseManager';
 
 
 
 
 
-export function check_issues(eadl, language='fr') {
+export function check_issues(dbConfig, eadl, language='fr') {
 
     try {
 
         if (!eadl || !eadl?.representative || !eadl?.representative?.email) return;
 
-        NetInfo.fetch().then((state) => {
+        NetInfo.fetch().then(async (state) => {
             if (state.isConnected) {
                 try {
                     LocalGRMDatabase.find({
@@ -52,6 +52,9 @@ export function check_issues(eadl, language='fr') {
                 } catch (e) {
                     console.log("Error3 : " + e);
                 }
+                
+                await SyncToRemoteDatabase(dbConfig, username);
+
             }
         });
     } catch (e) {

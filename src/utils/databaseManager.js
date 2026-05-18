@@ -1,138 +1,51 @@
 import 'react-native-get-random-values';
 import axios from 'axios';
-import PouchAsyncStorage from 'pouchdb-adapter-asyncstorage';
-import PouchAuth from 'pouchdb-authentication';
-import PouchFind from 'pouchdb-find';
-import PouchDB from 'pouchdb-react-native';
 import { getData, getEncryptedData, storeData } from './storageManager';
 import { EXPO_PUBLIC_COUCHDB_BASE_URL } from '../services/env';
+import { syncAllDatabases, setupNetworkSyncAutoRestart, cancelAllSyncs } from './syncManager';
+import { LocalDatabase, LocalGRMDatabase } from './pouchInstances';
 
-PouchDB.plugin(PouchAuth);
-PouchDB.plugin(PouchFind);
-PouchDB.plugin(require('pouchdb-upsert'));
-
-PouchDB.plugin(PouchAsyncStorage);
 
 const couchDBURLBase = EXPO_PUBLIC_COUCHDB_BASE_URL;
-
 export { couchDBURLBase };
+export { LocalGRMDatabase, LocalDatabase };
 
-export const LocalDatabase = new PouchDB('eadl', {
-  adapter: 'asyncstorage',
-});
-
-LocalDatabase.createIndex({
-  index: {
-    fields: ['representative.email', 'representative.id', 'type']
-  }
-}).then(function () {
-  // Index created successfully
-}).catch(function (err) {
-  // Handle error
-  console.log(err);
-});
-
-
-export const LocalGRMDatabase = new PouchDB('grm', {
-  adapter: 'asyncstorage',
-});
-
-LocalGRMDatabase.createIndex({
-  index: {
-    fields: ['issue', 'assignee.id', 'type', 'confirmed', 'publish', 'reporter.id']
-  }
-}).then(function () {
-  // Index created successfully
-}).catch(function (err) {
-  // Handle error
-  console.log(err);
-});
-
-// export const LocalADMINLEVELDatabase = new PouchDB('administrative_levels', {
-//   adapter: 'asyncstorage',
-// });
-
-// export const LocalCommunesDatabase = new PouchDB('commune', {
-//   adapter: 'asyncstorage',
-// });
-
+global.__countNetInfoListener = 0;
 export const SyncToRemoteDatabase = async ({ username, password, eadl }, userEmail) => {
-  const remoteDB = new PouchDB(`${couchDBURLBase}/eadls`, {
-    skip_setup: true,
+  cancelAllSyncs();
+  const start = () => syncAllDatabases({
+    username,
+    password,
+    eadl,
+    userEmail,
+    couchDBURLBase: EXPO_PUBLIC_COUCHDB_BASE_URL,
+    localDBs: {
+      LocalDatabase,
+      LocalGRMDatabase,
+    }
   });
 
-  if (__DEV__) {
-    // console.log(couchDBURLBase);
-  }
+  // Sync immédiat
+  start();
 
-  const grmRemoteDB = new PouchDB(`${couchDBURLBase}/grm`, {
-    skip_setup: true,
-  });
-
-  // const remoteADMINLEVEL = new PouchDB(`${couchDBURLBase}/administrative_levels`, {
-  //   skip_setup: true,
-  // });
-
-  //   const communesRemoteDB = new PouchDB(`${couchDBURLBase}/eadls`, {
-  //     skip_setup: true,
-  //   });
-
-  await remoteDB.login(username, password);
-  await grmRemoteDB.login(username, password);
-  // await remoteADMINLEVEL.login(username, password);
-  const sync = LocalDatabase.sync(remoteDB, {
-    live: true,
-    retry: true,
-    filter: 'eadl/by_user_email',
-    query_params: { email: userEmail },
-  });
-
-  //   const syncCommunes = LocalCommunesDatabase.sync(communesRemoteDB, {
-  //     live: true,
-  //     retry: true,
-  //     // view: "eadl/all_administrative_levels",
-  //     // filter: filterFunction,
-  //     // query_params: { usrEmail: userEmail },
-  //   });
-
-  let syncGRM;
-  if (eadl?.administrative_region == "1") {
-    syncGRM = LocalGRMDatabase.sync(grmRemoteDB, {
-      live: true,
-      retry: true,
-    });
-  } else {
-    syncGRM = LocalGRMDatabase.sync(grmRemoteDB, {
-      live: true,
-      retry: true,
-      filter: 'issues/exclude_unrelated_issues',
-      query_params: { user_id: eadl?.representative?.id }
-    });
-  }
-
-  // const syncADMINLEVEL = remoteADMINLEVEL.sync(remoteADMINLEVEL, {
-  //   live: true,
-  //   retry: true,
-  // });
-  const syncStates = ['change', 'paused', 'active', 'denied', 'complete', 'error'];
-  syncStates.forEach((state) => {
-    sync.on(state, (currState) => {
-      if (__DEV__) {
-        console.log(`[Sync EADL: ]`);
-      }
-    });
-
-    syncGRM.on(state, (currState) => {
-      if (__DEV__) {
-        console.log(`[Sync GRM: ]`);
-      }
-    });
-
-    // syncADMINLEVEL.on(state, (currState) => console.log(`[Sync GRM: ]`));
-  });
+  // Sync automatique lors du retour d’Internet
+  global.__countNetInfoListener += 1;
+  setupNetworkSyncAutoRestart(start, global.__countNetInfoListener);
 
   getUserDocs(userEmail);
+
+  // Redémarrage régulier (chaque 10 min)
+  if (!global.__syncIntervalSet) {
+    global.__syncIntervalSet = true;
+    setInterval(() => {
+      if (__DEV__) { console.log("Scheduled sync refresh"); }
+      start();
+    }, 10 * 60 * 1000);
+  }
 };
+
+
+
 
 // Function to fetch documents from CouchDB with a Mango query
 const fetchDocumentsByFilter = async (db_name, filter) => {
@@ -171,7 +84,7 @@ const fetchDocumentsByFilter = async (db_name, filter) => {
 
     return response.data;
   } catch (error) {
-    console.log('Error fetching documents by filter:', error);
+    if (__DEV__) { console.log('Error fetching documents by filter:', error); }
     throw error;
   }
 };

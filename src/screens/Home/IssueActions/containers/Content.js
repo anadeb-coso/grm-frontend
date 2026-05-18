@@ -101,6 +101,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const [dbUsername, setDBUsername] = useState(null);
   const [dbPassword, setDBPassword] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [escalateFlag, setEscalateFlag] = useState(!!issue?.escalate_flag);
+  console.log(issue.escalate_flag)
+  console.log(!!issue.escalate_flag)
 
   const [currentAdlObj, setCurrentAdlObj] = useState({
     escalate_to: {
@@ -395,7 +398,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       stopASound();
     }
 
-    setRecordingURIs(recordingURIs.filter((elt) => elt.uri != recording_url));
+    setRecordingURIs(recordingURIs.filter((elt) => elt?.uri != recording_url && elt?.url != recording_url));
   }
 
   const getProgress = () => {
@@ -630,9 +633,13 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       doc = issue;
       return doc;
     })
-      .then(() => {
+      .then(async () => {
         //Check Issues to sync (new issues, escalade issues, assignment)
-        check_issues(eadl, i18n.language)
+        check_issues(
+          await getEncryptedData(
+            `dbCredentials_${userPassword}_${username.replace('@', '')}`
+          ),
+          eadl, i18n.language);
       })
       .catch((err) => {
         console.log('Error', err);
@@ -739,6 +746,8 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       issue_status_stories(newStatus, `${t('issue_was_escalated')}\n${escalateComment}`);
 
       get_current_adl_obj();
+
+      setEscalateFlag(issue.escalate_flag);
     }
   };
 
@@ -878,7 +887,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       doc = issue;
       return doc;
     })
-      .then(() => {
+      .then(async () => {
         updateActionButtons();
         if (type === 'accept') {
           setAcceptedDialog(true);
@@ -893,7 +902,11 @@ function Content({ issue, navigation, statuses = [], eadl }) {
         }
 
         //Check Issues to sync (new issues, escalade issues, assignment)
-        check_issues(eadl, i18n.language)
+        check_issues(
+          await getEncryptedData(
+            `dbCredentials_${userPassword}_${username.replace('@', '')}`
+          ),
+          eadl, i18n.language);
 
       })
       .catch((err) => {
@@ -929,24 +942,28 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
-        setErrorMessage(t('unable_access_internet'));
-        setErrorVisible(true);
-        setConnected(false);
+          setErrorMessage(t('unable_access_wifi'));
+          setErrorVisible(true);
+          setConnected(false);
+      }else if(!state.isInternetReachable){
+          setErrorMessage(t('unable_access_internet'));
+          setErrorVisible(true);
+          setConnected(false);
       }
     });
   }
   const uploadImages = async () => {
-    
+
     setConnected(true);
     check_network();
     if (connected) {
       setIsSyncing(true);
-      
+
       try {
         let count = 0;
         let elt_id;
         let attachments_recordingURIs_pdfs = [...attachments, ...recordingURIs, escalatePDF, resolvePDF];
-        
+
         const updatedAttachments = [...attachments_recordingURIs_pdfs];
         for (let i = 0; i < attachments_recordingURIs_pdfs.length; i++) {
           let elt = attachments_recordingURIs_pdfs[i];
@@ -964,7 +981,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   mimeType: elt?.mimeType
                 }
               );
-              
+
               if (response.fileUrl) {
                 elt_id = updatedAttachments.findIndex((e, i) => e && e.id == elt.id);
                 elt.url_uploaded = response.fileUrl;
@@ -1007,7 +1024,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
         if (count != 0) {
 
           setAttachments(updatedAttachments.slice(0, attachments.length));
-          
+
           setRecordingURIs(updatedAttachments.slice(attachments.length, updatedAttachments.length - [...[escalatePDF], ...[resolvePDF]].length));
           let _escalatePDFs = updatedAttachments.slice(attachments.length + recordingURIs.length, updatedAttachments.length - [...[resolvePDF]].length);
           setEscalatePDF(_escalatePDFs.length == 0 ? null : _escalatePDFs[0]);
@@ -1069,7 +1086,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           >
             <TouchableOpacity
               onPress={() => _showDialog()}
-              disabled={!isAcceptEnabled}
+              disabled={!isAcceptEnabled || escalateFlag}
               style={{
                 alignItems: 'center',
                 flexDirection: 'row',
@@ -1083,7 +1100,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   style={{ marginRight: 5 }}
                   name="rightsquare"
                   size={35}
-                  color={isAcceptEnabled ? colors.primary : colors.disabled}
+                  color={(isAcceptEnabled && !escalateFlag) ? colors.primary : colors.disabled}
                 />
                 <Feather name="help-circle" size={24} color="gray" />
               </View>
@@ -1180,8 +1197,8 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           </View>
           <TouchableOpacity
             onPress={_showEscalateDialog}
-            // disabled={disableEscalation || !isRecordResolutionEnabled || issue.escalate_flag}
-            disabled={!issue.status.id == 5 || currentAdlObj.escalate_to.administrative_level == "Country"}
+            // disabled={disableEscalation || !isRecordResolutionEnabled || escalateFlag}
+            disabled={!issue.status.id == 5 || currentAdlObj.escalate_to.administrative_level == "Country" || (!issue.status.id == 5 && escalateFlag)}
             style={{
               alignItems: 'center',
               flexDirection: 'row',
@@ -1197,7 +1214,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 name="rightsquare"
                 size={35}
                 // color={!disableEscalation && isRecordResolutionEnabled ? colors.primary : colors.disabled}
-                color={(issue.status.id == 5 && currentAdlObj.escalate_to.administrative_level != "Country") ? colors.primary : colors.disabled}
+                color={((issue.status.id == 5 && currentAdlObj.escalate_to.administrative_level != "Country" && !escalateFlag)) ? colors.primary : colors.disabled}
               />
               <Feather name="help-circle" size={24} color="gray" />
             </View>
@@ -1428,6 +1445,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
                     <Button
                       theme={theme}
+                      disabled={isSyncing}
                       style={{ alignSelf: 'center' }}
                       labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
                       mode="contained"
@@ -1454,7 +1472,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 {t('cancel')}
               </Button>
               <Button
-                disabled={escalateComment === ''}
+                disabled={escalateComment === '' || !(escalatePDF)}
                 theme={theme}
                 style={{ alignSelf: 'center', margin: 24 }}
                 labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
@@ -1522,7 +1540,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                     {attachments.length > 0 &&
                       attachments.map((attachment, index) => {
                         let urlL = (attachment.local_url ? (attachment.local_url && attachment.local_url != "" ? attachment.local_url : undefined) : undefined) ?? (attachment.url ?? attachment.uri);
-                        
+
                         return (
                           <ImageBackground
                             key={`${attachment.id}_${urlL}`}
@@ -1641,7 +1659,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   let audio_url = (recording_url.local_url ? (recording_url.local_url && recording_url.local_url != "" ? recording_url.local_url : undefined) : undefined) ?? (recording_url.url ?? recording_url.uri);
                   let audio_url_split = audio_url.split("?")[0].split("/");
                   let audio_file_name = audio_url_split[audio_url_split.length - 1];
-                  
+
                   let audio_url_current = (soundUrl ? (soundUrl && soundUrl != "" ? soundUrl : undefined) : undefined) ?? "";
                   let audio_url_split_current = audio_url_current.split("?")[0].split("/");
                   let audio_file_name_current = audio_url_split_current[audio_url_split_current.length - 1];
@@ -1886,6 +1904,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
                     <Button
                       theme={theme}
+                      disabled={isSyncing}
                       style={{ alignSelf: 'center' }}
                       labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
                       mode="contained"
@@ -1919,7 +1938,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 {t('cancel')}
               </Button>
               <Button
-                disabled={resolution === ''}
+                disabled={resolution === '' || !(resolvePDF)}
                 theme={theme}
                 style={{ alignSelf: 'center', margin: 24 }}
                 labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}

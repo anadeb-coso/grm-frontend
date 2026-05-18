@@ -5,6 +5,8 @@ import { ToastProvider } from 'react-native-toast-notifications';
 import Router from "./src/router/";
 import store from "./src/store";
 import "./src/translations/i18n";
+// import { SyncStatusProvider } from "./src/components/SyncStatus/SyncStatusContext";
+// import SyncStatusInitializer from "./src/components/SyncStatus/SyncStatusInitializer";
 
 if (__DEV__) {
   // eslint-disable-next-line no-console
@@ -22,5 +24,19 @@ const App = () => {
     </ReduxProvider>
   );
 };
+// const App = () => {
+//   return (
+//     <SyncStatusProvider>
+//       <SyncStatusInitializer />
+//       <ReduxProvider store={store}>
+//         <ToastProvider>
+//           <PaperProvider>
+//             <Router />
+//           </PaperProvider>
+//         </ToastProvider>
+//       </ReduxProvider>
+//     </SyncStatusProvider>
+//   );
+// };
 
 export default App;

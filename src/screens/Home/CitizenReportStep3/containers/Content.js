@@ -79,15 +79,15 @@ function Content({ issue, eadl, issues }) {
   const getDBConfig = async () => {
     const password = await getEncryptedData('userPassword');
     let dbCredentials;
-    let username;
+    let user_name;
     if (password) {
-      username = await getEncryptedData(`username`);
+      user_name = await getEncryptedData(`username`);
       dbCredentials = await getEncryptedData(
-        `dbCredentials_${password}_${username.replace('@', '')}`
+        `dbCredentials_${password}_${user_name.replace('@', '')}`
       );
 
-      if (username) {
-        if (!(await verify_account_on_couchdb(dbCredentials, username))) {
+      if (user_name) {
+        if (!(await verify_account_on_couchdb(dbCredentials, user_name))) {
           ToastAndroid.show(t('unable_retrieve_your_information'), ToastAndroid.LONG);
           dispatch(logout());
         }
@@ -105,10 +105,15 @@ function Content({ issue, eadl, issues }) {
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
-        setErrorMessage(t('unable_access_internet'));
-        setErrorVisible(true);
-        setConnected(false);
+          setErrorMessage(t('unable_access_wifi'));
+          setErrorVisible(true);
+          setConnected(false);
+      }else if(!state.isInternetReachable){
+          setErrorMessage(t('unable_access_internet'));
+          setErrorVisible(true);
+          setConnected(false);
       }
+
     });
   }
 
@@ -250,7 +255,7 @@ function Content({ issue, eadl, issues }) {
 
 
 
-  const submitIssue = () => {
+  const submitIssue = async () => {
 
     // const isAssignee =
     //   issue.category?.assigned_department === eadl?.department
@@ -335,7 +340,11 @@ function Content({ issue, eadl, issues }) {
 
 
     //Check Issues to sync (new issues, escalade issues, assignment)
-    check_issues(eadl, i18n.language)
+    check_issues(
+      await getEncryptedData(
+        `dbCredentials_${userPassword}_${username.replace('@', '')}`
+      ),
+      eadl, i18n.language);
 
 
     // navigation.navigate("CitizenReportStep4");

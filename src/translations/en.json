@@ -100,7 +100,7 @@
   "step_2_keep_name_confidential": "Keep name confidential. Only the person resolving the issue will see the name.",
   "step_2_on_behalf_of_someone": "This is an individual filing on behalf of someone else.",
   "step_2_organization_behalf_someone": "This is an organization filing on behalf of someone else.",
-  "step_2_structure_in_charge": "Structure in charge",
+  "step_2_structure_in_charge": "Structure in charge:",
   "step_2_structure_in_charge_name": "Name of structure in charge of this issue",
   "step_2_structure_in_charge_phone": "Phone number of the structure",
   "step_2_structure_in_charge_email": "Structure's e-mail address",
@@ -124,6 +124,7 @@
   "attachment_synchronized": "The attachment has been successfully synchronized.",
   "attachments_synchronized": "The attachments have been successfully synchronized.",
   "attach_all_attachments": "Please attach all attachments.",
+  "unable_access_wifi": "We are unable to access the Wi-Fi network. Please check your connection!",
   "unable_access_internet": "We are unable to access the internet. Please check your connection!",
   "unable_retrieve_your_information": "We are unable to retrieve your information from the server.",
 

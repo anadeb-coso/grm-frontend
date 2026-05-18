@@ -409,7 +409,7 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
                   //   name: uniqueRegion?.name,
                   // },
                   issueLocation: {
-                    administrative_id: selectedVillage?.id,
+                    administrative_id: String(selectedVillage?.id),
                     name: selectedVillage?.name,
                   },
                   locationDescription: additionalDetails,

@@ -128,6 +128,7 @@ export const getFileType = async (url, username, password) => {
     if (mimeTypeFromExt) return mimeTypeFromExt;
 
     // Si extension inconnue, tente HEAD
+    const base64Creds = btoa(`${username}:${password}`);
     const res = await fetch(url, {
         method: 'HEAD',
         headers: {

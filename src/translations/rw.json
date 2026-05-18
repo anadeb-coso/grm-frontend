@@ -140,7 +140,7 @@
 	"step_2_on_behalf_of_someone": "Ikibazo gitanzwe n'umuntu uhagarariye undi.",
 	"step_2_organization_behalf_someone": "Ikibazo gitanzwe n'itsinda rihagarariye undi muntu.",
 
-	"step_2_structure_in_charge": "Structure in charge", //to complete
+	"step_2_structure_in_charge": "Structure in charge:", //to complete
 	"step_2_structure_in_charge_name": "Name of structure in charge of this issue", //to complete
 	"step_2_structure_in_charge_phone": "Phone number of the structure", //to complete
 	"step_2_structure_in_charge_email": "Structure's e-mail address", //to complete
@@ -171,6 +171,7 @@
 	"attachment_synchronized": "The attachment has been successfully synchronized.", //to complete
 	"attachments_synchronized": "The attachments have been successfully synchronized.", //to complete
 	"attach_all_attachments": "Please attach all attachments.", //to complete
+	"unable_access_wifi": "We are unable to access the Wi-Fi network. Please check your connection!", //to complete
 	"unable_access_internet": "We are unable to access the internet. Please check your connection!", //to complete
 	"unable_retrieve_your_information": "We are unable to retrieve your information from the server.", //to complete
 
