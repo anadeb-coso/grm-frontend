@@ -83,6 +83,9 @@ You'll see the apk on `\android\app\build\outputs\apk`
 - `Change subdomain "cdd-env.eba-mz2nppu7.us-west-1.elasticbeanstalk.com" to "dcc.coso-togo.com" to apply secure https option`
 - `Change subdomain "grm-2-env.eba-speiyafz.us-west-1.elasticbeanstalk.com" to "mgp.coso-togo.com" to apply secure https option`
 
+### 1.5.2 (22) : 2026.05.18
+- `Added internet connection verification when calling certain functions`
+
 
 ## Devices commands to know
 
