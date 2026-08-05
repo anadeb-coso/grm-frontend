@@ -308,6 +308,18 @@
   //Components
   "see": "Voir",
   "new_version_alert_message": "Il y a une version plus récente disponible. \nVeuillez mettre à jour l'application!",
+  "update_download_button": "Mettre à jour",
+  "update_downloading_title": "Téléchargement de la mise à jour",
+  "update_downloading_message": "Veuillez patienter pendant le téléchargement de la nouvelle version. Ne fermez pas l'application.",
+  "update_installing_message": "Téléchargement terminé, lancement de l'installation...",
+  "update_download_error": "Le téléchargement de la mise à jour a échoué. Vérifiez votre connexion et réessayez.",
+  "update_install_error": "La mise à jour a été téléchargée mais n'a pas pu être installée automatiquement. Ouvrez-la manuellement depuis votre gestionnaire de fichiers.",
+  "retry": "Réessayer",
+  "open_settings": "Ouvrir les paramètres",
+  "permission_install_unknown_apps_title": "Autoriser l'installation depuis cette application",
+  "permission_install_unknown_apps_message": "Pour installer les mises à jour directement, veuillez autoriser cette application à installer des applications inconnues : appuyez sur \"Ouvrir les paramètres\" puis activez l'option pour cette application.",
+  "permission_overlay_title": "Affichage par-dessus les autres applications",
+  "permission_overlay_message": "Pour pouvoir vous afficher certaines alertes même quand l'application est en arrière-plan, veuillez l'autoriser à s'afficher par-dessus les autres applications : appuyez sur \"Ouvrir les paramètres\" puis activez l'option pour cette application.",
   "files_not_sync_alert_message": "Nous avions trouvé un(des) fichier(s) qui ne sont pas encore synchronisés, veuillez aller les synchroniser.",
 
 

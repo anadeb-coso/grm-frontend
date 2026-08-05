@@ -306,6 +306,18 @@
   //Components
   "see": "See",
   "new_version_alert_message": "There is a newer version available. \nPlease update the application!",
+  "update_download_button": "Update",
+  "update_downloading_title": "Downloading the update",
+  "update_downloading_message": "Please wait while the new version is downloaded. Do not close the application.",
+  "update_installing_message": "Download complete, starting installation...",
+  "update_download_error": "The update could not be downloaded. Please check your connection and try again.",
+  "update_install_error": "The update was downloaded but could not be installed automatically. Please open it manually from your file manager.",
+  "retry": "Retry",
+  "open_settings": "Open settings",
+  "permission_install_unknown_apps_title": "Allow installation from this app",
+  "permission_install_unknown_apps_message": "To install updates directly, please allow this application to install unknown apps: tap \"Open settings\" then enable the option for this application.",
+  "permission_overlay_title": "Display over other apps",
+  "permission_overlay_message": "To show you certain alerts even when the application is in the background, please allow it to display over other apps: tap \"Open settings\" then enable the option for this application.",
   "files_not_sync_alert_message": "We found file(s) that are not yet synchronized. Please go and synchronize them.",
 
 
