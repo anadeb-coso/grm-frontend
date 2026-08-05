@@ -11,6 +11,9 @@ module.exports = function(api) {
         "safe": false,
         "allowUndefined": true
       }],
+      // Requis par les décorateurs @nozbe/watermelondb (@field, @date, @children, @relation...)
+      // dans src/database/models/*.js.
+      ["@babel/plugin-proposal-decorators", { "legacy": true }],
     ],
   };
 };

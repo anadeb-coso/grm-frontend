@@ -1,85 +1,75 @@
 import { Map } from "immutable";
 import { createActions, handleActions } from "redux-actions";
-import { SyncToRemoteDatabase } from "../../utils/databaseManager";
+import { startWatermelonSync, stopWatermelonSync } from "../../database/watermelonSyncManager";
+import { logout as jwtLogout } from "../../api/client";
 import {
   clearEncryptedValues,
-  getEncryptedData,
-  removeEncryptedValue,
   storeEncryptedData,
 } from '../../utils/storageManager';
 
 const defaultState = Map({
-  userPassword: null,
+  isAuthenticated: false,
   username: null,
 });
 
-function getRemoteDbConfig() {
-
-  const credentials = getEncryptedData("dbCredentials");
-  return credentials;
-}
-
+// `dbCredentials`/`SyncToRemoteDatabase` (réplication CouchDB/PouchDB) sont retirés du flux
+// d'authentification : la connexion se fait désormais par JWT (src/api/client.js::login,
+// appelé par l'écran avant de dispatcher ces actions — les tokens sont déjà stockés à ce
+// stade, sous une clé propre à `api/client.js`). `startWatermelonSync()` remplace
+// `SyncToRemoteDatabase()` pour déclencher le premier pull WatermelonDB juste après connexion.
+//
+// Le store ne conserve plus le mot de passe de l'utilisateur (ni en mémoire ni en stockage
+// chiffré) : `isAuthenticated` est l'unique indicateur de session, restauré au démarrage par
+// `router/index.js::restoreSession` d'après la présence d'un token JWT valide plutôt que d'après
+// un mot de passe mis de côté à cet effet (cf. databaseManager.js::getUserDocs, qui n'a plus
+// besoin non plus du mot de passe pour rafraîchir le profil ADL).
 export const { init, login, signUp, logout } = createActions({
-  INIT: (dbCredentials, credentials) => {
-    SyncToRemoteDatabase(dbCredentials, credentials.email);
-    return { password: credentials.password, username: credentials.email };
+  INIT: (credentials) => {
+    startWatermelonSync();
+    return { username: credentials.email };
   },
-  LOGIN: (dbCredentials, credentials) => {
-    storeEncryptedData(
-      `dbCredentials_${credentials.password}_${credentials.email.replace(
-        "@",
-        ""
-      )}`,
-      dbCredentials
-    );
-    storeEncryptedData(`userPassword`, credentials.password);
+  LOGIN: (credentials) => {
     storeEncryptedData(`username`, credentials.email);
-    SyncToRemoteDatabase(dbCredentials, credentials.email);
-    return { password: credentials.password, username: credentials.email };
+    startWatermelonSync();
+    return { username: credentials.email };
   },
-  SIGN_UP: (dbCredentials, credentials) => {
-    storeEncryptedData(
-      `dbCredentials_${credentials.password}_${credentials.email.replace(
-        "@",
-        ""
-      )}`,
-      dbCredentials
-    );
-    storeEncryptedData(`userPassword`, credentials.password);
+  SIGN_UP: (credentials) => {
     storeEncryptedData(`username`, credentials.email);
-    SyncToRemoteDatabase(dbCredentials, credentials.email);
-    return { password: credentials.password, username: credentials.email };
+    startWatermelonSync();
+    return { username: credentials.email };
   },
   LOGOUT: () => {
+    stopWatermelonSync();
+    jwtLogout();
     clearEncryptedValues()
-    return { password: null, username: null };
+    return { username: null };
   },
 });
 
 const authentication = handleActions(
   {
-    [init]: (draft, { payload: { password, username } }) => {
+    [init]: (draft, { payload: { username } }) => {
       return draft.withMutations((state) => {
-        state.set("userPassword", password);
+        state.set("isAuthenticated", true);
         state.set("username", username);
       });
     },
-    [login]: (draft, { payload: { password, username } }) => {
+    [login]: (draft, { payload: { username } }) => {
       return draft.withMutations((state) => {
-        state.set("userPassword", password);
+        state.set("isAuthenticated", true);
         state.set("username", username);
       });
     },
-    [signUp]: (draft, { payload: { password, username } }) => {
+    [signUp]: (draft, { payload: { username } }) => {
       return draft.withMutations((state) => {
-        state.set("userPassword", password);
+        state.set("isAuthenticated", true);
         state.set("username", username);
       });
     },
-    [logout]: (draft, { payload: { password, username } }) => {
+    [logout]: (draft) => {
       return draft.withMutations((state) => {
-        state.set("userPassword", password);
-        state.set("username", username);
+        state.set("isAuthenticated", false);
+        state.set("username", null);
       });
     },
   },

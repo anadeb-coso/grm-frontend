@@ -43,6 +43,7 @@
 	"sync_files_abbreviation": "Sync Files", //to complete
 	"sync_datas_abbreviation": "Sync Datas", //to complete
   	"sync": "Sync", //to complete
+  "files_sync_currently": "All files are currently synchronized by the system", //to complete
   	"starting_download": "Starting the download", //to complete
  	"downloaded_file": "Downloaded file", //to complete
 	"sync_datas_text": "This page is at your disposal for manual data synchronization, to avoid data loss in the event of non-synchronization.", //to complete
@@ -166,6 +167,15 @@
 
 	"step_3_field_title_4": "Ubusobanuro ku kibazo:",
 
+	"step_3_section_reporter": "Reporter", //to complete
+	"step_3_section_citizen": "Citizen", //to complete
+	"step_3_field_location": "Location of the incident:", //to complete
+	"step_3_field_location_description": "Location details:", //to complete
+	"step_3_field_structure": "Structure in charge:", //to complete
+	"attachments_upload_deferred": "Some files could not be sent right now. They will be sent as soon as a connection is available (see Sync files).", //to complete
+	"attachments_upload_failed_retry_hint": "Sending one or more files to the server failed. The app will retry automatically later, or you can do it yourself from \"Sync files\".", //to complete
+	"upload_files_now": "Upload files now", //to complete
+
 	"step_3_attachments": "Umugereka:",
   	"attachment_error": "An error has occurred! The attachment {{name}} may not be found on your mobile device, or the server is not responding.", //to complete
 	"attachment_synchronized": "The attachment has been successfully synchronized.", //to complete
@@ -173,6 +183,7 @@
 	"attach_all_attachments": "Please attach all attachments.", //to complete
 	"unable_access_wifi": "We are unable to access the Wi-Fi network. Please check your connection!", //to complete
 	"unable_access_internet": "We are unable to access the internet. Please check your connection!", //to complete
+	"session_expired_please_login": "Your session has expired. Please log in again.", //to complete
 	"unable_retrieve_your_information": "We are unable to retrieve your information from the server.", //to complete
 
 	//location step
@@ -385,6 +396,8 @@
   "sync_success": "Synchronization \n successful!", //to complete
   "sync_unsuccess": "Synchronization \n unsuccessful!", //to complete
   "sync_in_progress_take_time": "Synchronization in progress...\nThis may take a few seconds!", //to complete
+  "sync_full_resync_reset": "Resetting local data...\nPlease wait.", //to complete
+  "sync_full_resync_downloading": "Downloading all data (page {{page}})...\nThis may take a while.", //to complete
   "done": "Done", //to complete
   "exit": "Exit" //to complete
 }

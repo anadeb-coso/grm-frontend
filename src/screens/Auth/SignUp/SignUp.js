@@ -32,6 +32,7 @@ import CodeLogo from '../../../../assets/code_logo.svg';
 import SuccessLogo from '../../../../assets/success_logo.svg';
 import ThinkingSVG from '../../../../assets/think.svg';
 import API from '../../../services/API';
+import { login as jwtLogin } from '../../../api/client';
 import { colors } from '../../../utils/colors';
 import MESSAGES from '../../../utils/formErrorMessages';
 import { emailRegex, passwordRegex } from '../../../utils/formUtils';
@@ -57,17 +58,32 @@ function SignUp({ route }) {
   const [props, getCellOnLayoutHandler] = useClearByFocusCell({ value, setValue });
 
   const hideModal = () => setCodeModal(false);
-  const hideSuccessModal = (response) => {
+  const hideSuccessModal = () => {
     setSuccessModal(false);
-    dispatch(signUp(response, credentials));
+    dispatch(signUp({ email: credentials.email }));
   };
   const onSignUp = (code) => {
     setLoading(true);
     // handle code with backend, check if valid
-    new API().signUp({ ...credentials, validation_code: code }).then((response) => {
-      if (response.error) {
+    new API().signUp({ ...credentials, validation_code: code }).then(async (response) => {
+      if (response.error || response.non_field_errors) {
         setLoading(false);
-        Alert.alert('Sign Up Error', response?.non_field_errors[0], [{ text: 'OK' }], {
+        Alert.alert('Sign Up Error', response?.non_field_errors?.[0] ?? String(response.error), [{ text: 'OK' }], {
+          cancelable: false,
+        });
+        return;
+      }
+      // `/authentication/register/` (endpoint historique) confirme la création du compte mais ne
+      // renvoie pas de JWT — sans cet appel explicite, l'utilisateur atterrit sur PrivateRoutes
+      // (isAuthenticated passera à true au dispatch(signUp(...)) ci-dessous) mais
+      // startWatermelonSync() échoue en boucle avec des 401, faute de tokens stockés
+      // (src/api/client.js). On s'authentifie donc immédiatement après l'inscription, comme le
+      // fait Login.js.
+      try {
+        await jwtLogin(credentials.email, credentials.password);
+      } catch (error) {
+        setLoading(false);
+        Alert.alert('Sign Up Error', t('unable_retrieve_your_information'), [{ text: 'OK' }], {
           cancelable: false,
         });
         return;

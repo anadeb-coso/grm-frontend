@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import { SafeAreaView } from "react-native";
 import Content from "./containers/Content";
 import { styles } from "./CitizenReportContactInfo.styles";
-import {LocalGRMDatabase} from "../../../utils/databaseManager";
+import { database } from "../../../database";
 
 const CitizenReportContactInfo = ({ route }) => {
   const customStyles = styles();
@@ -14,31 +14,25 @@ const CitizenReportContactInfo = ({ route }) => {
 
   useEffect(() => {
     //FETCH ISSUE AGE GROUP
-    LocalGRMDatabase.find({
-      selector: { type: "issue_age_group" },
-    })
-        .then(function (result) {
-          setIssueAges(result?.docs);
+    database.get('issue_age_groups').query().fetch()
+        .then(function (records) {
+          setIssueAges(records.map((r) => ({ id: r.legacyId, name: r.name })));
         })
         .catch(function (err) {
           console.log(err);
         });
     //FETCH CITIZEN GROUP 1
-    LocalGRMDatabase.find({
-      selector: { type: "issue_citizen_group_1" },
-    })
-        .then(function (result) {
-          setCitizenGroupsI(result?.docs);
+    database.get('issue_citizen_groups_1').query().fetch()
+        .then(function (records) {
+          setCitizenGroupsI(records.map((r) => ({ id: r.legacyId, name: r.name })));
         })
         .catch(function (err) {
           console.log(err);
         });
     //FETCH CITIZEN GROUP 2
-    LocalGRMDatabase.find({
-      selector: { type: "issue_citizen_group_2" },
-    })
-        .then(function (result) {
-          setCitizenGroupsII(result?.docs);
+    database.get('issue_citizen_groups_2').query().fetch()
+        .then(function (records) {
+          setCitizenGroupsII(records.map((r) => ({ id: r.legacyId, name: r.name })));
         })
         .catch(function (err) {
           console.log(err);

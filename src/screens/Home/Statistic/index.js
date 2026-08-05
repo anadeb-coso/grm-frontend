@@ -6,8 +6,10 @@ import {
   RefreshControl
 } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
+import { Q } from '@nozbe/watermelondb';
 import { colors } from '../../../utils/colors';
-import { LocalGRMDatabase } from '../../../utils/databaseManager';
+import { database } from '../../../database';
+import { runSyncSafely } from '../../../database/watermelonSyncManager';
 import ChartIssues from '../../../components/Chart/ChartIssues';
 
 export function IssuesStatistic() {
@@ -25,31 +27,41 @@ export function IssuesStatistic() {
 
 
 
-  const get_issues = () => {
+  const get_issues = async () => {
     setIssues([]);
-    let selector = {
-      type: 'issue',
-      confirmed: true
-    }
-
-
-    LocalGRMDatabase.find({
-      selector: selector
-    })
-      .then((result) => {
-        setIssues(result?.docs ?? []);
-        setRefreshing(false);
-      })
-      .catch((err) => {
-        console.log(err);
-        setRefreshing(false);
+    try {
+      const [issueRecords, statusRecords] = await Promise.all([
+        database.get('issues').query(Q.where('confirmed', true)).fetch(),
+        database.get('issue_statuses').query().fetch(),
+      ]);
+      const statusesByServerId = new Map(statusRecords.map((s) => [s.id, s]));
+      const docs = issueRecords.map((issue) => {
+        const status = statusesByServerId.get(issue.statusId);
+        return {
+          assignee: issue.assigneeId ? { id: issue.assigneeId, name: issue.assigneeName } : null,
+          status: status ? { id: status.legacyId, name: status.name } : null,
+        };
       });
+      setIssues(docs);
+      setRefreshing(false);
+    } catch (err) {
+      console.log(err);
+      setRefreshing(false);
+    }
   }
 
   const onRefresh = async () => {
     setRefreshing(true);
+    // Récupère d'abord les dernières données du serveur avant de relire la base locale : sans ce
+    // sync, "tirer pour rafraîchir" ne faisait que ré-afficher le même instantané local, sans
+    // jamais aller chercher les mises à jour côté serveur.
+    try {
+      await runSyncSafely();
+    } catch (err) {
+      console.log(err);
+    }
     //Get Issues
-    get_issues();
+    await get_issues();
     //End Get Issues
 
   };

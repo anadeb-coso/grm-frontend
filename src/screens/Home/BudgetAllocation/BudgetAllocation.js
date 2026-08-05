@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   FlatList,
@@ -12,12 +12,14 @@ import {
 } from "react-native";
 import { Divider } from "react-native-paper";
 import { FontAwesome5 } from "@expo/vector-icons";
+import { Q } from "@nozbe/watermelondb";
 import { styles } from "./BudgetAllocation.styles";
 import moment from "moment";
 import "moment/locale/fr";
 import CustomGreenButton from "../../../components/CustomGreenButton/CustomGreenButton";
 import { colors } from "../../../utils/colors";
-import LocalDatabase from "../../../utils/databaseManager";
+import { database } from "../../../database";
+import { createWithId } from "../../../database/utils/createWithId";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import "intl";
 import "intl/locale-data/jsonp/en";
@@ -29,30 +31,40 @@ function RegisterSubprojects() {
   const { params } = useRoute();
   const { eadl } = params;
   const [loading, setLoading] = useState(false);
-  const [bpProjects, setBpProjects] = useState(eadl.bp_projects || []);
+  const [bpProjects, setBpProjects] = useState([]);
   const [mandatoryError, setMandatoryError] = useState(false);
-  const [projectAmount, setProjectAmount] = useState(0);e
+  const [projectAmount, setProjectAmount] = useState(0);
   const [projectAmountFormatted, setProjectAmountFormatted] = useState(0);
   const [subProjectDesc, setSubProjectDesc] = useState("");
   const [selectedProjectIndex, setSelectedProjectIndex] = useState();
   const [recordBudgetModal, setRecordBudgetModal] = useState(false);
 
-  const upsertRecord = () => {
-    LocalDatabase.upsert(eadl._id, function (doc) {
-      doc = eadl;
-      return doc;
-    })
-      .then(function (res) {
-        hideRecordBudgetModal();
-      })
-      .catch(function (err) {
-        console.log("Error", err);
-        // error
-      });
-  };
+  const loadProjects = useCallback(async () => {
+    const records = await database.get('bp_projects').query(Q.where('adl', eadl.id)).fetch();
+    const withTotals = await Promise.all(records.map(async (r) => {
+      const allocations = await database.get('budget_allocations')
+        .query(Q.where('bp_project', r.id)).fetch();
+      return {
+        record: r,
+        id: r.externalCode,
+        subproject_name: r.subprojectName,
+        budget_allocated: allocations.map((a) => ({
+          amount: a.amount,
+          description: a.description,
+          timestamp: a.entryDate,
+          formattedAmount: new Intl.NumberFormat().format(a.amount),
+        })),
+      };
+    }));
+    setBpProjects(withTotals);
+  }, [eadl]);
+
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
 
   const goToBudgetLog = (project) => {
-    navigation.navigate("BudgetLog", { project });
+    navigation.navigate("BudgetLog", { bpProjectId: project.record.id });
   };
 
   const showRecordBudgetModal = (item, index) => {
@@ -80,15 +92,20 @@ function RegisterSubprojects() {
     setLoading(true);
     setMandatoryError(false);
 
-    //Create project
-    eadl.bp_projects[selectedProjectIndex].budget_allocated.push({
-      timestamp: new Date(),
-      description: subProjectDesc,
-      formattedAmount: projectAmountFormatted,
-      amount: projectAmount,
-    });
-
-    upsertRecord();
+    try {
+      const project = bpProjects[selectedProjectIndex];
+      await createWithId(database.get('budget_allocations'), (r) => {
+        r.bpProjectId = project.record.id;
+        r.description = subProjectDesc;
+        r.amount = parseFloat(projectAmount) || 0;
+        r.entryDate = new Date();
+      });
+      await loadProjects();
+      hideRecordBudgetModal();
+    } catch (err) {
+      console.log("Error", err);
+      setLoading(false);
+    }
   };
   const onRegisterBudget = async () => {
     if (!!projectAmountFormatted && !!subProjectDesc) {

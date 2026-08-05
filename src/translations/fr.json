@@ -39,6 +39,7 @@
   "sync_files_abbreviation": "Sync les Fichiers",
   "sync_datas_abbreviation": "Sync les Données",
   "sync": "Synchroniser",
+  "files_sync_currently": "Tous les fichiers sont actuellement synchronisés par le système",
   "starting_download": "Début du téléchargement",
   "downloaded_file": "Fichier téléchargé",
 	"sync_datas_text": "Nous vous mettons cette page à votre disposition pour vos synchronisations manuelles des données pour éviter les pertes de ces dernières en cas de non-synchronisation de celles-ci.",
@@ -118,6 +119,14 @@
   "step_3_field_title_2": "Catégorie de la demande :",
   "step_3_field_title_3": "Sujet:",
   "step_3_field_title_4": "Description:",
+  "step_3_section_reporter": "Déclarant",
+  "step_3_section_citizen": "Plaignant",
+  "step_3_field_location": "Lieu de l'incident :",
+  "step_3_field_location_description": "Détails sur le lieu :",
+  "step_3_field_structure": "Structure en charge :",
+  "attachments_upload_deferred": "Certains fichiers n'ont pas pu être envoyés maintenant. Ils seront envoyés dès qu'une connexion sera disponible (voir Synchroniser les fichiers).",
+  "attachments_upload_failed_retry_hint": "L'envoi d'un ou plusieurs fichiers vers le serveur a échoué. L'application réessaiera automatiquement plus tard, ou vous pouvez le faire vous-même dans « Synchronisation des fichiers ».",
+  "upload_files_now": "Envoyer les fichiers maintenant",
   "step_3_attachments": "Pièces jointes:",
   "attachment_error": "Une erreur est survenue! Il se pourrait que la pièce jointe {{name}} soit introuvable sur votre portable ou le serveur ne répond pas.",
   "attachment_synchronized": "La pièce jointe est synchronisée avec succès.",
@@ -125,6 +134,7 @@
   "attach_all_attachments": "Veuillez ajouter toutes les pièces jointes.",
   "unable_access_wifi": "Nous n'arrivons pas a accéder au réseau Wi-Fi. Veuillez vérifier votre connexion!",
   "unable_access_internet": "Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!",
+  "session_expired_please_login": "Votre session a expiré. Veuillez vous reconnecter.",
   "unable_retrieve_your_information": "Nous n'arrivons pas avoir vos informations sur le serveur.",
 
   //location step
@@ -307,6 +317,8 @@
   "sync_success": "Synchronisation \n réussie!",
   "sync_unsuccess": "Synchronisation \n non réussie!",
   "sync_in_progress_take_time": "Synchronisation en cours...\nCeci peut prendre quelques secondes!",
+  "sync_full_resync_reset": "Réinitialisation des données locales...\nVeuillez patienter.",
+  "sync_full_resync_downloading": "Téléchargement de toutes les données (page {{page}})...\nCeci peut prendre du temps.",
   "done": "Effectué(e)",
   "exit": "Sortir"
 }

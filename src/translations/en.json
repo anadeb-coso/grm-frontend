@@ -39,6 +39,7 @@
   "sync_files_abbreviation": "Sync Files",
   "sync_datas_abbreviation": "Sync Datas",
   "sync": "Sync",
+  "files_sync_currently": "All files are currently synchronized by the system",
   "starting_download": "Starting the download",
   "downloaded_file": "Downloaded file",
   "sync_datas_text": "This page is at your disposal for manual data synchronization, to avoid data loss in the event of non-synchronization.",
@@ -119,6 +120,14 @@
   "step_3_field_title_2": "This is a:",
   "step_3_field_title_3": "This issue is about:",
   "step_3_field_title_4": "Description of Issue:",
+  "step_3_section_reporter": "Reporter",
+  "step_3_section_citizen": "Citizen",
+  "step_3_field_location": "Location of the incident:",
+  "step_3_field_location_description": "Location details:",
+  "step_3_field_structure": "Structure in charge:",
+  "attachments_upload_deferred": "Some files could not be sent right now. They will be sent as soon as a connection is available (see Sync files).",
+  "attachments_upload_failed_retry_hint": "Sending one or more files to the server failed. The app will retry automatically later, or you can do it yourself from \"Sync files\".",
+  "upload_files_now": "Upload files now",
   "step_3_attachments": "Attachments:",
   "attachment_error": "An error has occurred! The attachment {{name}} may not be found on your mobile device, or the server is not responding.",
   "attachment_synchronized": "The attachment has been successfully synchronized.",
@@ -126,6 +135,7 @@
   "attach_all_attachments": "Please attach all attachments.",
   "unable_access_wifi": "We are unable to access the Wi-Fi network. Please check your connection!",
   "unable_access_internet": "We are unable to access the internet. Please check your connection!",
+  "session_expired_please_login": "Your session has expired. Please log in again.",
   "unable_retrieve_your_information": "We are unable to retrieve your information from the server.",
 
   //location step
@@ -305,6 +315,8 @@
   "sync_success": "Synchronization \n successful!",
   "sync_unsuccess": "Synchronization \n unsuccessful!",
   "sync_in_progress_take_time": "Synchronization in progress...\nThis may take a few seconds!",
+  "sync_full_resync_reset": "Resetting local data...\nPlease wait.",
+  "sync_full_resync_downloading": "Downloading all data (page {{page}})...\nThis may take a while.",
   "done": "Done",
   "exit": "Exit"
 }

@@ -3,7 +3,7 @@ import { useBackHandler } from '@react-native-community/hooks';
 import { Audio } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import moment from 'moment';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import {
@@ -13,26 +13,24 @@ import {
 } from 'react-native';
 import Collapsible from 'react-native-collapsible';
 import { Button, IconButton, Divider, Dialog, Paragraph, Portal, ActivityIndicator } from 'react-native-paper';
-import NetInfo from '@react-native-community/netinfo';
-import { Buffer } from "buffer";
-import * as FileSystem from 'expo-file-system';
-// import * as Sharing from "expo-sharing";
 import * as Linking from 'expo-linking';
 import Share from 'react-native-share';
 import CustomSeparator from '../../../../components/CustomSeparator/CustomSeparator';
-// import { baseURL } from '../../../../services/API';
-import { couchDBURLBase } from '../../../../utils/databaseManager';
 import { colors } from '../../../../utils/colors';
-import { LocalGRMDatabase } from '../../../../utils/databaseManager';
-import { getEncryptedData } from '../../../../utils/storageManager';
+import { database } from '../../../../database';
+import { createWithId } from '../../../../database/utils/createWithId';
+import { runSyncSafely } from '../../../../database/watermelonSyncManager';
+import { toLegacyIssueShape } from '../../../../utils/issueLegacyShape';
+import { getUserDocs } from '../../../../utils/databaseManager';
 import { citizenTypes } from '../../../../utils/utils';
 import { styles } from './Content.styles';
 import API from '../../../../services/API';
 import CustomDropDownPickerWithRender from '../../../../components/CustomDropDownPicker/CustomDropDownPicker';
 import { setCommune, setDocument } from '../../../../store/ducks/userDocument.duck';
 import UpdatableList from "../../../../components/UpdatableList";
-import { showDoc } from '../../../../utils/functions';
-import DownloadComponent from '../../../../components/DownloadComponent/DownloadComponent';
+import AttachmentViewerModal from '../../../../components/AttachmentViewerModal/AttachmentViewerModal';
+import { downloadAttachmentById } from '../../../../files/downloadQueue';
+import { formatDuration, getAudioDuration } from '../../../../utils/functions';
 
 
 
@@ -61,12 +59,27 @@ const styles_audio = StyleSheet.create({
   },
 });
 
+// Convertit un enregistrement `Attachment` WatermelonDB vers la forme legacy attendue par le JSX
+// existant (`url`/`local_url`/`isAudio`), qui distinguait auparavant les pièces jointes audio via
+// l'extension `.3gp` dans l'URL CouchDB — on utilise désormais directement `content_type`.
+function attachmentToLegacy(attachment) {
+  if (!attachment) return null;
+  return {
+    id: attachment.id,
+    url: attachment.remoteUrl,
+    local_url: attachment.localUri,
+    uri: attachment.localUri || attachment.remoteUrl,
+    isAudio: !!(attachment.contentType && attachment.contentType.startsWith('audio/')),
+    name: attachment.fileName,
+  };
+}
+
 
 function Content({ issue }) {
   const { t } = useTranslation();
-  const [dbConfig, setDbConfig] = useState({});
+  const issueRecord = issue.record;
 
-  const [comments, setComments] = useState(issue.comments);
+  const [comments, setComments] = useState([]);
   const [isIssueAssignedToMe, setIsIssueAssignedToMe] = useState(false);
   const [currentDate, setCurrentDate] = useState(moment());
   const [newComment, setNewComment] = useState();
@@ -83,6 +96,16 @@ function Content({ issue }) {
   const [imageError, setImageError] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const [issueAttachments, setIssueAttachments] = useState([]);
+  const [issueReasons, setIssueReasons] = useState([]);
+  const [resolutionFiles, setResolutionFiles] = useState([]);
+
+  // Visionneuse plein écran (image/PDF) — le téléchargement n'est plus automatique (cf.
+  // files/downloadQueue.js) : la visionneuse affiche directement `remote_url` à la volée quand
+  // rien n'est encore présent localement, sans avoir besoin de télécharger le fichier.
+  const [viewerAttachment, setViewerAttachment] = useState(null);
+  const [downloadingIds, setDownloadingIds] = useState(() => new Set());
+
   const [playing, setPlaying] = useState(false);
 
   const [editLocationDialog, setEditLocationDialog] = useState(false);
@@ -93,8 +116,8 @@ function Content({ issue }) {
 
   //Adminstrative
   const dispatch = useDispatch();
-  const { username, userPassword } = useSelector((state) => state.get('authentication').toObject());
-  const { userCommune } = useSelector((state) => state.get('userDocument').toObject());
+  const { username } = useSelector((state) => state.get('authentication').toObject());
+  const { userDocument: eadl, userCommune } = useSelector((state) => state.get('userDocument').toObject());
 
   const [cantons, setCantons] = useState(null);
   const [villages, setVillages] = useState(null);
@@ -109,6 +132,81 @@ function Content({ issue }) {
   const [open, setOpen] = useState(false);
   const [openVillage, setOpenVillage] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // `Relation.fetch()` rejette (RecordNotFoundError) si la pièce jointe référencée par un
+  // `Reason` n'est pas encore présente localement (ex. pull pas encore effectué depuis l'ajout
+  // du fix de synchronisation des attachments) — sans ce garde, un seul enregistrement manquant
+  // faisait échouer tout le `Promise.all` englobant, vidant silencieusement la preuve de
+  // résolution ET les décisions/investigations (jamais juste l'entrée concernée).
+  const fetchAttachmentSafely = async (reasonRecord) => {
+    if (!reasonRecord.attachmentId) return null;
+    try {
+      return await reasonRecord.attachment.fetch();
+    } catch (err) {
+      return null;
+    }
+  };
+
+  // Charge les tables enfants WatermelonDB (comments/reasons/attachments) de l'issue — ces
+  // tableaux n'existent plus dans le document lui-même (cf. src/utils/issueLegacyShape.js).
+  const loadIssueChildren = useCallback(async () => {
+    const [commentRecords, reasonRecords, attachmentRecords] = await Promise.all([
+      issueRecord.comments.fetch(),
+      issueRecord.reasons.fetch(),
+      issueRecord.attachments.fetch(),
+    ]);
+
+    commentRecords.sort((a, b) => (b.dueAt?.getTime() || 0) - (a.dueAt?.getTime() || 0));
+    const legacyComments = commentRecords.map((c) => ({
+      name: c.authorName,
+      comment: c.comment,
+      due_at: c.dueAt,
+    }));
+    issue.comments = legacyComments;
+    setComments(legacyComments);
+
+    const linkedAttachmentIds = new Set(
+      reasonRecords.filter((r) => r.attachmentId).map((r) => r.attachmentId)
+    );
+    // `getAudioDuration` est asynchrone (elle joue le fichier via expo-av pour lire sa durée) :
+    // sans `await`, `formatDuration` recevait la Promise elle-même au lieu du nombre de secondes,
+    // d'où un `duration_f` affichant systématiquement "NaN:NaN" quel que soit le résultat réel.
+    const topLevelAttachments = (await Promise.all(
+      attachmentRecords
+        .filter((a) => !linkedAttachmentIds.has(a.id))
+        .map(attachmentToLegacy)
+        .map(async (att) => (att ? { duration_f: formatDuration(await getAudioDuration(att.uri)), ...att } : null))
+    )).filter(Boolean);
+    issue.attachments = topLevelAttachments;
+    setIssueAttachments(topLevelAttachments);
+
+    const resolutionReasonRecords = reasonRecords.filter((r) => r.subject === 'resolution');
+    const resolutionFilesList = (await Promise.all(
+      resolutionReasonRecords.map(async (r) => {
+        const att = await fetchAttachmentSafely(r);
+        return att ? { id: r.id, duration_f: formatDuration(await getAudioDuration(att.uri)), ...attachmentToLegacy(att) } : null;
+      })
+    )).filter(Boolean);
+    issue.resolution_files = resolutionFilesList;
+    setResolutionFiles(resolutionFilesList);
+
+    const otherReasonRecords = reasonRecords.filter((r) => r.subject !== 'resolution');
+    const reasonsList = (await Promise.all(
+      otherReasonRecords.map(async (r) => {
+        if (r.subject === 'comment') {
+          return { type: 'comment', id: r.id, user_name: r.userName, due_at: r.dueAt, comment: r.comment };
+        }
+        const att = await fetchAttachmentSafely(r);
+        return att ? { type: 'file', id: r.id, due_at: r.dueAt, duration_f: formatDuration(await getAudioDuration(att.uri)), ...attachmentToLegacy(att) } : null;
+      })
+    )).filter(Boolean);
+    issue.reasons = reasonsList;
+    setIssueReasons(reasonsList);
+  }, [issueRecord]);
+
+  useEffect(() => {
+    loadIssueChildren();
+  }, [loadIssueChildren]);
 
   const setVillagesInfos = (hideC, c) => {
     let v = [];
@@ -136,64 +234,53 @@ function Content({ issue }) {
   }
 
   const getAdministrativeLevels = () => {
-    setCantons(null);
-    setVillages(null);
-    new API().administrativeLevelsFilterByAdministrativeRegion(username, userCommune.administrative_id, {}).then((response) => {
-      if (response.error) {
-        // console.log(response.error);
-        Alert.alert('Warning', response?.error?.toString(), [{ text: 'OK' }], {
-          cancelable: false,
-        });
-        return;
-      }
-      setCantons(response.cantons);
-      setVillages(response.villages);
+    if(!issue.administrative_region?.name){
+      setCantons(null);
+      setVillages(null);
+      // `return` : rend cet appel "attendable" par `onRefresh` ci-dessous (sinon `setRefreshing(false)`
+      // s'exécutait avant même que la requête réseau ne parte, cf. l'ancien `onRefresh` synchrone).
+      return new API().administrativeLevelsFilterByAdministrativeRegion(username, userCommune.administrative_id, {}).then((response) => {
+        if (response.error) {
+          // console.log(response.error);
+          Alert.alert('Warning', response?.error?.toString(), [{ text: 'OK' }], {
+            cancelable: false,
+          });
+          return;
+        }
+        setCantons(response.cantons);
+        setVillages(response.villages);
 
-      let d = [];
-      if (cantons && villages && cantons.length == 0 && villages.length == 0) {
-        setHideCantonField(true);
-        setHideVillageField(true);
-      } else if (cantons && [0, 1].includes(cantons.length)) {
-        setHideCantonField(true);
-        setVillagesInfos(true, canton);
-      } else {
-        setHideCantonField(false);
-        setVillagesInfos(false, canton);
-        if (cantons) {
-          for (let i = 0; i < cantons.length; i++) {
-            d.push({ name: String(cantons[i].name), id: String(cantons[i].id) });
-            if (i + 1 == cantons.length) {
-              setCantonsItems(d);
+        let d = [];
+        if (cantons && villages && cantons.length == 0 && villages.length == 0) {
+          setHideCantonField(true);
+          setHideVillageField(true);
+        } else if (cantons && [0, 1].includes(cantons.length)) {
+          setHideCantonField(true);
+          setVillagesInfos(true, canton);
+        } else {
+          setHideCantonField(false);
+          setVillagesInfos(false, canton);
+          if (cantons) {
+            for (let i = 0; i < cantons.length; i++) {
+              d.push({ name: String(cantons[i].name), id: String(cantons[i].id) });
+              if (i + 1 == cantons.length) {
+                setCantonsItems(d);
+              }
             }
           }
         }
-      }
-    }).catch((error) => {
-      console.log(error);
-    });
-
-    NetInfo.fetch().then((state) => {
-      if (!state.isConnected) {
-        Alert.alert('Not intervent', '', [{ text: 'OK' }], {
-          cancelable: false,
-        });
-      }
-    });
-
+      }).catch((error) => {
+        console.log(error);
+      });
+    }
   };
 
 
 
   useEffect(() => {
     const fetchUserCommune = async () => {
-
-      setDbConfig(await getEncryptedData(
-        `dbCredentials_${userPassword}_${username.replace('@', '')}`
-      ));
-
       if (!userCommune) {
-        // console.log(username)
-        const { userDoc, userCommune: usrC } = await getUserDocs(username);
+        const { userDoc, userCommune: usrC } = await getUserDocs();
         if (userDoc) {
           dispatch(setDocument(userDoc)); // Dispatch setDocument action
         }
@@ -203,43 +290,75 @@ function Content({ issue }) {
       }
     };
     fetchUserCommune(); // Call the fetch userCommune data function
-  }, [dispatch, userCommune, username]);
+  }, [dispatch, userCommune]);
 
 
   useEffect(() => {
-    getAdministrativeLevels();
-  }, []);
+    if (userCommune) {
+      getAdministrativeLevels();
+    }
+  }, [userCommune]);
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    getAdministrativeLevels();
-    setRefreshing(false);
+    try {
+      // Récupère d'abord les dernières données du serveur avant de relire la base locale : sans
+      // ce sync, "tirer pour rafraîchir" ne faisait que ré-afficher le même instantané local.
+      await runSyncSafely();
+      // `issue` (le dict "legacy shape", cf. utils/issueLegacyShape.js) est construit UNE SEULE
+      // FOIS par l'écran appelant (au moment de la navigation) puis muté en place ici —
+      // `runSyncSafely()` met bien à jour la ligne SQLite sous-jacente (`issueRecord`), mais rien
+      // ne rafraîchissait ensuite les champs scalaires/relations de `issue` (statut, catégorie,
+      // assignation, description, résultat de recherche...) à partir de `issueRecord` :
+      // `loadIssueChildren()` ci-dessous ne rafraîchit que les tables enfants (commentaires,
+      // pièces jointes, raisons), pas l'issue elle-même. D'où la reconstruction explicite ici.
+      Object.assign(issue, await toLegacyIssueShape(issueRecord));
+      refreshAssigneeDerivedState();
+      // Correctif au passage : `setRefreshing(false)` s'exécutait auparavant immédiatement après
+      // avoir déclenché ces deux appels asynchrones sans les attendre, donc avant même qu'ils
+      // n'aient eu le temps de partir — l'indicateur de chargement disparaissait donc
+      // instantanément au lieu de refléter la vraie durée du rafraîchissement.
+      await Promise.all([getAdministrativeLevels(), loadIssueChildren()]);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
-  const saveADLIssue = () => {
-    let issueLocation = {
-      administrative_id: selectedVillage?.id,
-      name: selectedVillage?.name,
+  const saveADLIssue = async () => {
+    // `administrative_region` est requis côté serveur (sync/serializers.py::IssueSyncSerializer,
+    // required=True) : pousser `null` sur une issue existante ferait échouer toute la
+    // synchronisation (la validation DRF n'est pas rattrapée par PushView), sans qu'aucun message
+    // clair ne soit montré à l'agent avant ce moment. On bloque donc localement plutôt que de
+    // laisser `selectedVillage` vide partir en sync.
+    if (!selectedVillage?.id) {
+      Alert.alert('Erreur', "Veuillez sélectionner un village avant d'enregistrer.");
+      return;
+    }
+
+    const issueLocation = {
+      administrative_id: selectedVillage.id,
+      name: selectedVillage.name,
     };
     issue.location_info = {
       ...issue.location_info,
-      issue_location: issueLocation
+      issue_location: issueLocation,
     };
     issue.administrative_region = issueLocation;
-    LocalGRMDatabase.upsert(issue._id, (doc) => {
-      doc = issue;
-      return doc;
-    })
-      .then(() => {
-        _hideEditLocationDialog();
-        onRefresh();
-      })
-      .catch((err) => {
-        console.log('Error', err);
+
+    await database.write(async () => {
+      await issueRecord.update((r) => {
+        r.administrativeRegionId = Number(selectedVillage.id);
+        r.administrativeRegionName = selectedVillage.name;
+        r.locationInfo = issue.location_info;
       });
+    });
+
+    _hideEditLocationDialog();
+    onRefresh();
   };
   //End Administrative
-
 
 
 
@@ -263,22 +382,97 @@ function Content({ issue }) {
     })();
   }, []);
 
-  useEffect(() => {
+  // Extrait en fonction réutilisable (rejouée aussi par `onRefresh` ci-dessous) : `issue` est un
+  // objet muté en place (jamais remplacé par une nouvelle référence, cf. `toLegacyIssueShape`
+  // plus bas), donc un `useEffect` dépendant de `issue` ne se redéclencherait jamais tout seul
+  // après une telle mutation — il faut explicitement rejouer cette logique après chaque
+  // rafraîchissement des données.
+  const refreshAssigneeDerivedState = () => {
     function _isIssueAssignedToMe() {
       if (issue.assignee && issue.assignee.id) {
-        return issue.reporter.id === issue.assignee.id;
+        return issue.assignee.id === eadl?.representative?.id;
       }
     }
 
     setIsIssueAssignedToMe(_isIssueAssignedToMe());
+  };
+
+  useEffect(() => {
+    refreshAssigneeDerivedState();
   }, []);
 
-  const upsertNewComment = () => {
-    LocalGRMDatabase.upsert(issue._id, (doc) => {
-      doc = issue;
-      return doc;
+  const openAttachment = async (item) => {
+    try {
+      setIsSyncing(true);
+      if (item.local_url) {
+        await Share.open({ url: item.local_url });
+      } else if (item.url) {
+        await Linking.openURL(item.url.split('?')[0]);
+      } else if (item.uri) {
+        await Linking.openURL(item.uri.split('?')[0]);
+      }
+    } catch (err) {
+      console.log('Error opening attachment', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Ouvre la visionneuse plein écran (image/PDF) — affiche directement `local_url` si déjà
+  // téléchargé, sinon `url` (distant) à la volée, sans nécessiter de téléchargement préalable.
+  const openAttachmentViewer = (item) => {
+    const uri = (item?.local_url || item?.url || item?.uri || '').split("?")[0];
+    if (!uri) return;
+    setViewerAttachment({
+      item,
+      uri,
+      isPdf: uri.includes('.pdf'),
+      name: item?.name,
+      isLocal: !!item?.local_url,
     });
   };
+
+  // Téléchargement à la demande d'UNE pièce jointe (icône dédiée) — plus aucun téléchargement
+  // automatique en arrière-plan (cf. database/sync.js::runSync, files/downloadQueue.js).
+  const handleDownloadAttachment = async (item) => {
+    if (!item?.id || item.local_url || !item.url) return;
+    setDownloadingIds((prev) => new Set(prev).add(item.id));
+    try {
+      const localUri = await downloadAttachmentById(item.id);
+      setViewerAttachment((prev) => (
+        prev && prev.item?.id === item.id ? { ...prev, uri: localUri, isLocal: true } : prev
+      ));
+      await loadIssueChildren();
+    } catch (err) {
+      console.warn('Download failed for', item.name, err);
+      Alert.alert(t('file_read_error'), t('file_read_error_try_again'));
+    } finally {
+      setDownloadingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
+    }
+  };
+
+  const onAddComment = async () => {
+    if (newComment) {
+      await createWithId(database.get('comments'), (c) => {
+        c.issueId = issueRecord.id;
+        c.authorId = eadl?.representative?.id;
+        c.authorName = eadl?.representative?.name;
+        c.comment = newComment;
+        c.dueAt = new Date();
+      });
+
+      setNewComment('');
+      await loadIssueChildren();
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 50);
+    }
+  };
+
   React.useEffect(
     () =>
       sound
@@ -290,46 +484,9 @@ function Content({ issue }) {
     [sound]
   );
 
-  const playSound = async (recordingUri, remoteUrl) => {
-    if (playing === false) {
-      setPlaying(true);
-      try {
-        // console.log("Loading Sound");
-        const { sound } = await Audio.Sound.createAsync({ uri: recordingUri });
-        setSound(sound);
-        // console.log("Playing Sound");
-        await sound.playAsync();
-
-        sound.setOnPlaybackStatusUpdate((status) => {
-          if (status.didJustFinish) {
-            setPlaying(false);
-          }
-        });
-      } catch (e) {
-        console.log(e);
-        try {
-          const { sound } = await Audio.Sound.createAsync({ uri: `${couchDBURLBase}${remoteUrl}` });
-          setSound(sound);
-          // console.log("Playing Sound");
-          await sound.playAsync();
-
-          sound.setOnPlaybackStatusUpdate((status) => {
-            if (status.didJustFinish) {
-              setPlaying(false);
-            }
-          });
-        } catch (_e) {
-          console.log(_e);
-        }
-      }
-    }
-    // setPlaying(false)
-  };
-
   const onPlaybackStatusUpdate = (status) => {
     setDuration(status.durationMillis);
     setPosition(status.positionMillis);
-    // setFinish(status.didJustFinish);
 
     if (status.didJustFinish) {
       setSound(undefined);
@@ -356,16 +513,7 @@ function Content({ issue }) {
 
 
   const playASound = async (sound_url) => {
-
-    if (sound_url && !sound_url.includes("file://")) {
-      setIsSyncing(true);
-      sound_url = `file://${await showDoc({ url: sound_url }, dbConfig?.username, dbConfig?.password, false)}`;
-      setIsSyncing(false);
-    }
-
-
     setSoundOnPause(false);
-    // console.log("Loading Sound");
     if (sound) {
       stopASound();
       setSound(undefined);
@@ -378,7 +526,6 @@ function Content({ issue }) {
     );
     setSound(sound);
     setSoundUrl(sound_url);
-    // console.log("Playing Sound");
     await sound.playAsync();
 
   };
@@ -394,89 +541,6 @@ function Content({ issue }) {
 
     return (position / duration) * 150;
   }
-  const getAudioDuration = async (sound_url) => {
-    const soundObject = new Audio.Sound();
-    let durationSecond;
-    try {
-      // Load the audio file (replace 'your-audio-file.mp3' with your actual file)
-      await soundObject.loadAsync({ uri: sound_url });
-
-      // Get the status of the audio
-      const status = await soundObject.getStatusAsync();
-
-      // Convert the duration from milliseconds to seconds
-      durationSecond = status.durationMillis / 1000;
-    } catch (error) {
-      console.error('Error loading audio:', error);
-    } finally {
-      // Unload the sound object to free up resources
-      await soundObject.unloadAsync();
-    }
-    return durationSecond;
-  };
-
-  const onAddComment = () => {
-    if (newComment) {
-      const commentDate = moment().format('DD-MMM-YYYY');
-      let cs = issue.comments.unshift({
-        name: issue.reporter.name,
-        comment: newComment,
-        due_at: commentDate,
-      });
-      // issue.comments = [
-      //   ...issue.comments,
-      //   {
-      //     name: issue.reporter.name,
-      //     comment: newComment,
-      //     due_at: commentDate,
-      //   },
-      // ];
-      // setComments([
-      //   ...comments,
-      //   {
-      //     name: issue.reporter.name,
-      //     comment: newComment,
-      //     due_at: commentDate,
-      //   },
-      // ]);
-      issue.comments = cs;
-      setComments(issue.comments);
-
-      setNewComment('');
-      setTimeout(() => {
-        scrollViewRef.current.scrollToEnd({ animated: true });
-      }, 50);
-    }
-    upsertNewComment();
-  };
-
-  // const openUrl = url => {
-  //   if (!url.includes("http")) {
-  //     url = couchDBURLBase + url;
-  //   }
-  //   Linking.openURL(url);
-  // };
-
-  // const showDoc = async (attach) => {
-  //   let url = (attach.local_url ? (attach.local_url && attach.local_url != "" ? attach.local_url : undefined) : undefined) ?? (attach.url ?? attach.uri);
-  //   if (url.includes("file://")) {
-  //     const buff = Buffer.from(url, "base64");
-  //     const base64 = buff.toString("base64");
-  //     const fileUri = FileSystem.documentDirectory + `${encodeURI(attach.name ? attach.name : "pdf")}.pdf`;
-
-  //     await FileSystem.writeAsStringAsync(fileUri, base64, {
-  //       encoding: FileSystem.EncodingType.Base64,
-  //     });
-
-  //     // Sharing.shareAsync(url);
-  //     await Share.open({ url: url, });
-
-  //   } else {
-  //     openUrl(url.split("?")[0]);
-  //   }
-
-
-  // }
 
   const renderItemReason = ({ item, index }) => {
     if (item.type == "comment") {
@@ -493,19 +557,19 @@ function Content({ issue }) {
         </View>
       );
     } else {
-      let urlL = (item.local_url ? (item.local_url && item.local_url != "" ? item.local_url : undefined) : undefined) ?? (item.url ?? item.uri);
+      let urlL = (item.local_url || item.url || item.uri || '').split("?")[0];
 
       let audio_url = urlL;
-      let audio_url_split = audio_url.split("?")[0].split("/");
+      let audio_url_split = (audio_url || '').split("?")[0].split("/");
       let audio_file_name = audio_url_split[audio_url_split.length - 1];
 
-      let audio_url_current = (soundUrl ? (soundUrl && soundUrl != "" ? soundUrl : undefined) : undefined) ?? "";
+      let audio_url_current = soundUrl || "";
       let audio_url_split_current = audio_url_current.split("?")[0].split("/");
       let audio_file_name_current = audio_url_split_current[audio_url_split_current.length - 1];
 
       return (
         <View key={`${index}_${item.url ?? item.local_url}`} style={{ width: 250, height: 200 }}>
-          {(item.url.includes(".3gp") || item.local_url.includes(".3gp")) ? (
+          {item.isAudio ? (
             <View
               style={{
                 flexDirection: 'row',
@@ -522,7 +586,7 @@ function Content({ issue }) {
               <View style={styles_audio.container}>
                 <Animated.View style={[styles_audio.bar, { width: audio_file_name_current == audio_file_name ? getProgress() ?? 0 : 0 }]} />
               </View>
-              <Text
+              {/* <Text
                 style={{
                   fontFamily: 'Poppins_400Regular',
                   fontSize: 12,
@@ -536,7 +600,7 @@ function Content({ issue }) {
                 }}
               >
                 {`(${index + 1})`}
-              </Text>
+              </Text> */}
               <Text
                 style={{
                   fontFamily: 'Poppins_400Regular',
@@ -549,7 +613,7 @@ function Content({ issue }) {
                   marginVertical: 13,
                   marginLeft: 7
                 }}
-              >{parseInt(String(audio_file_name_current == audio_file_name && position ? position / 1000 : 0))}</Text>
+              >{parseInt(String(audio_file_name_current == audio_file_name && position ? position / 1000 : 0))}{item?.duration_f ? `/${item?.duration_f}` : ''}</Text>
             </View>
           ) : (
             <View style={{
@@ -561,14 +625,7 @@ function Content({ issue }) {
               <View style={{ flex: 1, flexDirection: 'row' }}>
                 <ImageBackground
                   key={`${item.id} ${urlL}`}
-                  source={(urlL && urlL.includes('.pdf')) ? require('../../../../../assets/pdf.png') : (
-                    (urlL && urlL.includes("file://")) ? { uri: urlL } : {
-                      uri: `${couchDBURLBase}${urlL}`, headers: {
-                        username: dbConfig?.username,
-                        password: dbConfig?.password,
-                      }
-                    }
-                  )}
+                  source={(urlL && urlL.includes('.pdf')) ? require('../../../../../assets/pdf.png') : { uri: urlL }}
                   style={{
                     height: 200,
                     width: 200,
@@ -579,45 +636,9 @@ function Content({ issue }) {
                   }}
                 >
 
-                  <TouchableOpacity
-                    onPress={async () => {
-                      setIsSyncing(true);
-                      await showDoc(item, dbConfig?.username, dbConfig?.password);
-                      setIsSyncing(false);
-                    }}
-                    style={{
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                    }}
-                  >
-                    <Image
-                      resizeMode="stretch"
-                      style={{ width: 75, height: 75, borderRadius: 50, marginBottom: 5 }}
-                      source={require('../../../../../assets/eye.png')}
-                    />
-                  </TouchableOpacity>
-
-                </ImageBackground>
-                {item?.url && <DownloadComponent url={item.url} username={dbConfig?.username} password={dbConfig?.password} onlyIcon={true} eye={false} />}
-              </View>
-
-
-              {/* {((item.local_url && item.local_url.includes('.pdf')) || item.url && item.url.includes('.pdf')) ?
-                (
-                  <ImageBackground
-                    key={item.id}
-                    source={require('../../../../../assets/pdf.png')}
-                    style={{
-                      height: 200,
-                      width: 200,
-                      marginHorizontal: 1,
-                      alignSelf: 'center',
-                      justifyContent: 'flex-end',
-                    }}
-                  >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                     <TouchableOpacity
-                      onPress={async () => { await showDoc(item, dbConfig?.username, dbConfig?.password) }}
+                      onPress={() => openAttachmentViewer(item)}
                       style={{
                         justifyContent: 'center',
                         alignItems: 'center',
@@ -630,40 +651,20 @@ function Content({ issue }) {
                         source={require('../../../../../assets/eye.png')}
                       />
                     </TouchableOpacity>
-                  </ImageBackground>
-                )
-                : (item.url ? (
-                  <Image
-                    key={`${couchDBURLBase}${item.url}`}
-                    source={{
-                      uri: `${couchDBURLBase}${item.url}`, headers: {
-                        username: dbConfig?.username, // CouchDB username
-                        password: dbConfig?.password, // CouchDB password
-                      }
-                    }}
-                    // onError={() => setImageError(true)}
-                    style={{
-                      height: 200,
-                      width: 200,
-                      justifyContent: 'flex-end',
-                      marginVertical: 20,
-                      marginLeft: 20,
-                    }}
-                  />
-                ) : (
-                  <Image
-                    key={item.local_url}
-                    source={{ uri: item.local_url }}
-                    // onError={() => setImageError(true)}
-                    style={{
-                      height: 200,
-                      width: 200,
-                      justifyContent: 'flex-end',
-                      marginVertical: 20,
-                      marginLeft: 20,
-                    }}
-                  />
-                ))} */}
+                    {!item.local_url && item.url && (
+                      <IconButton
+                        icon={downloadingIds.has(item.id) ? 'progress-download' : 'download'}
+                        iconColor={colors.primary}
+                        size={24}
+                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.5)' }}
+                        disabled={downloadingIds.has(item.id)}
+                        onPress={() => handleDownloadAttachment(item)}
+                      />
+                    )}
+                  </View>
+
+                </ImageBackground>
+              </View>
             </View>
           )}
 
@@ -726,13 +727,6 @@ function Content({ issue }) {
             </Text>
 
             <Text style={styles.subtitle}>
-              {/* {t('location')}{' '} */}
-              {/* <Text style={styles.text}>
-                {' '}
-                {issue.citizen_type === 1 && !isIssueAssignedToMe
-                  ? t('confidential')
-                  : issue.administrative_region?.name ?? t('information_not_available')}
-              </Text> */}
               {
                 issue.citizen_type === 1 && !isIssueAssignedToMe ?
                   <>
@@ -804,15 +798,15 @@ function Content({ issue }) {
                   {issue.structure_in_charge.email ? ` | ${issue.structure_in_charge.email}` : ''}
                 </Text>
               </Text> : <></>}
-            {issue.attachments?.length > 0 &&
-              issue.attachments.map((item, index) => {
-                let urlL = (item.local_url ? (item.local_url && item.local_url != "" ? item.local_url : undefined) : undefined) ?? (item.url ?? item.uri);
-
+            {issueAttachments?.length > 0 &&
+              issueAttachments.map((item, index) => {
+                let urlL = (item.local_url || item.url || item.uri || '').split("?")[0];
+                
                 let audio_url = urlL;
-                let audio_url_split = audio_url.split("?")[0].split("/");
+                let audio_url_split = (audio_url || '').split("?")[0].split("/");
                 let audio_file_name = audio_url_split[audio_url_split.length - 1];
 
-                let audio_url_current = (soundUrl ? (soundUrl && soundUrl != "" ? soundUrl : undefined) : undefined) ?? "";
+                let audio_url_current = soundUrl || "";
                 let audio_url_split_current = audio_url_current.split("?")[0].split("/");
                 let audio_file_name_current = audio_url_split_current[audio_url_split_current.length - 1];
 
@@ -824,39 +818,15 @@ function Content({ issue }) {
                           style={{
                             flexDirection: 'row',
                             alignItems: 'center',
-                            // justifyContent: 'center',
                           }}
                         >
-                          {/* <IconButton
-                        icon="play"
-                        iconColor={playing ? colors.disabled : colors.primary}
-                        size={24}
-                        onPress={() => playSound(item.local_url, item.url)}
-                      />
-                      <Text
-                        style={{
-                          fontFamily: 'Poppins_400Regular',
-                          fontSize: 12,
-                          fontWeight: 'normal',
-                          fontStyle: 'normal',
-                          lineHeight: 18,
-                          letterSpacing: 0,
-                          textAlign: 'left',
-                          color: '#707070',
-                          marginVertical: 13,
-                        }}
-                      >
-                        {t('play_recorded_audio')}
-                      </Text> */}
-
-
                           <IconButton icon={!soundOnPause && audio_file_name_current == audio_file_name ? "pause" : "play"} iconColor={colors.primary} size={24} onPress={
                             () => audio_file_name_current == audio_file_name ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(audio_url)
                           } />
                           <View style={styles_audio.container}>
                             <Animated.View style={[styles_audio.bar, { width: audio_file_name_current == audio_file_name ? getProgress() : 0 }]} />
                           </View>
-                          <Text
+                          {/* <Text
                             style={{
                               fontFamily: 'Poppins_400Regular',
                               fontSize: 12,
@@ -870,7 +840,7 @@ function Content({ issue }) {
                             }}
                           >
                             {`(${index + 1})`}
-                          </Text>
+                          </Text> */}
                           <Text
                             style={{
                               fontFamily: 'Poppins_400Regular',
@@ -883,58 +853,15 @@ function Content({ issue }) {
                               marginVertical: 13,
                               marginLeft: 7
                             }}
-                          >{parseInt(String(audio_file_name_current == audio_file_name && position ? position / 1000 : 0))}</Text>
-
-                          <View style={{ width: 25 }}>
-                            {item?.url && <DownloadComponent url={item.url} username={dbConfig?.username} password={dbConfig?.password} onlyIcon={true} eye={false} />}
-                          </View>
+                          >{parseInt(String(audio_file_name_current == audio_file_name && position ? position / 1000 : 0))}{item?.duration_f ? `/${item?.duration_f}` : ''}</Text>
                         </View>
 
                       </View>
                     ) : (
-                      // <View>
-                      //   {item.url ? (
-                      //     <Image
-                      //       source={{
-                      //         uri: `${couchDBURLBase}${item.url}`, headers: {
-                      //           username: dbConfig?.username, // CouchDB username
-                      //           password: dbConfig?.password, // CouchDB password
-                      //         }
-                      //       }}
-                      //       onError={() => setImageError(true)}
-                      //       style={{
-                      //         height: 80,
-                      //         width: 80,
-                      //         justifyContent: 'flex-end',
-                      //         marginVertical: 20,
-                      //         marginLeft: 20,
-                      //       }}
-                      //     />
-                      //   ) : (
-                      //     <Image
-                      //       source={{ uri: item.local_url }}
-                      //       onError={() => setImageError(true)}
-                      //       style={{
-                      //         height: 80,
-                      //         width: 80,
-                      //         justifyContent: 'flex-end',
-                      //         marginVertical: 20,
-                      //         marginLeft: 20,
-                      //       }}
-                      //     />
-                      //   )}
-                      // </View>
                       <View style={{ flex: 1, flexDirection: 'row' }}>
                         <ImageBackground
                           key={`${item.id} ${urlL}`}
-                          source={(urlL && urlL.includes('.pdf')) ? require('../../../../../assets/pdf.png') : (
-                            (urlL && urlL.includes("file://")) ? { uri: urlL } : {
-                              uri: `${couchDBURLBase}${urlL}`, headers: {
-                                username: dbConfig?.username,
-                                password: dbConfig?.password,
-                              }
-                            }
-                          )}
+                          source={(urlL && urlL.includes('.pdf')) ? require('../../../../../assets/pdf.png') : { uri: urlL }}
                           style={{
                             height: 80,
                             width: 80,
@@ -945,27 +872,42 @@ function Content({ issue }) {
                           }}
                         >
 
-                          <TouchableOpacity
-                            onPress={async () => {
-                              setIsSyncing(true);
-                              await showDoc(item, dbConfig?.username, dbConfig?.password);
-                              setIsSyncing(false);
-                            }}
-                            style={{
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                            }}
-                          >
-                            <Image
-                              resizeMode="stretch"
-                              style={{ width: 20, height: 20, borderRadius: 15, marginBottom: 5 }}
-                              source={require('../../../../../assets/eye.png')}
-                            />
-                          </TouchableOpacity>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                            <TouchableOpacity
+                              onPress={() => openAttachmentViewer(item)}
+                              style={{
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                              }}
+                            >
+                              <Image
+                                resizeMode="stretch"
+                                style={{ width: 20, height: 20, borderRadius: 15, marginBottom: 5 }}
+                                source={require('../../../../../assets/eye.png')}
+                              />
+                            </TouchableOpacity>
+                            {!item.local_url && item.url && (
+                              <TouchableOpacity
+                                onPress={() => handleDownloadAttachment(item)}
+                                disabled={downloadingIds.has(item.id)}
+                                style={{
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                                  marginLeft: 2,
+                                }}
+                              >
+                                <MaterialCommunityIcons
+                                  name={downloadingIds.has(item.id) ? 'progress-download' : 'download'}
+                                  size={16}
+                                  color={colors.primary}
+                                />
+                              </TouchableOpacity>
+                            )}
+                          </View>
 
                         </ImageBackground>
-                        {item?.url && <DownloadComponent url={item.url} username={dbConfig?.username} password={dbConfig?.password} onlyIcon={true} eye={false} />}
                       </View>
                     )}
                   </View>
@@ -1029,12 +971,12 @@ function Content({ issue }) {
                 {issue.research_result}
               </Text>
 
-              {issue.resolution_files && issue.resolution_files.length > 0 ? <View style={{
+              {resolutionFiles && resolutionFiles.length > 0 ? <View style={{
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
                 <ImageBackground
-                  key={issue.resolution_files[0].id}
+                  key={resolutionFiles[0].id}
                   source={require('../../../../../assets/pdf.png')}
                   style={{
                     height: 200,
@@ -1044,24 +986,32 @@ function Content({ issue }) {
                     justifyContent: 'flex-end',
                   }}
                 >
-                  <TouchableOpacity
-                    onPress={async () => {
-                      setIsSyncing(true);
-                      await showDoc(issue.resolution_files[0], dbConfig?.username, dbConfig?.password);
-                      setIsSyncing(false);
-                    }}
-                    style={{
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                    }}
-                  >
-                    <Image
-                      resizeMode="stretch"
-                      style={{ width: 75, height: 75, borderRadius: 50, marginBottom: 5 }}
-                      source={require('../../../../../assets/eye.png')}
-                    />
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                    <TouchableOpacity
+                      onPress={() => openAttachmentViewer(resolutionFiles[0])}
+                      style={{
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                      }}
+                    >
+                      <Image
+                        resizeMode="stretch"
+                        style={{ width: 75, height: 75, borderRadius: 50, marginBottom: 5 }}
+                        source={require('../../../../../assets/eye.png')}
+                      />
+                    </TouchableOpacity>
+                    {!resolutionFiles[0].local_url && resolutionFiles[0].url && (
+                      <IconButton
+                        icon={downloadingIds.has(resolutionFiles[0].id) ? 'progress-download' : 'download'}
+                        iconColor={colors.primary}
+                        size={24}
+                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.5)' }}
+                        disabled={downloadingIds.has(resolutionFiles[0].id)}
+                        onPress={() => handleDownloadAttachment(resolutionFiles[0])}
+                      />
+                    )}
+                  </View>
                 </ImageBackground>
               </View> : <View></View>}
             </View>
@@ -1069,17 +1019,15 @@ function Content({ issue }) {
         </>)}
         <CustomSeparator />
         <TouchableOpacity
-          // onPress={() => setIsDecisionCollapsed(!isDecisionCollapsed)}
           style={styles.collapsibleTrigger}
         >
           <Text style={styles.subtitle}>{t('decisions')}/{t('investigations')}</Text>
           <MaterialCommunityIcons
-            name={'chevron-down-circle'}//{isDecisionCollapsed ? 'chevron-down-circle' : 'chevron-up-circle'}
+            name={'chevron-down-circle'}
             size={24}
             color={colors.primary}
           />
         </TouchableOpacity>
-        {/* <Collapsible collapsed={isDecisionCollapsed}> */}
         <View style={styles.collapsibleContent}>
           {issue.research_result ? <Text>{issue.research_result}</Text> : <></>}
           <Text></Text>
@@ -1095,11 +1043,11 @@ function Content({ issue }) {
               color: '#707070',
             }}
           >
-            {(issue.research_result || (issue.reasons && issue.reasons.length != 0))
+            {(issue.research_result || (issueReasons && issueReasons.length != 0))
               ?
               <>
                 {
-                  (issue.reasons && issue.reasons.length != 0)
+                  (issueReasons && issueReasons.length != 0)
                     ?
                     <>
                       <SafeAreaView style={{
@@ -1108,13 +1056,12 @@ function Content({ issue }) {
                       }}>
 
                         <UpdatableList
-                          // onFetchMoreData={handleFetchMoreData}
                           horizontal
                           ItemSeparatorComponent={() => <Divider style={{
                             marginTop: 7, marginBottom: 7
                           }} />}
                           style={{ flex: 1 }}
-                          data={issue.reasons}
+                          data={issueReasons}
                           keyExtractor={(item) => `${item.id} ${item.local_url}` ?? `${item.due_at} ${item.local_url}`}
                           renderItem={renderItemReason}
                         />
@@ -1131,118 +1078,7 @@ function Content({ issue }) {
         {isSyncing && <View>
           <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" key={"task_progress_key_1"} />
         </View>}
-        {/* </Collapsible> */}
 
-        {/* <CustomSeparator />
-        <TouchableOpacity
-          onPress={() => setIsSatisfactionCollapsed(!isSatisfactionCollapsed)}
-          style={styles.collapsibleTrigger}
-        >
-          <Text style={styles.subtitle}>{t('satisfaction')}</Text>
-          <MaterialCommunityIcons
-            name={isSatisfactionCollapsed ? 'chevron-down-circle' : 'chevron-up-circle'}
-            size={24}
-            color={colors.primary}
-          />
-        </TouchableOpacity>
-        <Collapsible collapsed={isSatisfactionCollapsed}>
-          <View style={styles.collapsibleContent}>
-            <Text
-              style={{
-                fontFamily: 'Poppins_400Regular',
-                fontSize: 12,
-                fontWeight: 'normal',
-                fontStyle: 'normal',
-                lineHeight: 15,
-                letterSpacing: 0,
-                textAlign: 'left',
-                color: '#707070',
-              }}
-            >
-              {t('information_not_available')}
-            </Text>
-          </View>
-        </Collapsible> */}
-        {/* <CustomSeparator />
-        <TouchableOpacity
-          onPress={() => setIsAppealCollapsed(!isAppealCollapsed)}
-          style={styles.collapsibleTrigger}
-        >
-          <Text style={styles.subtitle}>{t('appeal_reason')}</Text>
-          <MaterialCommunityIcons
-            name={isAppealCollapsed ? 'chevron-down-circle' : 'chevron-up-circle'}
-            size={24}
-            color={colors.primary}
-          />
-        </TouchableOpacity>
-        <Collapsible collapsed={isAppealCollapsed}>
-          <View style={styles.collapsibleContent}>
-            <Text
-              style={{
-                fontFamily: 'Poppins_400Regular',
-                fontSize: 12,
-                fontWeight: 'normal',
-                fontStyle: 'normal',
-                lineHeight: 15,
-                letterSpacing: 0,
-                textAlign: 'left',
-                color: '#707070',
-              }}
-            >
-              {t('information_not_available')}
-            </Text>
-          </View>
-        </Collapsible> */}
-        {/* <CustomSeparator /> */}
-        {/* <Text style={styles.title}>{t("attachments_label")}</Text> */}
-        {/* {issue?.attachments.map((item) => ( */}
-        {/*  <Text style={[styles.text, { marginBottom: 10 }]}>{item.uri}</Text> */}
-        {/* ))} */}
-        {/* <CustomSeparator /> */}
-        {/* <Text style={styles.title}>Activity</Text> */}
-        {/* {comments?.map((item) => ( */}
-        {/*  <View style={{ flex: 1 }}> */}
-        {/*    <View style={{ flexDirection: "row", marginVertical: 10, flex: 1 }}> */}
-        {/*      <View */}
-        {/*        style={{ */}
-        {/*          width: 32, */}
-        {/*          height: 32, */}
-        {/*          backgroundColor: "#f5ba74", */}
-        {/*          borderRadius: 16, */}
-        {/*        }} */}
-        {/*      /> */}
-        {/*      <View style={{ marginLeft: 10 }}> */}
-        {/*        <Text style={styles.text}>{item.name}</Text> */}
-        {/*        <Text style={styles.text}> */}
-        {/*          {moment(item.due_at).format("DD-MMM-YYYY")} */}
-        {/*        </Text> */}
-        {/*      </View> */}
-        {/*    </View> */}
-        {/*    <Text style={styles.text}>{item.comment}</Text> */}
-        {/*  </View> */}
-        {/* ))} */}
-
-        {/* <TextInput */}
-        {/*  multiline */}
-        {/*  numberOfLines={4} */}
-        {/*  style={[styles.grmInput, { height: 80 }]} */}
-        {/*  placeholder={t("comment_placeholder")} */}
-        {/*  outlineColor={"#f6f6f6"} */}
-        {/*  theme={theme} */}
-        {/*  mode={"outlined"} */}
-        {/*  value={newComment} */}
-        {/*  onChangeText={(text) => setNewComment(text)} */}
-        {/* /> */}
-
-        {/* <Button */}
-        {/*  theme={theme} */}
-        {/*  style={{ alignSelf: "center", margin: 24 }} */}
-        {/*  labelStyle={{ color: "white", fontFamily: "Poppins_500Medium" }} */}
-        {/*  mode="contained" */}
-        {/*  onPress={onAddComment} */}
-        {/* > */}
-        {/*  Add comment */}
-        {/* </Button> */}
         <CustomSeparator />
         <Button
           theme={theme}
@@ -1351,7 +1187,16 @@ function Content({ issue }) {
         </Dialog>
       </Portal>
 
-
+      <AttachmentViewerModal
+        visible={!!viewerAttachment}
+        onClose={() => setViewerAttachment(null)}
+        uri={viewerAttachment?.uri}
+        isPdf={viewerAttachment?.isPdf}
+        title={viewerAttachment?.name}
+        isLocal={viewerAttachment?.isLocal}
+        onDownload={() => viewerAttachment?.item && handleDownloadAttachment(viewerAttachment.item)}
+        onShare={() => viewerAttachment?.item && openAttachment(viewerAttachment.item)}
+      />
 
     </ScrollView>
   );

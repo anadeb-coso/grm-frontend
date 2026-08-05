@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   FlatList,
@@ -13,12 +13,13 @@ import {
 } from "react-native";
 import { Divider, Modal } from "react-native-paper";
 import { FontAwesome5 } from "@expo/vector-icons";
+import { Q } from "@nozbe/watermelondb";
 import { styles } from "./RegisterVotesActivity.style";
 import moment from "moment";
 import "moment/locale/fr";
 import CustomGreenButton from "../../../components/CustomGreenButton/CustomGreenButton";
 import { colors } from "../../../utils/colors";
-import LocalDatabase from "../../../utils/databaseManager";
+import { database } from "../../../database";
 import { useRoute } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -28,6 +29,7 @@ moment.locale("fr");
 function RegisterVotesActivity() {
   const { params } = useRoute();
   const { eadl, update } = params;
+  const [bpProjects, setBpProjects] = useState([]);
   const [project, setProject] = useState();
   const [registerVotesModal, setRegisterVotesModal] = useState();
   const [voteYM, setvoteYM] = useState();
@@ -36,34 +38,50 @@ function RegisterVotesActivity() {
   const [voteMF, setvoteMF] = useState();
   const [voteOM, setvoteOM] = useState();
   const [voteOF, setvoteOF] = useState();
+
+  const loadProjects = useCallback(async () => {
+    const records = await database.get('bp_projects').query(Q.where('adl', eadl.id)).fetch();
+    setBpProjects(records.map((r) => ({
+      record: r,
+      id: r.externalCode,
+      subproject_name: r.subprojectName,
+      subproject_description: r.subprojectDescription,
+      vote_ym: r.voteYm,
+      vote_yf: r.voteYf,
+      vote_mm: r.voteMm,
+      vote_mf: r.voteMf,
+      vote_om: r.voteOm,
+      vote_of: r.voteOf,
+    })));
+  }, [eadl]);
+
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
+
   const dismissModal = () => {
     setProject(undefined);
     setRegisterVotesModal(false);
   };
 
-  const upsertTasks = () => {
-    LocalDatabase.upsert(eadl._id, function (doc) {
-      doc = eadl;
-      return doc;
-    })
-      .then(function (res) {
-        setTimeout(() => update(), 500);
-        dismissModal();
-      })
-      .catch(function (err) {
-        console.log("Error", err);
-        // error
+  const doSave = async () => {
+    try {
+      await database.write(async () => {
+        await project.record.update((r) => {
+          r.voteYm = parseInt(voteYM) || 0;
+          r.voteYf = parseInt(voteYF) || 0;
+          r.voteMm = parseInt(voteMM) || 0;
+          r.voteMf = parseInt(voteMF) || 0;
+          r.voteOm = parseInt(voteOM) || 0;
+          r.voteOf = parseInt(voteOF) || 0;
+        });
       });
-  };
-
-  const doSave = () => {
-    project.vote_ym = voteYM ?? 0;
-    project.vote_yf = voteYF ?? 0;
-    project.vote_mm = voteMM ?? 0;
-    project.vote_mf = voteMF ?? 0;
-    project.vote_om = voteOM ?? 0;
-    project.vote_of = voteOF ?? 0;
-    upsertTasks();
+      await loadProjects();
+      setTimeout(() => update(), 500);
+      dismissModal();
+    } catch (err) {
+      console.log("Error", err);
+    }
   };
 
   const onSaveProject = async () => {
@@ -81,7 +99,7 @@ function RegisterVotesActivity() {
     <View style={{ flex: 1, paddingTop: 10 }}>
       <FlatList
         showsVerticalScrollIndicator={false}
-        data={eadl.bp_projects ?? []}
+        data={bpProjects}
         contentContainerStyle={{ padding: 21 }}
         style={{ flex: 1 }}
         keyExtractor={(item) => item.id}

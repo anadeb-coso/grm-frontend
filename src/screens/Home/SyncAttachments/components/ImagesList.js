@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Image, ScrollView, Text, View } from 'react-native';
+import { Image, ScrollView, Text, View, RefreshControl } from 'react-native';
 import { ActivityIndicator, Card } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../../../../utils/colors';
 
-function ImagesList({ attachments }) {
+function ImagesList({ attachments, getAndSetAttachments, refreshing }) {
   const { t } = useTranslation();
   const [_attachments, _setAttachments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,10 +69,10 @@ function ImagesList({ attachments }) {
   }
   useEffect(() => {
     setTimeout(() => {
-      attachments?.length > 0 &&
+      attachments?.filter(elt => ![undefined, null, ""].includes(elt?.local_url))?.length > 0 &&
         _setAttachments(
-          attachments.map(
-            (obj) => obj?.attachment?.uploaded === false && <AttachmentComponent key={`${obj?.attachment?.id} ${obj?.attachment?.local_url}`} attachment={obj} />
+          attachments?.filter(elt => ![undefined, null, ""].includes(elt?.local_url))?.map(
+            (obj) => <AttachmentComponent key={`${obj?.attachment?.id} ${obj?.attachment?.local_url}`} attachment={obj} />
           )
         );
       setLoading(false);
@@ -88,7 +88,10 @@ function ImagesList({ attachments }) {
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ justifyContent: 'center', alignItems: 'center', padding: 20 }}
+      contentContainerStyle={{ justifyContent: 'center', alignItems: 'center', padding: 20 }} 
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={getAndSetAttachments} />
+      }
     >
       {_attachments}
     </ScrollView>

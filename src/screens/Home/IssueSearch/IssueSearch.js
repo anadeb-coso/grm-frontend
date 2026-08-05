@@ -1,21 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, ToastAndroid, RefreshControl, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import NetInfo from '@react-native-community/netinfo';
+import { Q } from '@nozbe/watermelondb';
+import { useNavigation } from '@react-navigation/native';
 import { colors } from '../../../utils/colors';
-import { LocalGRMDatabase } from '../../../utils/databaseManager';
+import { database } from '../../../database';
+import { runSyncSafely } from '../../../database/watermelonSyncManager';
 import { styles } from './IssueSearch.style';
 import Content from './containers';
-import { logout } from '../../../store/ducks/authentication.duck';
-import { getEncryptedData } from '../../../utils/storageManager';
-import { verify_account_on_couchdb } from '../../../services/CouchDBRequest';
 import SnackBarCheckFileUnsyncComponent from '../../../components/SnackBarCheckFileUnsyncComponent/SnackBarCheckFileUnsyncComponent';
+import { toLegacyIssueShapes } from '../../../utils/issueLegacyShape';
 
 function IssueSearch() {
   const { t } = useTranslation();
   const customStyles = styles();
+  const navigation = useNavigation();
+
   const [issues, setIssues] = useState();
   const [statuses, setStatuses] = useState();
   const [issueCategories, setIssueCategories] = useState();
@@ -27,106 +30,78 @@ function IssueSearch() {
   const onDismissSnackBar = () => setErrorVisible(false);
 
 
-  const dispatch = useDispatch();
-  const getDBConfig = async () => {
-    const password = await getEncryptedData('userPassword');
-    let dbCredentials;
-    let username;
-    if (password) {
-      username = await getEncryptedData(`username`);
-      dbCredentials = await getEncryptedData(
-        `dbCredentials_${password}_${username.replace('@', '')}`
-      );
-
-      if (username) {
-        if (!(await verify_account_on_couchdb(dbCredentials, username))) {
-          ToastAndroid.show(t('unable_retrieve_your_information'), ToastAndroid.LONG);
-          dispatch(logout());
-        }
-      }
-    }
-  };
-  useEffect(() => {
-    getDBConfig();
-  }, []);
-
   const { userDocument: eadl } = useSelector((state) => state.get('userDocument').toObject());
 
 
   useEffect(() => {
-    LocalGRMDatabase.find({
-      selector: { type: 'issue_status' },
-    })
+    database.get('issue_statuses').query().fetch()
       .then((result) => {
-        setStatuses(result.docs);
+        setStatuses(result.map((s) => ({ id: s.legacyId, name: s.name })));
       })
       .catch((err) => {
         alert(`Unable to retrieve statuses. ${JSON.stringify(err)}`);
       });
 
-
-      LocalGRMDatabase.find({
-        selector: { type: "issue_category" },
+    database.get('issue_categories').query().fetch()
+      .then((result) => {
+        setIssueCategories(
+          result
+            .map((c) => ({ id: c.legacyId, name: c.name }))
+            .filter((obj) => !([4, 7].includes(obj.id)))
+        );
       })
-        .then(function (result) {
-          setIssueCategories((result?.docs ?? []).filter((obj) => !([4, 7].includes(obj.id))));
-        })
-        .catch(function (err) {
-          console.log(err);
-        });
-
+      .catch((err) => {
+        console.log(err);
+      });
   }, []);
 
-  const get_issues = () => {
+  const get_issues = async () => {
+    
+    setConnected(true);
+    await check_network();
+    
     setIssues([]);
-    if (eadl && eadl.representative) {
-      let selector = {
-        type: 'issue',
-        // 'reporter.id': eadl.representative.id,
-        confirmed: true,
-        "$or": [
-          {
-            "reporter.id": eadl.representative.id
-          },
-          {
-            "assignee.id": eadl.representative.id
-          }
-        ]
+    if (!(eadl && eadl.representative)) return;
+
+    // Récupère d'abord les dernières données du serveur avant de relire la base locale : sans ce
+    // sync, "tirer pour rafraîchir" ne faisait que ré-afficher le même instantané local.
+    try {
+      await runSyncSafely();
+    } catch (err) {
+      console.log(err);
+    }
+
+    try {
+      const issueRecords = await database.get('issues').query(Q.where('confirmed', true)).fetch();
+      let docs = await toLegacyIssueShapes(issueRecords);
+
+      const isGlobalViewer = eadl.administrative_region == '1'
+        && eadl.representative.groups
+        && (eadl.representative.groups.includes('ViewerOfAllIssues') || eadl.representative.groups.includes('Admin'));
+
+      if (isGlobalViewer) {
+        // pas de filtre supplémentaire : toutes les issues confirmées
+      } else if (eadl.administrative_region == '1') {
+        docs = docs.filter((issue) => issue.publish);
+      } else {
+        docs = docs.filter((issue) => (
+          (issue.reporter && issue.reporter.id === eadl.representative.id)
+          || (issue.assignee && issue.assignee.id === eadl.representative.id)
+        ));
       }
-      if (eadl.administrative_region == "1" && eadl.representative.groups && (eadl.representative.groups.includes("ViewerOfAllIssues") || eadl.representative.groups.includes("Admin"))) {
-        selector = {
-          type: 'issue',
-          confirmed: true
+
+      docs.sort((a, b) => {
+        if (a.created_date && b.created_date) {
+          return a.created_date < b.created_date ? 1 : -1; // descending
         }
-      } else if (eadl.administrative_region == "1") {
-        selector = {
-          type: 'issue',
-          confirmed: true,
-          publish: true
-        }
-      }
+        return 0;
+      });
 
-      LocalGRMDatabase.find({
-        selector: selector
-      })
-        .then((result) => {
-          let docs = result?.docs ?? [];
-          docs.sort((a, b) => {
-            if (a.created_date && b.created_date) {
-              return a.created_date < b.created_date ? 1 : -1; // descending
-              // return a.created_date > b.created_date ? 1 : -1; // ascending
-            }
-          });
-
-
-          // setIssues(result?.docs);
-          setIssues(docs);
-          setRefreshing(false);
-        })
-        .catch((err) => {
-          console.log(err);
-          setRefreshing(false);
-        });
+      setIssues(docs);
+      setRefreshing(false);
+    } catch (err) {
+      console.log(err);
+      setRefreshing(false);
     }
   }
   useEffect(() => {
@@ -150,38 +125,48 @@ function IssueSearch() {
   }
   const onRefresh = async () => {
     setRefreshing(true);
-    setConnected(true);
-    await check_network();
+
     //Get Issues
-    get_issues();
+    await get_issues();
     //End Get Issues
 
   };
+
+  useEffect(() => {
+
+    const unsubscribe = navigation.addListener('focus', async () => {
+        await onRefresh();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
 
 
   if (!issues || refreshing || !issueCategories)
     return <ActivityIndicator style={{ marginTop: 50 }} color={colors.primary} size="small" />;
 
-  
+
   return (
-    <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}  style={customStyles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }>
-      <SafeAreaView>
+    <SafeAreaView style={[customStyles.container, { flex: 1 }]}>
 
-        <Content issues={issues} eadl={eadl} statuses={statuses} issueCategories={issueCategories} />
+      <Content
+        issues={issues}
+        eadl={eadl}
+        statuses={statuses}
+        issueCategories={issueCategories}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+      />
 
-        <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
-          {errorMessage}
-        </Snackbar>
+      <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
+        {errorMessage}
+      </Snackbar>
 
-        
-        <SnackBarCheckFileUnsyncComponent />
 
-      </SafeAreaView>
-    </ScrollView>
+      <SnackBarCheckFileUnsyncComponent />
+
+    </SafeAreaView>
   );
 }
 

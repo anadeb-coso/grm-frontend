@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { View, Modal, Text, Image } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
+import * as Progress from 'react-native-progress';
 import { useSelector } from 'react-redux';
 import NetInfo from '@react-native-community/netinfo';
 import { useTranslation } from 'react-i18next';
+import { Q } from '@nozbe/watermelondb';
 import { colors } from '../../../utils/colors';
 import Datas from './components/Content';
-import { getEncryptedData } from '../../../utils/storageManager';
 import CustomGreenButton from '../../../components/CustomGreenButton/CustomGreenButton';
 import SyncImage from '../../../../assets/sync-image.svg';
 import CheckCircle from '../../../../assets/check-circle.svg';
-import { SyncToRemoteDatabase, LocalGRMDatabase } from "../../../utils/databaseManager";
+import { database } from '../../../database';
+import { runSyncSafely } from '../../../database/watermelonSyncManager';
 import API from '../../../services/API';
 
 
@@ -23,9 +25,13 @@ function SyncDatas({ navigation }) {
   const [errorMessage, setErrorMessage] = useState(t('datas_sync_error'));
   const [connected, setConnected] = useState(true);
   const [message, setMessage] = useState(null);
-  
+  // Suivi de `onProgress` (src/database/sync.js) : la phase 'reset' signale un full resync forcé
+  // par le serveur (last_pulled_at trop ancien, cf. CLAUDE.md §9) — la base locale est vidée puis
+  // entièrement retéléchargée, ce qui peut prendre du temps ; on affiche une barre de progression
+  // dédiée plutôt que le message générique "sync en cours".
+  const [syncProgress, setSyncProgress] = useState(null);
+
   const onDismissSnackBar = () => setErrorVisible(false);
-  const { username, userPassword } = useSelector((state) => state.get('authentication').toObject());
   const { userDocument: eadl } = useSelector((state) => state.get('userDocument').toObject());
   
   const check_network = async () => {
@@ -44,79 +50,63 @@ function SyncDatas({ navigation }) {
 
   const sync = async () => {
 
-    let succes = false;
     setLoading(true);
+    setSyncProgress(null);
     setConnected(true);
     await check_network();
     if(connected){
+      // Appel legacy best-effort (notifie le serveur / vérifie les doublons pour les clients
+      // pré-WatermelonDB encore en circulation, cf. issue/views_rest.py::SaveIssueDatas) : son
+      // échec ne doit plus empêcher la vraie mise à jour des données locales ci-dessous — avant
+      // ce correctif, `runSyncSafely` (le seul appel qui pull/push réellement les données via
+      // WatermelonDB) n'était déclenché QUE si cet appel legacy réussissait, ce qui pouvait
+      // laisser l'utilisateur avec des données locales périmées malgré un bouton "Sync" pressé
+      // avec succès en apparence.
       try {
-        await LocalGRMDatabase.find({
-          selector: { 
-            type: 'issue',
-            confirmed: true,
-            "$or": [
-              {
-                "reporter.id": eadl.representative.id
-              },
-              {
-                "assignee.id": eadl.representative.id
-              }
-            ]
-           },
-        })
-          .then(async (result) => {
-            let issues = result?.docs ?? [];
-            await new API()
-              .sync_datas({issues: issues, email: eadl.representative.email}, i18n.language)
-              .then(response => {
-                // console.log(response.status != 'ok');
-                if (response.message) {
-                  setMessage(response.message);
-                }
+        const issueRecords = await database.get('issues').query(Q.where('confirmed', true)).fetch();
+        const issues = issueRecords
+          .filter((i) => i.reporterId === eadl.representative.id || i.assigneeId === eadl.representative.id)
+          .map((i) => ({
+            _id: i.id,
+            internal_code: i.internalCode,
+            tracking_code: i.trackingCode,
+            description: i.description,
+            confirmed: i.confirmed,
+            reporter: i.reporterId ? { id: i.reporterId, name: i.reporterName } : null,
+            assignee: i.assigneeId ? { id: i.assigneeId, name: i.assigneeName } : null,
+          }));
 
-                if (response.status != 'ok') {
-                  // console.error(response.error);
-                  setErrorVisible(true);
-                }else if (response.has_error) {
-                  succes = true;
-                  setErrorMessage(t('some_datas_sync_error'));
-                  console.error(response.error);
-                  setErrorVisible(true);
-                }else if(response.status && response.status == 'ok') {
-                  succes = true;
-                }
-              })
-              .catch(error => {
-                console.error(error);
-                console.log(error);
-                setErrorVisible(true);
-              });
-  
+        await new API()
+          .sync_datas({issues: issues, email: eadl.representative.email}, i18n.language)
+          .then(response => {
+            if (response.message) {
+              setMessage(response.message);
+            }
+            if (response.status == 'ok' && response.has_error) {
+              setErrorMessage(t('some_datas_sync_error'));
+              console.error(response.error);
+              setErrorVisible(true);
+            }
           })
-          .catch((err) => {
-            console.log("Error1 : "+err);
-            setErrorVisible(true);
+          .catch(error => {
+            console.error(error);
           });
       } catch (e) {
         console.log("Error1 : "+e);
-        setErrorVisible(true);
       }
-      if (succes){
+
+      // La vraie mise à jour des données locales (pull + push WatermelonDB), désormais toujours
+      // tentée dès qu'il y a une connexion, quel qu'ait été le résultat de l'appel legacy ci-dessus.
+      const succeeded = await runSyncSafely({ onProgress: setSyncProgress });
+      if (succeeded) {
         setSuccessModal(true);
-        try {
-          const dbConfig = await getEncryptedData(
-            `dbCredentials_${userPassword}_${username.replace('@', '')}`
-          );
-          await SyncToRemoteDatabase(dbConfig, username);
-        } catch (e) {
-          setErrorVisible(true);
-        }
-      }else{
+      } else {
         setErrorModal(true);
       }
     }
+    setSyncProgress(null);
     setLoading(false);
-    
+
   };
 
   return (
@@ -259,9 +249,22 @@ function SyncDatas({ navigation }) {
 
       <Datas />
       {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color="#24c38b" />
-          <Text style={{ fontSize: 18, marginTop: 12 }} color="#000000">{t('sync_in_progress_take_time')}</Text>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          {syncProgress?.phase === 'reset' || syncProgress?.phase === 'pull' ? (
+            <>
+              <Progress.Bar indeterminate width={200} color={colors.primary} />
+              <Text style={{ fontSize: 16, marginTop: 12, textAlign: 'center' }} color="#000000">
+                {syncProgress.phase === 'reset'
+                  ? t('sync_full_resync_reset')
+                  : t('sync_full_resync_downloading', { page: syncProgress.current })}
+              </Text>
+            </>
+          ) : (
+            <>
+              <ActivityIndicator size="large" color="#24c38b" />
+              <Text style={{ fontSize: 18, marginTop: 12 }} color="#000000">{t('sync_in_progress_take_time')}</Text>
+            </>
+          )}
         </View>
       ) : (
         <View>

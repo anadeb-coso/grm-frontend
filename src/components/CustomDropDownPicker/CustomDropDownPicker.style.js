@@ -41,4 +41,13 @@ export const styles = StyleSheet.create({
     borderColor: "#dedede",
     elevation: 3,
   },
+  searchContainerStyle: {
+    borderBottomColor: "#dedede",
+  },
+  searchTextInputStyle: {
+    borderColor: "#dedede",
+    fontFamily: "Poppins_400Regular",
+    fontSize: 12,
+    color: "#707070",
+  },
 });

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Dimensions, Platform, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '../../utils/colors';
 import { styles } from './CustomDropDownPicker.style';
 
@@ -26,7 +27,9 @@ function CustomDropDownPicker({
   onOpen = () => null,
   onClose = () => null,
   onSelectItem = () => null,
+  searchable = true,
 }) {
+  const { t } = useTranslation();
   const [dropdownVisible, setDropdownVisible] = React.useState(false);
   const [open, setOpen] = useState(false);
   return (
@@ -65,6 +68,10 @@ function CustomDropDownPicker({
         textStyle={styles.dropdownText}
         labelStyle={styles.dropdownLabel}
         itemSeparator
+        searchable={searchable}
+        searchPlaceholder={t('search_label')}
+        searchContainerStyle={styles.searchContainerStyle}
+        searchTextInputStyle={styles.searchTextInputStyle}
         onChangeValue={onChangeValue}
         itemSeparatorStyle={{
           backgroundColor: '#f6f6f6',

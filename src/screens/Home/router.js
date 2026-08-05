@@ -201,7 +201,7 @@ function ProfileStackScreen() {
     <ProfileStack.Navigator>
       
       <ProfileStack.Screen
-        name="Profile"
+        name="ProfileHome"
         component={WorkInProgress}
         options={({ navigation, route }) => customHeaderOptions('Profile')}
       />

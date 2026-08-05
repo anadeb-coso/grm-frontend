@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   TouchableOpacity,
@@ -13,16 +13,18 @@ import { useNavigation } from "@react-navigation/native";
 import CurrencyInput from "react-native-currency-input";
 import { ActivityIndicator, Text } from "react-native-paper";
 import { FontAwesome5, AntDesign } from "@expo/vector-icons";
+import { Q } from "@nozbe/watermelondb";
 import { styles } from "./Content.styles";
 import * as ImagePicker from "expo-image-picker";
 import { Feather } from "@expo/vector-icons";
 import CustomGreenButton from "../../../../components/CustomGreenButton/CustomGreenButton";
 import moment from "moment";
 import "moment/locale/fr";
-import LocalDatabase from "../../../../utils/databaseManager";
+import { database } from "../../../../database";
+import { createWithId } from "../../../../database/utils/createWithId";
+import { deleteAttachmentRemote } from "../../../../files/uploadQueue";
 import * as Location from "expo-location";
 import { colors } from "../../../../utils/colors";
-import { baseURL } from "../../../../services/API";
 import CustomDropDownPicker from "../../../../components/CustomDropDownPicker/CustomDropDownPicker";
 import * as ImageManipulator from "expo-image-manipulator";
 
@@ -36,9 +38,24 @@ function Content({ task, phase, eadl, updatePhase }) {
   const [notes, setNotes] = useState(task.notes);
   const [open, setOpen] = useState(false);
   const [pickerValue, setPickerValue] = useState(task.status);
-  const [attachments, setAttachments] = useState(task.attachments || []);
-  const [amount, setAmount] = useState(task.bp_amount || 0);
-  const isBugetElaborationTask = typeof task.bp_amount !== "undefined";
+  const [attachments, setAttachments] = useState([]);
+  const [amount, setAmount] = useState(task.bpAmount || 0);
+  const isBugetElaborationTask = task.taskType === "input_activity";
+
+  const loadAttachments = useCallback(async () => {
+    const records = await database.get('attachments').query(Q.where('task', task.id)).fetch();
+    setAttachments(records.map((a) => ({
+      record: a,
+      id: a.id,
+      url: a.remoteUrl,
+      uploaded: a.uploadStatus === 'done',
+      local_url: a.localUri,
+    })));
+  }, [task]);
+
+  useEffect(() => {
+    loadAttachments();
+  }, [loadAttachments]);
 
   const getLocation = async () => {
     let { status } = await Location.requestPermissionsAsync();
@@ -59,83 +76,64 @@ function Content({ task, phase, eadl, updatePhase }) {
     });
 
     if (!result.cancelled) {
+      const localUri = result.localUri || result.uri;
       const manipResult = await ImageManipulator.manipulateAsync(
-        result.localUri || result.uri,
+        localUri,
         [{ resize: { width: 1000, height: 1000 } }],
         { compress: 1, format: ImageManipulator.SaveFormat.PNG }
       );
-      setAttachments([
-        ...attachments,
-        {
-          url: "",
-          id: new Date(),
-          uploaded: false,
-          local_url: manipResult.uri,
-        },
-      ]);
+      await createWithId(database.get('attachments'), (a) => {
+        a.taskId = task.id;
+        a.fileName = manipResult.uri.split('/').pop();
+        a.contentType = 'image/png';
+        a.localUri = manipResult.uri;
+        a.uploadStatus = 'pending';
+        a.downloadStatus = 'done';
+      });
+      await loadAttachments();
     }
   };
   const onChangeNotes = (text) => {
-    task.notes = text;
     setNotes(text);
   };
   const onChangeStatus = (value) => {
-    task.status = value;
-    if (value === "completed") {
-      task.closed_at = moment();
-    } else {
-      task.closed_at = "";
-    }
     setStatus(value);
   };
   const onChangeAmount = (value) => {
     if (value === null) value = 0;
-    task.bp_amount = value;
     setAmount(value);
   };
-  const doSave = async (data) => {
+  const doSave = async () => {
     setLoading(true);
     const _location = await getLocation();
-    task.attachments = attachments;
-    task.location = _location;
-    LocalDatabase.upsert(eadl._id, function (doc) {
-      doc.phases = eadl.phases;
-      return doc;
-    })
-      .then(function (res) {
-        setLoading(false);
-        setTimeout(() => updatePhase(), 500);
-        navigation.goBack();
-        // success, res is {rev: '1-xxx', updated: true, id: 'myDocId'}
-      })
-      .catch(function (err) {
-        console.log("Error", err);
-        // error
+    try {
+      await database.write(async () => {
+        await task.update((t) => {
+          t.notes = notes;
+          t.status = status;
+          t.closedAt = status === "completed" ? new Date() : null;
+          t.location = _location ? { lat: _location.coords.latitude, lng: _location.coords.longitude } : null;
+          if (isBugetElaborationTask) t.bpAmount = amount;
+        });
       });
+      setLoading(false);
+      setTimeout(() => updatePhase(), 500);
+      navigation.goBack();
+    } catch (err) {
+      setLoading(false);
+      console.log("Error", err);
+    }
   };
-  const onAttachmentRemove = (id) => {
-    const newList = attachments.filter((item) => item.id !== id);
-    setAttachments(newList);
-    //TODO: implement back button prompt to discard changes
-
-    // Alert.alert(
-    //   "Remove Attachment",
-    //   "Are you sure you want to remove this attachment?",
-    //   [
-    //     {
-    //       text: "Cancel",
-    //       onPress: () => console.log("Cancel Pressed"),
-    //       style: "cancel",
-    //     },
-    //     {
-    //       text: "OK",
-    //       onPress: () => {
-    //         const newList = attachments.filter((item) => item.id !== id);
-    //         setAttachments(newList);
-    //       },
-    //     },
-    //   ]
-    // );
+  const onAttachmentRemove = async (item) => {
+    // Répercute la suppression côté serveur AVANT de supprimer l'enregistrement local :
+    // `attachments` n'étant pas poussée par le protocole de sync habituel (cf.
+    // files/uploadQueue.js::deleteAttachmentRemote), c'est le seul moyen pour que ce fichier ne
+    // reste pas orphelin côté serveur s'il avait déjà été envoyé.
+    await deleteAttachmentRemote(item.record);
+    await database.write(async () => {
+      await item.record.markAsDeleted();
+    });
+    await loadAttachments();
   };
 
   const onSaveTask = async (data) => {
@@ -190,8 +188,8 @@ function Content({ task, phase, eadl, updatePhase }) {
             color="#f5ba74"
           />
           <Text style={styles.cardDateText}>
-            {moment(task.open_at).format("MMMM-yyyy")}-
-            {moment(task.due_at).format("MMMM-yyyy")}
+            {moment(task.openAt).format("MMMM-yyyy")}-
+            {moment(task.dueAt).format("MMMM-yyyy")}
           </Text>
         </View>
         <Text
@@ -308,11 +306,9 @@ function Content({ task, phase, eadl, updatePhase }) {
           {attachments &&
             attachments.map((item) => (
               <ImageBackground
+                key={item.id}
                 source={{
-                  uri:
-                    item?.url?.length > 0
-                      ? `${baseURL}${item.url}`
-                      : item.local_url,
+                  uri: item.local_url || item.url,
                 }}
                 style={{
                   marginHorizontal: 5,
@@ -323,7 +319,7 @@ function Content({ task, phase, eadl, updatePhase }) {
                   alignItems: "flex-end",
                 }}
               >
-                <TouchableOpacity onPress={() => onAttachmentRemove(item.id)}>
+                <TouchableOpacity onPress={() => onAttachmentRemove(item)}>
                   <AntDesign
                     style={{ margin: 10 }}
                     name="closecircle"

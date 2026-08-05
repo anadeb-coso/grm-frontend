@@ -11,8 +11,11 @@ import { useNavigation } from '@react-navigation/native';
 import { logout } from '../../../store/ducks/authentication.duck';
 import LanguageSelector from '../../../translations/LanguageComponent';
 import { setCommune, setDocument } from '../../../store/ducks/userDocument.duck';
+import { Q } from '@nozbe/watermelondb';
 import { colors } from '../../../utils/colors';
-import { getUserDocs, LocalDatabase, LocalGRMDatabase } from '../../../utils/databaseManager';
+import { getUserDocs } from '../../../utils/databaseManager';
+import { database } from '../../../database';
+import { runSyncSafely } from '../../../database/watermelonSyncManager';
 import ChartIssues from '../../../components/Chart/ChartIssues';
 import SnackBarCheckFileUnsyncComponent from '../../../components/SnackBarCheckFileUnsyncComponent/SnackBarCheckFileUnsyncComponent';
 
@@ -21,7 +24,6 @@ export function WorkInProgress() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
-  const { username } = useSelector((state) => state.get('authentication').toObject());
   const { userDocument: eadl } = useSelector((state) => state.get('userDocument').toObject());
 
   const screenHeight = Dimensions.get("window").height;
@@ -31,28 +33,15 @@ export function WorkInProgress() {
   const [issues, setIssues] = useState();
   const [status, setStatus] = useState('my_statistics');
 
+  // `eadl` (issu de getUserDocs, cf. redux userDocument) porte déjà `administrative_regions_objects`
+  // — inutile de le rechercher une seconde fois via une réplication PouchDB locale désormais retirée.
   const get_adl_region_objects = () => {
-
-    LocalDatabase.find({
-      selector: {
-        'representative.email': eadl.representative.email
-      }
-    }).then((res) => {
-
-      if (res.docs && res.docs.length > 0) {
-        setAdministrative_regions_objects(res.docs[0].administrative_regions_objects ?? []);
-      } else {
-        setAdministrative_regions_objects([]);
-      }
-
-    }).catch((er) => {
-      console.log(er);
-    })
+    setAdministrative_regions_objects(eadl?.administrative_regions_objects ?? []);
   }
   useEffect(() => {
     const fetchUserCommune = async () => {
       if (!eadl) {
-        const { userDoc, userDocument: usrC } = await getUserDocs(username);
+        const { userDoc, userCommune: usrC } = await getUserDocs();
         if (userDoc) {
           dispatch(setDocument(userDoc)); // Dispatch setDocument action
         }
@@ -69,57 +58,66 @@ export function WorkInProgress() {
       get_adl_region_objects();
     }
 
-  }, [dispatch, eadl, username]);
+  }, [dispatch, eadl]);
 
 
 
-  const get_issues = () => {
+  const get_issues = async () => {
     setIssues([]);
-    if (eadl && eadl.representative) {
-      let selector = {
-        type: 'issue',
-        // 'reporter.id': eadl.representative.id,
-        confirmed: true,
-        "$or": [
-          {
-            "reporter.id": eadl.representative.id
-          },
-          {
-            "assignee.id": eadl.representative.id
-          }
-        ]
-      }
-      if (eadl.administrative_region == "1" && eadl.representative.groups && (eadl.representative.groups.includes("ViewerOfAllIssues") || eadl.representative.groups.includes("Admin"))) {
-        selector = {
-          type: 'issue',
-          confirmed: true
-        }
+    if (!(eadl && eadl.representative)) return;
+    try {
+      const [issueRecords, statusRecords, categoryRecords] = await Promise.all([
+        database.get('issues').query(Q.where('confirmed', true)).fetch(),
+        database.get('issue_statuses').query().fetch(),
+        database.get('issue_categories').query().fetch(),
+      ]);
+      const statusesByServerId = new Map(statusRecords.map((s) => [s.id, s]));
+      const categoriesByServerId = new Map(categoryRecords.map((c) => [c.id, c]));
+      let docs = issueRecords.map((issue) => {
+        const status = statusesByServerId.get(issue.statusId);
+        const category = categoriesByServerId.get(issue.categoryId);
+        return {
+          reporter: issue.reporterId ? { id: issue.reporterId } : null,
+          assignee: issue.assigneeId ? { id: issue.assigneeId } : null,
+          status: status ? { id: status.legacyId, name: status.name } : null,
+          category: category ? { id: category.legacyId, name: category.name } : null,
+          publish: issue.publish,
+        };
+      });
+
+      const isGlobalViewer = eadl.administrative_region == "1" && eadl.representative.groups
+        && (eadl.representative.groups.includes("ViewerOfAllIssues") || eadl.representative.groups.includes("Admin"));
+
+      if (isGlobalViewer) {
+        // toutes les issues confirmées
       } else if (eadl.administrative_region == "1") {
-        selector = {
-          type: 'issue',
-          confirmed: true,
-          publish: true
-        }
+        docs = docs.filter((issue) => issue.publish);
+      } else {
+        docs = docs.filter((issue) => (
+          (issue.reporter && issue.reporter.id === eadl.representative.id)
+          || (issue.assignee && issue.assignee.id === eadl.representative.id)
+        ));
       }
 
-      LocalGRMDatabase.find({
-        selector: selector
-      })
-        .then((result) => {
-          setIssues(result?.docs ?? []);
-          setRefreshing(false);
-        })
-        .catch((err) => {
-          console.log(err);
-          setRefreshing(false);
-        });
+      setIssues(docs);
+      setRefreshing(false);
+    } catch (err) {
+      console.log(err);
+      setRefreshing(false);
     }
   }
 
   const onRefresh = async () => {
     setRefreshing(true);
+    // Récupère d'abord les dernières données du serveur avant de relire la base locale : sans ce
+    // sync, "tirer pour rafraîchir" ne faisait que ré-afficher le même instantané local.
+    try {
+      await runSyncSafely();
+    } catch (err) {
+      console.log(err);
+    }
     //Get Issues
-    get_issues();
+    await get_issues();
     //End Get Issues
 
     get_adl_region_objects();
@@ -291,7 +289,7 @@ export function WorkInProgress() {
                 <View>
                   <Image
                     style={styles.avatar}
-                    source={{ uri: eadl.representative.photo }}
+                    source={![undefined, null, ""].includes(eadl.representative.photo) ? { uri: eadl.representative.photo } : require('../../../../assets/default-avatar.jpg')}
                   />
                 </View>
               </View>

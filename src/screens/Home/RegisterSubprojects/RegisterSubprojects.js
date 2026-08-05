@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   FlatList,
@@ -12,12 +12,14 @@ import {
 } from "react-native";
 import { Divider, Modal } from "react-native-paper";
 import { FontAwesome5 } from "@expo/vector-icons";
+import { Q } from "@nozbe/watermelondb";
 import { styles } from "./RegisterSubprojects.style";
 import moment from "moment";
 import "moment/locale/fr";
 import CustomGreenButton from "../../../components/CustomGreenButton/CustomGreenButton";
 import { colors } from "../../../utils/colors";
-import LocalDatabase from "../../../utils/databaseManager";
+import { database } from "../../../database";
+import { createWithId } from "../../../database/utils/createWithId";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
 moment.locale("fr");
@@ -28,15 +30,31 @@ function RegisterSubprojects() {
   const { eadl } = params;
   const [createProjectModal, setCreateProjectModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [bpProjects, setBpProjects] = useState(eadl.bp_projects || []);
+  const [bpProjects, setBpProjects] = useState([]);
   const [subProjectName, setSubProjectName] = useState("");
   const [subProjectDesc, setSubProjectDesc] = useState("");
   const [subProjectLocation, setSubProjectLocation] = useState("");
   const [projectToEdit, setProjectToEdit] = useState();
+
+  const loadProjects = useCallback(async () => {
+    const records = await database.get('bp_projects').query(Q.where('adl', eadl.id)).fetch();
+    setBpProjects(records.map((r) => ({
+      record: r,
+      id: r.externalCode,
+      district_name: r.districtName,
+      subproject_name: r.subprojectName,
+      subproject_description: r.subprojectDescription,
+    })));
+  }, [eadl]);
+
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
+
   const incrementId = () => {
-    const last = eadl.bp_projects[eadl.bp_projects.length - 1];
-    if (!eadl.bp_projects[0]) return 1;
-    else return parseInt(last.id.split("-")[1]) + 1;
+    if (!bpProjects[0]) return 1;
+    const last = bpProjects[bpProjects.length - 1];
+    return parseInt(last.id.split("-")[1] || "0") + 1;
   };
   const dismissModal = () => {
     setLoading(false);
@@ -45,19 +63,6 @@ function RegisterSubprojects() {
     setSubProjectLocation("");
     setProjectToEdit(undefined);
     setCreateProjectModal(false);
-  };
-  const upsertTasks = () => {
-    LocalDatabase.upsert(eadl._id, function (doc) {
-      doc = eadl;
-      return doc;
-    })
-      .then(function (res) {
-        dismissModal();
-      })
-      .catch(function (err) {
-        console.log("Error", err);
-        // error
-      });
   };
   const addSubproject = () => setCreateProjectModal(!createProjectModal);
 
@@ -80,12 +85,10 @@ function RegisterSubprojects() {
       {
         text: "Oui",
         onPress: async () => {
-          const updatedSubProjects = bpProjects.filter(
-            (item) => item.id !== project.id
-          );
-          setBpProjects(updatedSubProjects);
-          eadl.bp_projects = updatedSubProjects;
-          upsertTasks();
+          await database.write(async () => {
+            await project.record.markAsDeleted();
+          });
+          await loadProjects();
         },
         style: "yes",
       },
@@ -97,57 +100,39 @@ function RegisterSubprojects() {
   const onChangeLocation = (text) => setSubProjectLocation(text);
   const doSave = async () => {
     setLoading(true);
-    if (projectToEdit) {
-      //Edit project
-      const updatedData = eadl.bp_projects.map((x) =>
-        x.id === projectToEdit
-          ? {
-              ...x,
-              district_name: subProjectLocation,
-              subproject_name: subProjectName,
-              subproject_description: subProjectDesc,
-            }
-          : x
-      );
-      setBpProjects(updatedData);
-      eadl.bp_projects = updatedData;
-    } else {
-      //Create project
-      const newId = incrementId();
-      setBpProjects([
-        ...bpProjects,
-        {
-          id: `${eadl.commune}-${newId}`,
-          district_name: subProjectLocation,
-          subproject_name: subProjectName,
-          subproject_description: subProjectDesc,
-          budget_allocated: [],
-          vote_ym: "",
-          vote_yf: "",
-          vote_mm: "",
-          vote_mf: "",
-          vote_om: "",
-          vote_of: "",
-        },
-      ]);
-      eadl.bp_projects = [
-        ...eadl.bp_projects,
-        {
-          id: `${eadl.commune}-${newId}`,
-          district_name: subProjectLocation,
-          subproject_name: subProjectName,
-          subproject_description: subProjectDesc,
-          budget_allocated: [],
-          vote_ym: "",
-          vote_yf: "",
-          vote_mm: "",
-          vote_mf: "",
-          vote_om: "",
-          vote_of: "",
-        },
-      ];
+    try {
+      if (projectToEdit) {
+        const existing = bpProjects.find((x) => x.id === projectToEdit);
+        await database.write(async () => {
+          await existing.record.update((r) => {
+            r.districtName = subProjectLocation;
+            r.subprojectName = subProjectName;
+            r.subprojectDescription = subProjectDesc;
+          });
+        });
+      } else {
+        const newId = incrementId();
+        const externalCode = `${eadl.locationName || eadl.name || 'BP'}-${newId}`;
+        await createWithId(database.get('bp_projects'), (r) => {
+          r.adlId = eadl.id;
+          r.externalCode = externalCode;
+          r.districtName = subProjectLocation;
+          r.subprojectName = subProjectName;
+          r.subprojectDescription = subProjectDesc;
+          r.voteYm = 0;
+          r.voteYf = 0;
+          r.voteMm = 0;
+          r.voteMf = 0;
+          r.voteOm = 0;
+          r.voteOf = 0;
+        });
+      }
+      await loadProjects();
+      dismissModal();
+    } catch (err) {
+      console.log("Error", err);
+      setLoading(false);
     }
-    upsertTasks();
   };
   const onSaveTask = async () => {
     if (!!subProjectName && !!subProjectLocation) {

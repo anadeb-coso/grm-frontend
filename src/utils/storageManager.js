@@ -55,7 +55,6 @@ export const removeEncryptedValue = async (key) => {
 
 export const clearEncryptedValues = async () => {
   try {
-    await removeEncryptedValue('userPassword');
     await removeEncryptedValue('username');
     await removeValue('userDoc');
     await removeValue('userCommune');

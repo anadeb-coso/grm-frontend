@@ -4,6 +4,7 @@ import { Provider as PaperProvider } from 'react-native-paper';
 import { ToastProvider } from 'react-native-toast-notifications';
 import Router from "./src/router/";
 import store from "./src/store";
+import SyncProgressBar from "./src/components/SyncProgressBar/SyncProgressBar";
 import "./src/translations/i18n";
 // import { SyncStatusProvider } from "./src/components/SyncStatus/SyncStatusContext";
 // import SyncStatusInitializer from "./src/components/SyncStatus/SyncStatusInitializer";
@@ -18,6 +19,7 @@ const App = () => {
     <ReduxProvider store={store}>
       <ToastProvider>
         <PaperProvider>
+          <SyncProgressBar />
           <Router />
         </PaperProvider>
       </ToastProvider>

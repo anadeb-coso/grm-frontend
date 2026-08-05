@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, View, RefreshControl } from 'react-native';
 import Chart from '../../../../../assets/chart_line_solid.svg';
 import FileIcon from '../../../../../assets/file_alt_regular.svg';
 import SearchIcon from '../../../../../assets/magnifying-glass-solid.svg';
@@ -9,13 +9,35 @@ import SyncIcon from '../../../../../assets/sync_alt_solid.svg';
 import TeamWorkIcon from '../../../../../assets/team-work.svg';
 import BigCard from '../components/BigCard';
 import SmallCard from '../components/SmallCard';
+import { runSyncSafely } from '../../../../database/watermelonSyncManager';
 
 function Content() {
   const { t } = useTranslation();
 
   const navigation = useNavigation();
+
+  // Cet écran n'affiche lui-même aucune donnée dynamique (un simple menu de navigation) : tirer
+  // pour rafraîchir ici ne met donc rien à jour visuellement, mais permet de déclencher une
+  // synchronisation à la demande depuis l'écran d'accueil, dont profiteront les autres écrans
+  // (liste des issues, statistiques, etc.) à la prochaine ouverture.
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await runSyncSafely();
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
-    <ScrollView contentContainerStyle={{ paddingTop: 20 }} style={{ backgroundColor: 'white' }}>
+    <ScrollView
+      contentContainerStyle={{ paddingTop: 20 }}
+      style={{ backgroundColor: 'white' }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <BigCard
         image={require('../../../../../assets/BG_9.png')}
         onCardPress={() => navigation.navigate('CitizenReportIntro')}

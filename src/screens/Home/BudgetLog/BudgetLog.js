@@ -1,11 +1,27 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { SafeAreaView, FlatList, Text, View } from "react-native";
 import { styles } from "../Notifications/components/NotificationItem/NotificationItem.style";
 import Svg, { Circle } from "react-native-svg";
 import { Divider } from "react-native-paper";
+import { database } from "../../../database";
 
 const BudgetLog = ({ route }) => {
-  const { project } = route?.params;
+  const { bpProjectId } = route?.params;
+  const [entries, setEntries] = useState([]);
+
+  useEffect(() => {
+    if (!bpProjectId) return;
+    (async () => {
+      const record = await database.get('bp_projects').find(bpProjectId);
+      const allocations = await record.budgetAllocations.fetch();
+      setEntries(allocations.map((a) => ({
+        description: a.description,
+        timestamp: a.entryDate,
+        formattedAmount: new Intl.NumberFormat().format(a.amount),
+      })));
+    })();
+  }, [bpProjectId]);
+
   const ListItem = ({ description, timestamp, formattedAmount }) => {
     return (
       <>
@@ -31,13 +47,11 @@ const BudgetLog = ({ route }) => {
   };
   return (
     <SafeAreaView>
-      {project && (
-        <FlatList
-          data={project.budget_allocated}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => <ListItem {...item} />}
-        />
-      )}
+      <FlatList
+        data={entries}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item }) => <ListItem {...item} />}
+      />
     </SafeAreaView>
   );
 };

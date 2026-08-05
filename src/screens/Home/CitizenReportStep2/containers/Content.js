@@ -29,8 +29,7 @@ import CustomDropDownPickerWithRender from '../../../../components/CustomDropDow
 import { colors } from '../../../../utils/colors';
 import { styles } from './Content.styles';
 import LoadingScreen from '../../../../components/LoadingScreen/LoadingScreen';
-import { formatDuration, showDoc } from '../../../../utils/functions';
-import { getEncryptedData } from '../../../../utils/storageManager';
+import { formatDuration, showDoc, getAudioDuration } from '../../../../utils/functions';
 
 const theme = {
   roundness: 12,
@@ -61,7 +60,6 @@ const styles_audio = StyleSheet.create({
 function Content({ stepOneParams, issueCategories, issueTypes }) {
   const { t } = useTranslation();
   const { userDocument: eadl } = useSelector((state) => state.get('userDocument').toObject());
-  const { username, userPassword } = useSelector((state) => state.get('authentication').toObject());
 
   const navigation = useNavigation();
   const [pickerValue, setPickerValue] = useState(null);
@@ -82,8 +80,6 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const [soundUrl, setSoundUrl] = React.useState();
   const [duration, setDuration] = useState(null);
   const [position, setPosition] = useState(null);
-  const [dbUsername, setDBUsername] = useState(null);
-  const [dbPassword, setDBPassword] = useState(null);
   // const [finish, setFinish] = useState<boolean>(true);
   const [issueTypeCategoryError, setIssueTypeCategoryError] = React.useState(false);
   const [selectedIssueType, setSelectedIssueType] = useState({
@@ -123,15 +119,6 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
     })();
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      const dbConfig = await getEncryptedData(
-        `dbCredentials_${userPassword}_${username.replace('@', '')}`
-      );
-      setDBUsername(dbConfig?.username);
-      setDBPassword(dbConfig?.password);
-    });
-  }, []);
 
   const getImageDimensions = async (imageUri) => {
     return new Promise((resolve, reject) => {
@@ -184,7 +171,14 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         });
         // console.log("Starting recording..");
         const recording = new Audio.Recording();
-        await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+        // `Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY` n'existe pas dans cette version d'expo-av
+        // (le vrai chemin est `Audio.RecordingOptionsPresets.HIGH_QUALITY`) : l'expression valait
+        // donc `undefined`, et `prepareToRecordAsync(undefined)` retombe silencieusement sur son
+        // défaut interne `RecordingOptionsPresets.LOW_QUALITY` — sur Android, ce préréglage encode
+        // en AMR_NB dans un conteneur `.3gp` au lieu d'AAC/`.m4a`, un format qu'aucun lecteur
+        // (ExoPlayer mobile comme navigateur web du dashboard) ne peut lire de façon fiable. Toutes
+        // les captures audio étaient donc enregistrées en basse qualité 3GP par accident.
+        await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
         await recording.startAsync();
         setRecording(recording);
         // console.log("Recording started");
@@ -286,27 +280,6 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
 
     return (position / duration) * 150;
   }
-
-  const getAudioDuration = async (sound_url) => {
-    const soundObject = new Audio.Sound();
-    let durationSecond;
-    try {
-      // Load the audio file (replace 'your-audio-file.mp3' with your actual file)
-      await soundObject.loadAsync({ uri: sound_url });
-
-      // Get the status of the audio
-      const status = await soundObject.getStatusAsync();
-
-      // Convert the duration from milliseconds to seconds
-      durationSecond = status.durationMillis / 1000;
-    } catch (error) {
-      console.error('Error loading audio:', error);
-    } finally {
-      // Unload the sound object to free up resources
-      await soundObject.unloadAsync();
-    }
-    return durationSecond;
-  };
 
 
   useEffect(() => {
@@ -759,7 +732,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
                 >
 
                   <TouchableOpacity
-                    onPress={async () => { await showDoc(attachment, dbUsername, dbPassword) }}
+                    onPress={async () => { await showDoc(attachment) }}
                     style={{
                       justifyContent: 'center',
                       alignItems: 'center',

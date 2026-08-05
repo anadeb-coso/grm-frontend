@@ -1,6 +1,6 @@
 import { AntDesign, Feather } from '@expo/vector-icons';
 import moment from 'moment';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
@@ -15,32 +15,28 @@ import {
   Animated,
   Image,
   Alert,
-  ProgressBarAndroid
+  ProgressBarAndroid,
+  RefreshControl
 } from 'react-native';
 import { Button, Dialog, Paragraph, Portal, TextInput, IconButton } from 'react-native-paper';
 import { Audio } from 'expo-av';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import { Buffer } from "buffer";
-import { useSelector } from 'react-redux';
 import { Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
-// import * as Sharing from "expo-sharing";
 import * as FileSystem from 'expo-file-system';
-import * as Linking from 'expo-linking';
-import Share from 'react-native-share';
+import { Q } from '@nozbe/watermelondb';
 import { colors } from '../../../../utils/colors';
-import { LocalGRMDatabase, couchDBURLBase } from '../../../../utils/databaseManager';
+import { database } from '../../../../database';
+import { createWithId } from '../../../../database/utils/createWithId';
+import { runSyncSafely } from '../../../../database/watermelonSyncManager';
+import { toLegacyIssueShape } from '../../../../utils/issueLegacyShape';
 import { styles } from './Content.styles';
 import LoadingScreen from '../../../../components/LoadingScreen/LoadingScreen';
-import { id_kara_centrale_cantons, administrative_levels } from '../../../../utils/utils';
-import { formatDuration } from '../../../../utils/functions';
-import { showDoc } from '../../../../utils/functions';
-import { getEncryptedData } from '../../../../utils/storageManager';
-import { baseURL } from '../../../../services/API';
-import { uploadFile } from '../../../../services/upload';
+import { formatDuration, getImageSize, image_compress, getImageDimensions, getAudioDuration } from '../../../../utils/functions';
 import { check_issues } from '../../../../utils/functionsRequestsToApi';
+import { enqueuePendingUploads, deleteAttachmentRemote } from '../../../../files/uploadQueue';
 
 
 
@@ -72,6 +68,7 @@ const styles_audio = StyleSheet.create({
 
 function Content({ issue, navigation, statuses = [], eadl }) {
   const { t, i18n } = useTranslation();
+  const issueRecord = issue.record;
 
   const [acceptDialog, setAcceptDialog] = useState(false);
   const [rejectDialog, setRejectDialog] = useState(false);
@@ -97,13 +94,8 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const [isNotResolveEnabled, setIsNotResolveEnabled] = useState(false);
   const [isRateAppealEnabled, setIsRateAppealEnabled] = useState(false);
   const [isIssueAssignedToMe, setIsIssueAssignedToMe] = useState(false);
-  const { username, userPassword } = useSelector((state) => state.get('authentication').toObject());
-  const [dbUsername, setDBUsername] = useState(null);
-  const [dbPassword, setDBPassword] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [escalateFlag, setEscalateFlag] = useState(!!issue?.escalate_flag);
-  console.log(issue.escalate_flag)
-  console.log(!!issue.escalate_flag)
 
   const [currentAdlObj, setCurrentAdlObj] = useState({
     escalate_to: {
@@ -173,42 +165,123 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
 
 
-  const get_next_administrative_level = (current_escalate_to) => {
-    if (!current_escalate_to) {
-      return "Canton";
+  // Résout la clé primaire WatermelonDB (UUID) d'un enregistrement de référence à partir de son
+  // `legacy_id` numérique — `statuses` (prop) ne porte que des objets bruts {id, name, ...}
+  // mappés depuis `issue_statuses` (IssueActions.js), sans référence `.record` vers
+  // l'enregistrement WatermelonDB local (contrairement à `issue.status`/`issue.category`, issus
+  // de `toLegacyIssueShape`). Utiliser `newStatus.record.id` ici (comme le faisait le code avant
+  // ce fix) lève `TypeError: Cannot read property 'id' of undefined` à chaque changement de
+  // statut/ajout d'historique.
+  const resolveReferenceId = async (tableName, legacyId) => {
+    if (legacyId === undefined || legacyId === null) return null;
+    const records = await database.get(tableName).query(Q.where('legacy_id', Number(legacyId))).fetch();
+    return records[0]?.id ?? null;
+  };
+
+  // Remonte d'un cran la hiérarchie administrative locale (`administrative_regions`, table de
+  // cache alimentée par syncAdministrativeLevels(), CLAUDE.md §4.7) à partir d'un `server_id`.
+  const get_parent_administrative_region = async (administrativeId) => {
+    if (!administrativeId) return null;
+    
+    const current = (await database.get('administrative_regions')
+      .query(Q.where('server_id', Number(administrativeId))).fetch())[0];
+    
+    if (!current || !current.parentId) return null;
+    return (await database.get('administrative_regions')
+      .query(Q.where('server_id', Number(current.parentId))).fetch())[0] || null;
+  };
+
+  // Logique de remontée hiérarchique (procédure de gestion des plaintes §5) :
+  //  - Village (ou tout niveau de base) → Canton (parent immédiat)
+  //  - Canton → Région si la région est "Savanes" (saute la préfecture), sinon → Préfecture
+  //    (régions Kara/Centrale)
+  //  - Préfecture ou Région → toujours National, quel que soit le niveau atteint juste avant
+  // Résolu via la vraie hiérarchie administrative (table locale), plus une liste blanche de
+  // cantons forcément incomplète.
+  const get_next_administrative_level = async (current_escalate_to) => {
+    const level = current_escalate_to?.administrative_level;
+
+    if (level === "Prefecture" || level === "Region") {
+      return { administrative_level: "Country", administrative_id: null, name: "TOGO" };
     }
-    if (current_escalate_to.administrative_level == "Canton") {
-      if (current_escalate_to.administrative_id) {
-        if (id_kara_centrale_cantons.includes(Number(current_escalate_to.administrative_id))) {
-          return "Prefecture";
-        } else {
-          return "Region";
-        }
-      } else {
+
+    if (level === "Canton") {
+      const commune = await get_parent_administrative_region(current_escalate_to.administrative_id);
+      
+      if (!commune) {
         ToastAndroid.show(`${t('error_message_for_update')}`, ToastAndroid.SHORT);
+        return null;
       }
+
+      const prefecture = await get_parent_administrative_region(commune.serverId ?? commune.server_id);
+      
+      if (!prefecture) {
+        ToastAndroid.show(`${t('error_message_for_update')}`, ToastAndroid.SHORT);
+        return null;
+      }
+      const region = await get_parent_administrative_region(prefecture.serverId ?? prefecture.server_id);
+      
+      if (region && region.name?.toUpperCase() === 'SAVANES') {
+        return { administrative_level: region.type ?? "Region", administrative_id: region.serverId ?? region.server_id, name: region.name };
+      }
+      return { administrative_level: prefecture.type ?? "Prefecture", administrative_id: prefecture.serverId ?? prefecture.server_id, name: prefecture.name };
     }
-    try {
-      return administrative_levels[administrative_levels.indexOf(current_escalate_to.administrative_level) - 1]
-    } catch (e) {
-      return "Country";
+
+    // Niveau initial (village, ou catégorie traitée dès un niveau de base) → canton parent.
+    const canton = await get_parent_administrative_region(current_escalate_to?.administrative_id);
+    
+    if (!canton) {
+      ToastAndroid.show(`${t('error_message_for_update')}`, ToastAndroid.SHORT);
+      return null;
     }
+    return { administrative_level: canton.type ?? "Canton", administrative_id: canton.serverId ?? canton.server_id, name: canton.name };
   }
 
-  const get_current_adl_obj = () => {
-    let escalation_administrativelevels = issue.escalation_administrativelevels ?? [];
+  // Le niveau d'escalade courant se détermine par rang hiérarchique fixe (Canton -> Préfecture/
+  // Région -> Pays, cf. get_next_administrative_level ci-dessus), PAS par `created_at` : sur les
+  // issues migrées depuis CouchDB, `escalation_administrativelevels[]` était stocké du plus
+  // récent au plus ancien (comme tous les autres tableaux legacy), et migrate_grm_issues.py a
+  // recréé les lignes `EscalationLevel` dans cet ordre littéral plutôt que chronologique réel —
+  // le tout premier niveau atteint (ex. Canton) se retrouve donc avec le `created_at` le plus
+  // récent, et inversement. Trier par rang évite de dépendre de timestamps historiques erronés,
+  // et reste valide pour les escalades créées après la migration (progression toujours croissante).
+  const ESCALATION_LEVEL_RANK = { Village: 1, Canton: 2, Commune: 3, Prefecture: 4, Region: 5, Country: 6 };
 
-    if (escalation_administrativelevels.length != 0) {
-      setCurrentAdlObj(escalation_administrativelevels[0]);
+  const get_current_adl_obj = async () => {
+    const levels = await database.get('escalation_levels')
+      .query(Q.where('issue', issueRecord.id))
+      .fetch();
+      
+    if (levels.length !== 0) {
+      const lvl = levels.reduce((highest, current) => {
+        
+        const highestRank = ESCALATION_LEVEL_RANK[highest.administrativeLevel] ?? 0;
+        const currentRank = ESCALATION_LEVEL_RANK[current.administrativeLevel] ?? 0;
+        if (currentRank !== highestRank) return currentRank > highestRank ? current : highest;
+        return (current.createdAt?.getTime() || 0) > (highest.createdAt?.getTime() || 0) ? current : highest;
+      });
+      
+      setCurrentAdlObj({
+        escalate_to: {
+          administrative_id: lvl.administrativeId,
+          name: lvl.name,
+          administrative_level: lvl.administrativeLevel,
+        },
+        due_at: lvl.dueAt,
+      });
     } else {
-      // setCurrentAdlObj({
-      //   escalate_to: {
-      //     administrative_id: issue.administrative_region.administrative_id,
-      //     name: issue.administrative_region.name,
-      //     administrative_level: issue.category.administrative_level
-      //   },
-      //   due_at: issue.issue_date
-      // });
+      // Pas (encore) d'historique d'escalade : retombe sur le niveau administratif/catégorie
+      // COURANTS de `issue` plutôt que de laisser la valeur figée au montage de l'écran — utile
+      // après un rafraîchissement où `issue.administrative_region`/`issue.category` ont pu changer
+      // côté serveur (réaffectation, correction de localisation...).
+      setCurrentAdlObj({
+        escalate_to: {
+          administrative_id: issue.administrative_region.administrative_id,
+          name: issue.administrative_region.name,
+          administrative_level: issue.category.administrative_level,
+        },
+        due_at: issue.issue_date,
+      });
     }
   }
 
@@ -216,15 +289,34 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     get_current_adl_obj();
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      const dbConfig = await getEncryptedData(
-        `dbCredentials_${userPassword}_${username.replace('@', '')}`
-      );
-      setDBUsername(dbConfig?.username);
-      setDBPassword(dbConfig?.password);
-    });
-  }, []);
+  const [refreshing, setRefreshing] = useState(false);
+  // Contrairement à IssueDetail, `statuses` est chargé une seule fois par le parent
+  // (IssueActions.js, useEffect au montage) et n'est pas re-fetchable ici sans dupliquer cette
+  // requête (référentiel qui change rarement, cf. CLAUDE.md).
+  //
+  // `issue` (le dict "legacy shape", cf. utils/issueLegacyShape.js) est construit UNE SEULE FOIS
+  // par l'écran appelant (IssueActions.js, au moment de la navigation) puis muté en place ici —
+  // `runSyncSafely()` met bien à jour la ligne SQLite sous-jacente (`issueRecord`), mais rien ne
+  // rafraîchissait ensuite les champs scalaires/relations de `issue` (statut, catégorie,
+  // assignation, description, résultat de recherche...) à partir de `issueRecord` : un
+  // rafraîchissement manuel resynchronisait bien le serveur, sans jamais faire réapparaître le
+  // changement à l'écran — ni sur les informations affichées, ni sur les boutons d'action (dérivés
+  // de `issue.status`/`issue.category`, cf. `updateActionButtons`). D'où le correctif : reconstruire
+  // `issue` depuis `issueRecord` (déjà à jour après le sync) et rejouer tout ce qui en dérive.
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await runSyncSafely();
+      Object.assign(issue, await toLegacyIssueShape(issueRecord));
+      refreshAssigneeDerivedState();
+      updateActionButtons();
+      await get_current_adl_obj();
+    } catch (err) {
+      console.warn(err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   //Media
   const [isLoading, setLoading] = useState(false);
@@ -239,6 +331,19 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const [position, setPosition] = useState(null);
   const [resolvePDF, setResolvePDF] = useState();
   const [escalatePDF, setEscalatePDF] = useState();
+  const [uploadingAttachments, setUploadingAttachments] = useState(false);
+  // Fait le pont entre les fichiers locaux en mémoire (`attachments`/`recordingURIs`/`resolvePDF`/
+  // `escalatePDF`, tous identifiables par leur `.uri` unique) et l'enregistrement `Attachment`
+  // WatermelonDB créé pour eux dès qu'un envoi manuel est déclenché (boutons "Envoyer les fichiers
+  // maintenant" ci-dessous, même patron que CitizenReportStep3/containers/Content.js) — un `ref`
+  // plutôt qu'un state : cette correspondance n'a pas besoin de déclencher un re-rendu.
+  const attachmentRecordsRef = useRef({});
+  // Reflète, par fichier (clé = `.uri`), s'il a été effectivement envoyé au serveur — piloté par
+  // le vrai `upload_status` WatermelonDB, relu après chaque tentative d'envoi. Un fichier absent
+  // de cette map (jamais encore tenté) est traité comme "non envoyé", donc rouge.
+  const [attachmentUploadStatuses, setAttachmentUploadStatuses] = useState({});
+  const isAttachmentUploaded = (uri) => attachmentUploadStatuses[uri] === 'done';
+  const attachmentStatusColor = (uri) => (isAttachmentUploaded(uri) ? colors.primary : colors.error);
 
 
   React.useEffect(
@@ -274,48 +379,37 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   }, []);
 
 
-  const getImageDimensions = async (imageUri) => {
-    return new Promise((resolve, reject) => {
-      Image.getSize(
-        imageUri,
-        (width, height) => {
-          resolve({ width, height });
-        },
-        (error) => {
-          reject(error);
-        }
-      );
-    });
-  };
-
-  const getImageSize = async (imageUri) => {
-    let fileSizeInMB = 0;
-    try {
-      const fileInfo = await FileSystem.getInfoAsync(imageUri);
-      const fileSizeInBytes = fileInfo.size;
-      fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
-      // console.log('Image size:', fileSizeInMB, 'MB');
-    } catch (error) {
-      console.error('Error getting image size:', error);
-    }
-    return fileSizeInMB;
-  };
+  // const getImageSize = async (imageUri) => {
+  //   let fileSizeInMB = 0;
+  //   try {
+  //     const fileInfo = await FileSystem.getInfoAsync(imageUri);
+  //     const fileSizeInBytes = fileInfo.size;
+  //     fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
+  //   } catch (error) {
+  //     console.error('Error getting image size:', error);
+  //   }
+  //   return fileSizeInMB;
+  // };
 
   const startRecording = async () => {
     if (recordingURIs.length < 4) {
       try {
-        // console.log("Requesting permissions..");
         await Audio.requestPermissionsAsync();
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: true,
           playsInSilentModeIOS: true,
         });
-        // console.log("Starting recording..");
         const recording = new Audio.Recording();
-        await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
+        // `Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY` n'existe pas dans cette version d'expo-av
+        // (le vrai chemin est `Audio.RecordingOptionsPresets.HIGH_QUALITY`) : l'expression valait
+        // donc `undefined`, et `prepareToRecordAsync(undefined)` retombe silencieusement sur son
+        // défaut interne `RecordingOptionsPresets.LOW_QUALITY` — sur Android, ce préréglage encode
+        // en AMR_NB dans un conteneur `.3gp` au lieu d'AAC/`.m4a`, un format qu'aucun lecteur
+        // (ExoPlayer mobile comme navigateur web du dashboard) ne peut lire de façon fiable. Toutes
+        // les captures audio étaient donc enregistrées en basse qualité 3GP par accident.
+        await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
         await recording.startAsync();
         setRecording(recording);
-        // console.log("Recording started");
       } catch (err) {
         // console.error("Failed to start recording", err);
       }
@@ -325,20 +419,17 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   };
 
   const stopRecording = async () => {
-    // console.log("Stopping recording..");
     await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
     const d = await getAudioDuration(uri);
     setRecordingURI(uri);
     setRecordingURIs([...recordingURIs, { uri: uri, duration: formatDuration(d), isAudio: true, id: new Date() }]);
     setRecording(undefined);
-    // console.log("Recording stopped and stored at", uri);
   };
 
   const onPlaybackStatusUpdate = (status) => {
     setDuration(status.durationMillis);
     setPosition(status.positionMillis);
-    // setFinish(status.didJustFinish);
 
     if (status.didJustFinish) {
       setSound(undefined);
@@ -348,16 +439,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
 
   const playASound = async (sound_url) => {
-
-    if (sound_url && !sound_url.includes("file://")) {
-      setIsSyncing(true);
-      sound_url = `file://${await showDoc({ url: sound_url }, dbUsername, dbPassword, false)}`;
-      setIsSyncing(false);
-    }
-
-
     setSoundOnPause(false);
-    // console.log("Loading Sound");
     if (sound) {
       stopASound();
       setSound(undefined);
@@ -370,7 +452,6 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     );
     setSound(sound);
     setSoundUrl(sound_url);
-    // console.log("Playing Sound");
     await sound.playAsync();
 
   };
@@ -398,6 +479,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       stopASound();
     }
 
+    discardPersistedAttachment(recording_url);
     setRecordingURIs(recordingURIs.filter((elt) => elt?.uri != recording_url && elt?.url != recording_url));
   }
 
@@ -412,42 +494,21 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     return (position / duration) * 150;
   }
 
-  const getAudioDuration = async (sound_url) => {
-    const soundObject = new Audio.Sound();
-    let durationSecond;
-    try {
-      // Load the audio file (replace 'your-audio-file.mp3' with your actual file)
-      await soundObject.loadAsync({ uri: sound_url });
-
-      // Get the status of the audio
-      const status = await soundObject.getStatusAsync();
-
-      // Convert the duration from milliseconds to seconds
-      durationSecond = status.durationMillis / 1000;
-    } catch (error) {
-      console.error('Error loading audio:', error);
-    } finally {
-      // Unload the sound object to free up resources
-      await soundObject.unloadAsync();
-    }
-    return durationSecond;
-  };
-
   const get_image_manipulate = async (localUri, width, height) => {
     let manipResult;
     const imageSize = await getImageSize(localUri);
 
     if (!height || !width) {
       const dimensions = await getImageDimensions(localUri);
-      width = width ?? dimensions.width;
-      height = height ?? dimensions.height;
+      width = dimensions.width ?? width;
+      height = dimensions.height ?? height;
     }
 
     if (imageSize && imageSize > 1) {
       manipResult = await ImageManipulator.manipulateAsync(
         localUri,
         [{ resize: { width: width, height: height } }],
-        { compress: 0.2 }//, format: ImageManipulator.SaveFormat.PNG },
+        { compress: image_compress(imageSize) }
       );
 
     } else {
@@ -484,17 +545,6 @@ function Content({ issue, navigation, statuses = [], eadl }) {
         );
 
         setAttachments([...attachments, { ...manipResult, id: new Date(), mimeType: mimeType }]);
-        // const manipResult = await ImageManipulator.manipulateAsync(
-        //   result.localUri || result.uri,
-        //   [{
-        //     resize: {
-        //       width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000,
-        //       height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000
-        //     }
-        //   }],
-        //   { compress: 1, format: ImageManipulator.SaveFormat.PNG }
-        // );
-        // setAttachments([...attachments, { ...manipResult, id: new Date() }]);
         setLoading(false);
       }
     } else {
@@ -518,7 +568,6 @@ function Content({ issue, navigation, statuses = [], eadl }) {
         let localUri = _result?.localUri || _result?.uri;
         let mimeType = _result?.mimeType;
 
-        // if (result.type != "cancel") {
         if (!result.canceled && localUri) {
           setLoading(true);
 
@@ -553,252 +602,268 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
   const pickImage = async () => {
     pickDocument(true);
-    // try {
-    //   if (attachments.length < 3) {
-    //     const result = await ImagePicker.launchImageLibraryAsync({
-    //       presentationStyle: 0,
-    //       mediaTypes: ImagePicker.MediaTypeOptions.All,
-    //       allowsEditing: false,
-
-    //       quality: 1,
-    //     });
-    //     if (!result.cancelled) {
-    //       setLoading(true);
-    //       const manipResult = await ImageManipulator.manipulateAsync(
-    //         result.localUri || result.uri,
-    //         [{ resize: {
-    //           width: (result.assets && result.assets.length > 0) ? result.assets[0].width : 1000, 
-    //           height: (result.assets && result.assets.length > 0) ? result.assets[0].height : 1000 
-    //          } }],
-    //         { compress: 1, format: ImageManipulator.SaveFormat.PNG }
-    //       );
-    //       setAttachments([...attachments, { ...manipResult, id: new Date() }]);
-    //       setLoading(false);
-    //     }
-    //   }
-    // } catch (e) {
-    //   console.log(e);
-    // }
   };
   function removeAttachment(index) {
     setIsSyncing(false);
+    const removed = attachments[index];
+    discardPersistedAttachment(removed?.uri || removed?.local_url);
     const array = [...attachments];
     array.splice(index, 1);
     setAttachments(array);
   }
 
-  // const openUrl = url => {
-  //   if (!url.includes("http")) {
-  //       url = couchDBURLBase + url;
-  //   }
-  //   Linking.openURL(url);
-  // };
-
-  // const showDoc = async (attach) => {
-  //   if (attach.uri.includes("file://")) {
-  //     const buff = Buffer.from(attach.uri, "base64");
-  //     const base64 = buff.toString("base64");
-  //     const fileUri = FileSystem.documentDirectory + `${encodeURI(attach.name ? attach.name : "pdf")}.pdf`;
-
-  //     await FileSystem.writeAsStringAsync(fileUri, base64, {
-  //       encoding: FileSystem.EncodingType.Base64,
-  //     });
-
-  //     // Sharing.shareAsync(attach.uri);
-  //     await Share.open({ url: attach.uri, });
-  //   } else {
-  //     openUrl(attach.uri.split("?")[0]);
-  //   }
-
-
-  // }
-
   //End Media
 
-
-
-  const issue_status_stories = (status, coment_message) => {
-    issue.issue_status_stories = issue.issue_status_stories ?? []
-    issue.issue_status_stories?.unshift({
-      status: { name: status.name, id: status.id },
-      user: {
-        id: eadl?.representative?.id,
-        username: null,
-        full_name: eadl?.representative?.name
-      },
-      comment: coment_message,
-      datetime: moment()
-    });
-    LocalGRMDatabase.upsert(issue._id, (doc) => {
-      doc = issue;
-      return doc;
-    })
-      .then(async () => {
-        //Check Issues to sync (new issues, escalade issues, assignment)
-        check_issues(
-          await getEncryptedData(
-            `dbCredentials_${userPassword}_${username.replace('@', '')}`
-          ),
-          eadl, i18n.language);
-      })
-      .catch((err) => {
-        console.log('Error', err);
-      });
-  };
-
-  const acceptIssue = () => {
-    const newStatus = statuses.find((x) => x.open_status === true);
-    issue.comments?.unshift({
-      name: issue.reporter.name,
-      id: eadl.representative?.id,
-      comment: (issue.status.id === 3 || issue.status.id === 4) ? t('issue_was_re_opened') : t('issue_was_accepted'),
-      due_at: moment(),
-    });
-    saveIssueStatus(newStatus, 'accept');
-    issue_status_stories(newStatus,
-      `${((issue.status.id === 3 || issue.status.id === 4) ? t('issue_was_re_opened') : t('issue_was_accepted'))}\n${reason}`
-    );
-  };
-
-  const rejectIssue = () => {
-    const newStatus = statuses.find((x) => x.rejected_status === true);
-    issue.comments?.unshift({
-      name: issue.reporter.name,
-      id: eadl.representative?.id,
-      comment: t('issue_was_rejected'),
-      due_at: moment(),
-    });
-    saveIssueStatus(newStatus, 'reject');
-    issue_status_stories(newStatus, `${t('issue_was_rejected')}\n${reason}`);
-  };
-
-
-  const escalateIssue = () => {
-
-    let current_escalate_to = null;
-    issue.escalation_reasons = issue.escalation_reasons ?? [];
-    issue.escalation_administrativelevels = issue.escalation_administrativelevels ?? [];
-    if (issue.escalation_administrativelevels.length != 0) {
-      current_escalate_to = issue.escalation_administrativelevels[0].escalate_to;
+  // Crée un enregistrement `Attachment` WatermelonDB (upload automatique par
+  // src/files/uploadQueue.js au prochain runSync) à partir d'un fichier local picker/enregistré.
+  // Idempotent via `attachmentRecordsRef` : si un envoi manuel ("Envoyer les fichiers maintenant")
+  // a déjà créé (et potentiellement déjà envoyé) l'enregistrement pour ce fichier, on le réutilise
+  // tel quel au lieu d'en recréer un doublon — `issueId` est déjà correct dès la création ici
+  // (contrairement à CitizenReportStep3, l'issue existe déjà quand on agit dessus), donc aucun
+  // rattachement supplémentaire n'est nécessaire au moment de la soumission finale.
+  const persistAttachment = async (localFile, contentTypeHint) => {
+    const localUri = localFile.uri || localFile.local_url;
+    const existingRecordId = attachmentRecordsRef.current[localUri];
+    if (existingRecordId) {
+      return database.get('attachments').find(existingRecordId);
     }
+    const record = await createWithId(database.get('attachments'), (a) => {
+      a.issueId = issueRecord.id;
+      a.fileName = (localUri || '').split('/').pop();
+      a.contentType = localFile.mimeType || contentTypeHint || 'application/octet-stream';
+      a.localUri = localUri;
+      a.uploadStatus = 'pending';
+      a.downloadStatus = 'done';
+    });
+    attachmentRecordsRef.current[localUri] = record.id;
+    return record;
+  };
+
+  // Affiche un retour succès/échec après une tentative d'envoi manuel, en relisant le statut réel
+  // des enregistrements concernés (un envoi peut avoir partiellement échoué, ex. hors-ligne) — et
+  // met à jour la couleur (verte/rouge) des vignettes en conséquence.
+  const reportAttachmentsUploadResult = async (localFiles) => {
+    const uriRecordPairs = localFiles
+      .map((f) => [f.uri || f.local_url, attachmentRecordsRef.current[f.uri || f.local_url]])
+      .filter(([, recordId]) => recordId);
+    const records = await Promise.all(
+      uriRecordPairs.map(([, recordId]) => database.get('attachments').find(recordId)),
+    );
+    setAttachmentUploadStatuses((prev) => ({
+      ...prev,
+      ...Object.fromEntries(uriRecordPairs.map(([uri], i) => [uri, records[i].uploadStatus])),
+    }));
+    const anyError = records.some((r) => r.uploadStatus === 'error');
+    ToastAndroid.show(t(anyError ? 'attachments_upload_deferred' : 'attachments_synchronized'), ToastAndroid.SHORT);
+  };
+
+  // Envoi manuel vers le serveur, avant même la soumission finale du modal (utile pour des fichiers
+  // volumineux — photo/audio/PDF — qui partent déjà pendant que l'utilisateur finit de rédiger son
+  // commentaire). Réutilisé par les 3 modals ci-dessous (RECORD STEPS/ESCALATE/RECORD RESOLUTION),
+  // chacun avec ses propres fichiers locaux. `items` : liste de `{ file, contentTypeHint }` — un
+  // hint par fichier plutôt qu'un seul hint global, indispensable pour RECORD STEPS qui mélange
+  // photos et enregistrements audio dans un seul envoi.
+  const uploadAttachmentsNow = async (items) => {
+    const validItems = items.filter((it) => it && it.file);
+    if (validItems.length === 0 || uploadingAttachments) return;
+    setUploadingAttachments(true);
+    try {
+      for (const { file, contentTypeHint } of validItems) {
+        await persistAttachment(file, contentTypeHint);
+      }
+      // Feedback dédié ci-dessous : pas besoin du toast générique d'échec.
+      await enqueuePendingUploads({ notifyOnError: false });
+      await reportAttachmentsUploadResult(validItems.map((it) => it.file));
+    } catch (err) {
+      console.warn(err);
+      ToastAndroid.show(t('attachments_upload_deferred'), ToastAndroid.SHORT);
+    } finally {
+      setUploadingAttachments(false);
+    }
+  };
+
+  const uploadRecordStepsAttachmentsNow = () => uploadAttachmentsNow([
+    ...attachments.map((file) => ({ file, contentTypeHint: 'image/jpeg' })),
+    ...recordingURIs.map((file) => ({ file, contentTypeHint: 'audio/m4a' })),
+  ]);
+  const uploadEscalatePDFNow = () => uploadAttachmentsNow([{ file: escalatePDF, contentTypeHint: 'application/pdf' }]);
+  const uploadResolvePDFNow = () => uploadAttachmentsNow([{ file: resolvePDF, contentTypeHint: 'application/pdf' }]);
+
+  // Supprime, le cas échéant, l'enregistrement `Attachment` déjà créé pour ce fichier via un envoi
+  // manuel — sinon il resterait orphelin (`issue_id` déjà rempli mais jamais rattaché à une raison/
+  // un commentaire) jusqu'au nettoyage automatique `cleanup_orphan_attachments` (CLAUDE.md §8).
+  const discardPersistedAttachment = (localUri) => {
+    const recordId = localUri && attachmentRecordsRef.current[localUri];
+    if (!recordId) return;
+    database.get('attachments').find(recordId)
+      .then(async (record) => {
+        // Répercute la suppression côté serveur AVANT de supprimer l'enregistrement local — sans
+        // ça, `attachments` n'étant pas poussée par le protocole de sync habituel (cf.
+        // files/uploadQueue.js::deleteAttachmentRemote), le fichier resterait orphelin côté
+        // serveur indéfiniment si ce retrait intervient après un envoi manuel réussi.
+        await deleteAttachmentRemote(record);
+        await database.write(() => record.markAsDeleted());
+      })
+      .catch(() => {});
+    delete attachmentRecordsRef.current[localUri];
+  };
+
+  const clearResolvePDF = () => {
+    discardPersistedAttachment(resolvePDF?.uri);
+    setResolvePDF();
+  };
+
+  const clearEscalatePDF = () => {
+    discardPersistedAttachment(escalatePDF?.uri);
+    setEscalatePDF();
+  };
+
+  const addComment = async (commentText) => {
+    await createWithId(database.get('comments'), (r) => {
+      r.issueId = issueRecord.id;
+      r.authorId = eadl?.representative?.id;
+      r.authorName = eadl?.representative?.name;
+      r.comment = commentText;
+      r.dueAt = new Date();
+    });
+  };
+
+  const createStatusStory = async (statusRecordId, commentMessage) => {
+    if (!statusRecordId) return;
+    await createWithId(database.get('issue_status_stories'), (r) => {
+      r.issueId = issueRecord.id;
+      r.statusId = statusRecordId;
+      r.userId = eadl?.representative?.id;
+      r.userFullName = eadl?.representative?.name;
+      r.comment = commentMessage;
+      r.datetime = new Date();
+    });
+  };
+
+  const issue_status_stories = async (status, coment_message) => {
+    const statusRecordId = await resolveReferenceId('issue_statuses', status?.id);
+    await createStatusStory(statusRecordId, coment_message);
+    //Check Issues to sync (new issues, escalade issues, assignment)
+    check_issues(null, eadl, i18n.language);
+  };
+
+  const acceptIssue = async () => {
+    const newStatus = statuses.find((x) => x.open_status === true);
+    const commentText = ([3, 4, 5].includes(issue.status.id)) ? t('issue_was_re_opened') : t('issue_was_accepted');
+    await addComment(commentText);
+    await saveIssueStatus(newStatus, 'accept');
+    await issue_status_stories(newStatus, `${commentText}` + ((reason && reason?.trim() != '') ? ` [${reason}]` : ''));
+  };
+
+  const rejectIssue = async () => {
+    const newStatus = statuses.find((x) => x.rejected_status === true);
+    await addComment(t('issue_was_rejected'));
+    await saveIssueStatus(newStatus, 'reject');
+    await issue_status_stories(newStatus, `${t('issue_was_rejected')}` + ((reason && reason?.trim() != '') ? ` [${reason}]` : ''));
+  };
+
+
+  const escalateIssue = async () => {
+    let current_escalate_to = currentAdlObj?.escalate_to;
 
     if (current_escalate_to && !current_escalate_to.administrative_id) {
       ToastAndroid.show(`${t('error_message_for_update')}`, ToastAndroid.SHORT);
-    } else {
-      let administrative_level_to_escalate = get_next_administrative_level(current_escalate_to);
-
-      issue.escalate_flag = true;
-      // issue.escalation_reasons = issue.escalation_reasons ?? [];
-      // issue.escalation_administrativelevels = issue.escalation_administrativelevels ?? [];
-
-      let r = null;
-      let escalate_reason = {
-        id: eadl?.representative?.id,
-        name: eadl?.representative?.name,
-        comment: escalateComment,
-        due_at: moment(),
-      };
-      if (escalatePDF) {
-        r = {
-          name: escalatePDF?.uri.split('/').pop(),
-          url: escalatePDF?.url ?? "",
-          local_url: escalatePDF?.uri,
-          id: moment(),
-          uploaded: false,
-          bd_id: moment(),
-          user_id: eadl?.representative?.id,
-          user_name: eadl?.representative?.name,
-          subject: "escalation"
-        };
-
-        escalate_reason.attachment = r;
-
-        r.type = "file";
-        issue.reasons = issue.reasons ?? []
-        issue.reasons?.unshift(r);
-
-        setEscalatePDF();
-      }
-
-      issue.escalation_reasons?.unshift(escalate_reason);
-
-
-      issue.comments?.unshift({
-        name: issue.reporter.name,
-        id: eadl.representative?.id,
-        comment: `${t('issue_was_escalated')} ${t('escalate_to_label')} ${administrative_level_to_escalate == "Country" ? "Nation" : administrative_level_to_escalate}`,
-        due_at: moment(),
-      });
-
-
-      issue.escalation_administrativelevels?.unshift({
-        escalate_to: {
-          administrative_level: administrative_level_to_escalate
-        },
-        due_at: moment()
-      });
-
-      saveIssueStatus();
-      setDisableEscalation(true);
-      setEscalatedDialog(true);
-
-      const newStatus = statuses.find((x) => x.id === issue.status.id);
-      issue_status_stories(newStatus, `${t('issue_was_escalated')}\n${escalateComment}`);
-
-      get_current_adl_obj();
-
-      setEscalateFlag(issue.escalate_flag);
+      return;
     }
+
+    const nextLevel = await get_next_administrative_level(current_escalate_to);
+    if (!nextLevel) {
+      return; // erreur déjà signalée par get_next_administrative_level
+    }
+    let administrative_level_to_escalate = nextLevel.administrative_level;
+
+    issue.escalate_flag = true;
+    await database.write(async () => {
+      await issueRecord.update((r) => { r.escalateFlag = true; });
+    });
+
+    let attachmentId = null;
+    if (escalatePDF) {
+      const attachmentRecord = await persistAttachment(escalatePDF, 'application/pdf');
+      attachmentId = attachmentRecord.id;
+      await createWithId(database.get('reasons'), (r) => {
+        r.issueId = issueRecord.id;
+        r.subject = 'escalation';
+        r.userId = eadl?.representative?.id;
+        r.userName = eadl?.representative?.name;
+        r.dueAt = new Date();
+        r.attachmentId = attachmentId;
+      });
+      setEscalatePDF();
+    }
+
+    await createWithId(database.get('escalation_reasons'), (er) => {
+      er.issueId = issueRecord.id;
+      er.userId = eadl?.representative?.id;
+      er.userName = eadl?.representative?.name;
+      er.comment = escalateComment;
+      er.dueAt = new Date();
+      er.attachmentId = attachmentId;
+    });
+
+    await addComment(`${t('issue_was_escalated')} ${t('escalate_to_label')} ${administrative_level_to_escalate == "Country" ? "Nation" : administrative_level_to_escalate}`);
+
+    await createWithId(database.get('escalation_levels'), (el) => {
+      el.issueId = issueRecord.id;
+      el.administrativeLevel = administrative_level_to_escalate;
+      el.administrativeId = nextLevel.administrative_id ? String(nextLevel.administrative_id) : null;
+      el.name = nextLevel.name || null;
+      el.dueAt = new Date();
+    });
+
+    setDisableEscalation(true);
+    setEscalatedDialog(true);
+
+    // La remontée réinitialise le statut à "En cours de traitement" (procédure §5).
+    const newStatus = statuses.find((x) => x.open_status === true);
+    await saveIssueStatus(newStatus, 'escalate');
+    await issue_status_stories(newStatus, `${t('issue_was_escalated')}` + ((escalateComment && escalateComment.trim() != '') ? ` [${escalateComment}]` : ''));
+
+    await get_current_adl_obj();
+
+    setEscalateFlag(true);
   };
 
-  const recordStep = () => {
-    let due_at = moment();
-    issue.comments?.unshift({
-      name: issue.reporter.name,
-      id: eadl.representative?.id,
-      comment,
-      due_at: due_at,
+  const recordStep = async () => {
+    let due_at = new Date();
+    await addComment(comment);
+
+    await createWithId(database.get('reasons'), (r) => {
+      r.issueId = issueRecord.id;
+      r.subject = 'comment';
+      r.comment = comment;
+      r.userId = eadl?.representative?.id;
+      r.userName = eadl?.representative?.name;
+      r.dueAt = due_at;
     });
 
-    issue.reasons = issue.reasons ?? []
-    issue.reasons?.unshift({
-      user_name: eadl?.representative?.name,
-      user_id: eadl?.representative?.id,
-      comment: comment,
-      due_at: due_at,
-      id: moment(),
-      type: "comment",
-      comment_id: due_at,
-    });
-
-    for (let i = 0; i < attachments.length; i++) {
-      issue.reasons?.unshift({
-        name: attachments[i]?.uri.split('/').pop(),
-        url: attachments[i]?.url ?? "",
-        local_url: attachments[i]?.uri,
-        id: moment(),
-        uploaded: false,
-        bd_id: due_at,
-        type: "file",
-        user_id: eadl?.representative?.id,
-        user_name: eadl?.representative?.name,
-        comment_id: due_at
+    for (const att of attachments) {
+      const attachmentRecord = await persistAttachment(att, 'image/jpeg');
+      await createWithId(database.get('reasons'), (r) => {
+        r.issueId = issueRecord.id;
+        r.subject = 'file';
+        r.userId = eadl?.representative?.id;
+        r.userName = eadl?.representative?.name;
+        r.dueAt = due_at;
+        r.attachmentId = attachmentRecord.id;
       });
     }
     setAttachments([]);
-    for (let index = 0; index < recordingURIs.length; index++) {
-      issue.reasons?.unshift({
-        name: recordingURIs[index].uri.split('/').pop(),
-        url: recordingURIs[index].url ?? "",
-        local_url: recordingURIs[index].uri,
-        id: moment(),
-        uploaded: false,
-        bd_id: due_at,
-        type: "file",
-        user_id: eadl?.representative?.id,
-        user_name: eadl?.representative?.name,
-        isAudio: true,
-        comment_id: due_at
+
+    for (const rec of recordingURIs) {
+      const attachmentRecord = await persistAttachment(rec, 'audio/m4a');
+      await createWithId(database.get('reasons'), (r) => {
+        r.issueId = issueRecord.id;
+        r.subject = 'file';
+        r.userId = eadl?.representative?.id;
+        r.userName = eadl?.representative?.name;
+        r.dueAt = due_at;
+        r.attachmentId = attachmentRecord.id;
       });
     }
     setRecordingURIs([]);
@@ -807,127 +872,109 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       setRecordingURI();
     }
 
-
-    saveIssueStatus();
     setRecordedSteps(true);
 
     const newStatus = statuses.find((x) => x.id === issue.status.id);
-    issue_status_stories(newStatus, comment);
+    await issue_status_stories(newStatus, comment);
   };
 
   const recordResolution = () => {
     setRecordedResolution(true);
   };
 
-  const recordResolutionConfirmation = () => {
+  const recordResolutionConfirmation = async () => {
     issue.research_result = resolution;
     const newStatus = statuses.find((x) => x.final_status === true);
-    issue.comments?.unshift({
-      name: issue.reporter.name,
-      id: eadl.representative?.id,
-      comment: t('issue_was_resolved'),
-      due_at: moment(),
-    });
+    await addComment(t('issue_was_resolved'));
 
-
+    let attachmentId = null;
     if (resolvePDF) {
-      let r = {
-        name: resolvePDF?.uri.split('/').pop(),
-        url: resolvePDF?.url ?? "",
-        local_url: resolvePDF?.uri,
-        id: moment(),
-        uploaded: false,
-        bd_id: moment(),
-        type: "file",
-        user_id: eadl?.representative?.id,
-        user_name: eadl?.representative?.name,
-        subject: "resolution"
-      };
-
-      issue.reasons = issue.reasons ?? []
-      issue.reasons?.unshift(r);
-
-      issue.resolution_files = issue.resolution_files ?? [];
-      issue.resolution_files?.unshift(r);
-
+      const attachmentRecord = await persistAttachment(resolvePDF, 'application/pdf');
+      attachmentId = attachmentRecord.id;
+      await createWithId(database.get('reasons'), (r) => {
+        r.issueId = issueRecord.id;
+        r.subject = 'resolution';
+        r.userId = eadl?.representative?.id;
+        r.userName = eadl?.representative?.name;
+        r.dueAt = new Date();
+        r.attachmentId = attachmentId;
+      });
       setResolvePDF();
     }
 
-    saveIssueStatus(newStatus, 'record_resolution');
+    await saveIssueStatus(newStatus, 'record_resolution', { researchResult: resolution });
     _hideRecordResolutionDialog();
-    issue_status_stories(newStatus, `${t('issue_was_resolved')}\n${resolution}`);
+    await issue_status_stories(newStatus, `${t('issue_was_resolved')}` + ((resolution && resolution.trim() != '') ? ` [${resolution}]` : ''));
   };
 
-  const notResolve = () => {
-    issue.unresolved_reason = notResolutionComment;
-    issue.unresolved_date = moment();
+  const notResolve = async () => {
     const newStatus = statuses.find((x) => x.unresolved_status === true);
-    issue.comments?.unshift({
-      name: issue.reporter.name,
-      id: eadl.representative?.id,
-      comment: t('issue_was_not_resolved'),
-      due_at: moment(),
-    });
-    saveIssueStatus(newStatus, 'not_resolve');
+    await addComment(t('issue_was_not_resolved'));
+    await saveIssueStatus(newStatus, 'not_resolve');
     _hideNotresolveDialog();
-    issue_status_stories(newStatus, `${t('issue_was_not_resolved')}\n${notResolutionComment}`);
+    await issue_status_stories(newStatus, `${t('issue_was_not_resolved')}` + ((notResolutionComment && notResolutionComment.trim() != '') ? ` [${notResolutionComment}]` : ''));
   };
 
-  const saveIssueStatus = (newStatus, type = 'none') => {
+  const saveIssueStatus = async (newStatus, type = 'none', extraFields = {}) => {
+    let statusRecordId = null;
     if (newStatus) {
       issue.status = {
         id: newStatus.id,
         name: newStatus.name,
       };
+      statusRecordId = await resolveReferenceId('issue_statuses', newStatus.id);
     }
-    if (type === 'rejected') {
-      issue.reject_reason = reason;
-    }
-    LocalGRMDatabase.upsert(issue._id, (doc) => {
-      doc = issue;
-      return doc;
-    })
-      .then(async () => {
-        updateActionButtons();
-        if (type === 'accept') {
-          setAcceptedDialog(true);
-        } else if (type === 'reject') {
-          setRejectedDialog(true);
-        } else if (type === 'record_resolution') {
-          setRecordedResolution(false);
-          _hideRecordResolutionDialog();
-        } else if (type == 'not_resolve') {
-          setNotResolveDialog(false);
-          _hideNotresolveDialog();
-        }
 
-        //Check Issues to sync (new issues, escalade issues, assignment)
-        check_issues(
-          await getEncryptedData(
-            `dbCredentials_${userPassword}_${username.replace('@', '')}`
-          ),
-          eadl, i18n.language);
-
-      })
-      .catch((err) => {
-        console.log('Error', err);
+    await database.write(async () => {
+      await issueRecord.update((r) => {
+        if (statusRecordId) r.statusId = statusRecordId;
+        Object.assign(r, extraFields);
       });
+    });
+
+    updateActionButtons();
+    if (type === 'accept') {
+      setAcceptedDialog(true);
+    } else if (type === 'reject') {
+      setRejectedDialog(true);
+    } else if (type === 'record_resolution') {
+      setRecordedResolution(false);
+      _hideRecordResolutionDialog();
+    } else if (type == 'not_resolve') {
+      setNotResolveDialog(false);
+      _hideNotresolveDialog();
+    }
+
+    //Check Issues to sync (new issues, escalade issues, assignment)
+    // check_issues(null, eadl, i18n.language);
   };
 
-  useEffect(() => {
+  // Dérive `isIssueAssignedToMe`/`citizenName`/`escalateFlag` de `issue` (le dict "legacy shape",
+  // cf. utils/issueLegacyShape.js) — extrait en fonction réutilisable pour pouvoir être rejoué
+  // après un rafraîchissement (`onRefresh` ci-dessous), pas seulement au montage : `issue` est un
+  // objet muté en place (jamais remplacé par une nouvelle référence), donc un `useEffect` avec
+  // `issue` en dépendance ne se redéclenche jamais tout seul après une mutation in-place — il faut
+  // explicitement rejouer cette logique après chaque rafraîchissement des données.
+  const refreshAssigneeDerivedState = () => {
     function _isIssueAssignedToMe() {
       if (issue.assignee && issue.assignee.id) {
-        // return issue.reporter.id === issue.assignee.id;
         return issue.assignee.id === eadl.representative?.id;
       }
     }
-    setIsIssueAssignedToMe(_isIssueAssignedToMe());
+    const assignedToMe = _isIssueAssignedToMe();
+    setIsIssueAssignedToMe(assignedToMe);
 
     if (issue.citizen_type !== 1) {
       setCitizenName(issue.citizen);
     } else if (issue.citizen_type === 1) {
-      setCitizenName(_isIssueAssignedToMe() ? issue.citizen : 'Anonymous');
+      setCitizenName(assignedToMe ? issue.citizen : 'Anonymous');
     }
+
+    setEscalateFlag(!!issue.escalate_flag);
+  };
+
+  useEffect(() => {
+    refreshAssigneeDerivedState();
   }, []);
 
   useEffect(() => {
@@ -952,107 +999,11 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       }
     });
   }
-  const uploadImages = async () => {
-
-    setConnected(true);
-    check_network();
-    if (connected) {
-      setIsSyncing(true);
-
-      try {
-        let count = 0;
-        let elt_id;
-        let attachments_recordingURIs_pdfs = [...attachments, ...recordingURIs, escalatePDF, resolvePDF];
-
-        const updatedAttachments = [...attachments_recordingURIs_pdfs];
-        for (let i = 0; i < attachments_recordingURIs_pdfs.length; i++) {
-          let elt = attachments_recordingURIs_pdfs[i];
-
-          if (elt && elt?.uri && elt?.uri && elt?.uri.includes("file://") && !elt.uploaded) {
-            try {
-              const response = await uploadFile(
-                `${baseURL}/attachments/upload-to-issue`,
-                {
-
-                  username: dbUsername,
-                  password: dbPassword,
-                  url: elt?.uri,
-                  isAudio: elt?.isAudio,
-                  mimeType: elt?.mimeType
-                }
-              );
-
-              if (response.fileUrl) {
-                elt_id = updatedAttachments.findIndex((e, i) => e && e.id == elt.id);
-                elt.url_uploaded = response.fileUrl;
-                updatedAttachments[elt_id] = {
-                  ...updatedAttachments[elt_id],
-                  uploaded: true,
-                  bd_id: response.bd_id,
-                  url: response.fileUrl,
-                  uri: '',
-                  local_url: '',
-                };
-
-                count++;
-              } else if (response.file) {
-                Alert.alert('Alert', response.file[0], [
-                  {
-                    text: "OK", onPress: () => { }
-                  }
-                ]);
-              } else {
-                Alert.alert('Alert', t('attachment_error', { name: elt.name }), [
-                  {
-                    text: "OK", onPress: () => { }
-                  }
-                ]);
-              }
-
-            } catch (e) {
-              setIsSyncing(false);
-              Alert.alert('Alert', t('attachment_error', { name: elt.name }), [
-                {
-                  text: "OK", onPress: () => { }
-                }
-              ]);
-            }
-
-          }
-        }
-        setIsSyncing(false);
-        if (count != 0) {
-
-          setAttachments(updatedAttachments.slice(0, attachments.length));
-
-          setRecordingURIs(updatedAttachments.slice(attachments.length, updatedAttachments.length - [...[escalatePDF], ...[resolvePDF]].length));
-          let _escalatePDFs = updatedAttachments.slice(attachments.length + recordingURIs.length, updatedAttachments.length - [...[resolvePDF]].length);
-          setEscalatePDF(_escalatePDFs.length == 0 ? null : _escalatePDFs[0]);
-          let _resolvePDFs = updatedAttachments.slice(attachments.length + recordingURIs.length + [...[escalatePDF]].length, updatedAttachments.length);
-          setResolvePDF(_resolvePDFs.length == 0 ? null : _resolvePDFs[0]);
-
-          if (count == 1) {
-            ToastAndroid.show(`${t('attachment_synchronized')}`, ToastAndroid.SHORT);
-          } else {
-            ToastAndroid.show(`${t('attachments_synchronized')}`, ToastAndroid.SHORT);
-          }
-
-        }
-
-      } catch (e) {
-        setIsSyncing(false);
-        Alert.alert('Alert', t('attach_all_attachments'), [
-          {
-            text: "OK", onPress: () => { }
-          }
-        ]);
-      }
-    }
-  };
-
 
   return (
-    <ScrollView>
+    <ScrollView
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'position' : null}>
         <View style={{ padding: 23 }}>
           <Text style={styles.stepDescription}>
@@ -1167,38 +1118,16 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   style={{ marginRight: 5 }}
                   name="rightsquare"
                   size={35}
-                  color={isNotResolveEnabled ? colors.primary : colors.disabled}
+                  color={isNotResolveEnabled ? colors.error : colors.disabled}
                 />
                 <Feather name="help-circle" size={24} color="gray" />
               </View>
             </TouchableOpacity>
             {/* End Not resolve */}
-
-            {/* <TouchableOpacity
-              disabled={!isRateAppealEnabled}
-              style={{
-                alignItems: 'center',
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                marginVertical: 10,
-              }}
-            >
-              <Text style={styles.subtitle}>{t('rate_appeal')}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <AntDesign
-                  style={{ marginRight: 5 }}
-                  name="rightsquare"
-                  size={35}
-                  color={isRateAppealEnabled ? colors.primary : colors.disabled}
-                />
-                <Feather name="help-circle" size={24} color="gray" />
-              </View>
-            </TouchableOpacity> */}
           </View>
           <TouchableOpacity
             onPress={_showEscalateDialog}
-            // disabled={disableEscalation || !isRecordResolutionEnabled || escalateFlag}
-            disabled={!issue.status.id == 5 || currentAdlObj.escalate_to.administrative_level == "Country" || (!issue.status.id == 5 && escalateFlag)}
+            disabled={issue.status.id !== 5 || currentAdlObj.escalate_to.administrative_level == "Country" || escalateFlag}
             style={{
               alignItems: 'center',
               flexDirection: 'row',
@@ -1213,7 +1142,6 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 style={{ marginRight: 5 }}
                 name="rightsquare"
                 size={35}
-                // color={!disableEscalation && isRecordResolutionEnabled ? colors.primary : colors.disabled}
                 color={((issue.status.id == 5 && currentAdlObj.escalate_to.administrative_level != "Country" && !escalateFlag)) ? colors.primary : colors.disabled}
               />
               <Feather name="help-circle" size={24} color="gray" />
@@ -1292,21 +1220,6 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           </Dialog.Content>
           {!acceptedDialog ? (
             <Dialog.Actions>
-              {/* {
-                (issue.status.id === 3 || issue.status.id === 4) 
-                  ? 
-                    <></>
-                  : 
-                    <Button
-                      theme={theme}
-                      style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
-                      labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-                      mode="contained"
-                      onPress={_showRejectDialog}
-                    >
-                      {t('reject')}
-                    </Button>
-                } */}
               <Button
                 theme={theme}
                 style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
@@ -1382,7 +1295,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                     {escalatePDF && (
                       <ImageBackground
                         key={escalatePDF.id}
-                        source={escalatePDF.mimeType && escalatePDF.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: attachment.uri }}
+                        source={escalatePDF.mimeType && escalatePDF.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: escalatePDF.uri }}
                         style={{
                           height: 80,
                           width: 80,
@@ -1390,62 +1303,33 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                           alignSelf: 'center',
                           justifyContent: 'flex-end',
                           marginVertical: 20,
+                          borderWidth: 3,
+                          borderColor: attachmentStatusColor(escalatePDF.uri),
                         }}
                       >
-                        {escalatePDF.mimeType && escalatePDF.mimeType.includes('pdf') ? <TouchableOpacity
-                          onPress={async () => { await showDoc(escalatePDF, dbUsername, dbPassword) }}
-                          style={{
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            height: 60,
-                            backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                          }}
-                        >
-                          <Image
-                            resizeMode="stretch"
-                            style={{ width: 30, height: 30, borderRadius: 50 }}
-                            source={require('../../../../../assets/eye.png')}
-                          />
-                        </TouchableOpacity> : <></>}
                         <TouchableOpacity
-                          onPress={() => { setEscalatePDF() }}
+                          onPress={clearEscalatePDF}
                           style={{
                             justifyContent: 'center',
                             alignItems: 'center',
                             height: 20,
-                            backgroundColor: escalatePDF.uploaded ? colors.primary : 'rgba(255, 1, 1, 1)',
+                            backgroundColor: 'rgba(255, 1, 1, 1)',
                           }}
                         >
-                          <Text style={{ color: escalatePDF.uploaded ? 'rgba(255, 1, 1, 1)' : 'white' }}>X</Text>
+                          <Text style={{ color: 'white' }}>X</Text>
                         </TouchableOpacity>
                       </ImageBackground>
                     )}
                   </View>
 
-                  {isSyncing && <View>
-                    <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" key={"task_progress_key"} />
-                  </View>}
                   <View
                     style={{
                       flexDirection: 'row',
                       justifyContent: 'space-between',
                     }}
                   >
-                    <IconButton
-                      icon="sync"
-                      iconColor={colors.lightgray}
-                      style={{ backgroundColor: isSyncing ? colors.disabled : colors.primary, margin: 'auto', alignSelf: 'center', marginRight: 25 }}
-                      onPress={uploadImages}
-                      loading={isSyncing}
-                      theme={theme}
-                      disabled={isSyncing || !(escalatePDF)}
-                      labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-                      mode="contained"
-                    />
-
                     <Button
                       theme={theme}
-                      disabled={isSyncing}
                       style={{ alignSelf: 'center' }}
                       labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
                       mode="contained"
@@ -1455,6 +1339,21 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                       {t('attach_pv')}
                     </Button>
                   </View>
+                  {escalatePDF && (
+                    <Button
+                      compact
+                      theme={theme}
+                      mode="outlined"
+                      uppercase={false}
+                      disabled={uploadingAttachments}
+                      loading={uploadingAttachments}
+                      style={{ alignSelf: 'flex-start', marginTop: 10, borderColor: colors.primary }}
+                      labelStyle={{ color: colors.primary, fontFamily: 'Poppins_400Regular', fontSize: 13 }}
+                      onPress={uploadEscalatePDFNow}
+                    >
+                      {t('upload_files_now')}
+                    </Button>
+                  )}
                 </View>
 
               </>
@@ -1539,20 +1438,12 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   <View style={{ flexDirection: 'row' }}>
                     {attachments.length > 0 &&
                       attachments.map((attachment, index) => {
-                        let urlL = (attachment.local_url ? (attachment.local_url && attachment.local_url != "" ? attachment.local_url : undefined) : undefined) ?? (attachment.url ?? attachment.uri);
+                        let urlL = attachment.local_url || attachment.uri;
 
                         return (
                           <ImageBackground
                             key={`${attachment.id}_${urlL}`}
-                            // source={attachment.mimeType && attachment.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: attachment.uri }}
-                            source={(urlL && urlL.includes('.pdf')) ? require('../../../../../assets/pdf.png') : (
-                              (urlL && urlL.includes("file://")) ? { uri: urlL } : {
-                                uri: `${couchDBURLBase}${urlL}`, headers: {
-                                  username: dbUsername,
-                                  password: dbPassword,
-                                }
-                              }
-                            )}
+                            source={(urlL && urlL.includes('.pdf')) ? require('../../../../../assets/pdf.png') : { uri: urlL }}
                             style={{
                               height: 80,
                               width: 80,
@@ -1560,35 +1451,20 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                               alignSelf: 'center',
                               justifyContent: 'flex-end',
                               marginVertical: 20,
+                              borderWidth: 3,
+                              borderColor: attachmentStatusColor(attachment.uri),
                             }}
                           >
-                            {/* {attachment.mimeType && attachment.mimeType.includes('pdf') ?  */}
-                            <TouchableOpacity
-                              onPress={async () => { await showDoc(attachment, dbUsername, dbPassword) }}
-                              style={{
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                height: 60,
-                                backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                              }}
-                            >
-                              <Image
-                                resizeMode="stretch"
-                                style={{ width: 30, height: 30, borderRadius: 50 }}
-                                source={require('../../../../../assets/eye.png')}
-                              />
-                            </TouchableOpacity>
-                            {/* : <></>} */}
                             <TouchableOpacity
                               onPress={() => removeAttachment(index)}
                               style={{
                                 justifyContent: 'center',
                                 alignItems: 'center',
                                 height: 20,
-                                backgroundColor: attachment.uploaded ? colors.primary : 'rgba(255, 1, 1, 1)',
+                                backgroundColor: 'rgba(255, 1, 1, 1)',
                               }}
                             >
-                              <Text style={{ color: attachment.uploaded ? 'rgba(255, 1, 1, 1)' : 'white' }}>X</Text>
+                              <Text style={{ color: 'white' }}>X</Text>
                             </TouchableOpacity>
                           </ImageBackground>
                         )
@@ -1623,44 +1499,12 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                     </View>
                   </View>
                 </View>
-                {/* {recordingURI && (
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <IconButton icon="play" color={colors.primary} size={24} onPress={playSound} />
-            <Text
-              style={{
-                fontFamily: 'Poppins_400Regular',
-                fontSize: 12,
-                fontWeight: 'normal',
-                fontStyle: 'normal',
-                lineHeight: 18,
-                letterSpacing: 0,
-                textAlign: 'left',
-                iconColor: '#707070',
-                marginVertical: 13,
-              }}
-            >
-              {t('play_recorded_audio')}
-            </Text>
-            <IconButton
-              icon="close"
-              iconColor={colors.error}
-              size={24}
-              onPress={() => setRecordingURI()}
-            />
-          </View>
-        )} */}
                 {recordingURIs && recordingURIs.map((recording_url, index) => {
-                  let audio_url = (recording_url.local_url ? (recording_url.local_url && recording_url.local_url != "" ? recording_url.local_url : undefined) : undefined) ?? (recording_url.url ?? recording_url.uri);
+                  let audio_url = recording_url.local_url || recording_url.uri;
                   let audio_url_split = audio_url.split("?")[0].split("/");
                   let audio_file_name = audio_url_split[audio_url_split.length - 1];
 
-                  let audio_url_current = (soundUrl ? (soundUrl && soundUrl != "" ? soundUrl : undefined) : undefined) ?? "";
+                  let audio_url_current = soundUrl || "";
                   let audio_url_split_current = audio_url_current.split("?")[0].split("/");
                   let audio_file_name_current = audio_url_split_current[audio_url_split_current.length - 1];
 
@@ -1671,9 +1515,11 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                         flexDirection: 'row',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        borderLeftWidth: 4,
+                        borderLeftColor: attachmentStatusColor(recording_url.uri || audio_url),
                       }}
                     >
-                      <IconButton icon={!soundOnPause && audio_file_name_current == audio_file_name ? "pause" : "play"} iconColor={recording_url.uploaded ? colors.primary : colors.error} size={24} onPress={
+                      <IconButton icon={!soundOnPause && audio_file_name_current == audio_file_name ? "pause" : "play"} iconColor={colors.primary} size={24} onPress={
                         () => audio_file_name_current == audio_file_name ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(audio_url)
                       } />
                       <Text
@@ -1707,19 +1553,6 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                       >
                         {`(${index + 1})`}
                       </Text>
-                      <Text
-                        style={{
-                          fontFamily: 'Poppins_400Regular',
-                          fontSize: 12,
-                          fontWeight: 'normal',
-                          fontStyle: 'normal',
-                          lineHeight: 18,
-                          letterSpacing: 0,
-                          textAlign: 'left',
-                          marginVertical: 13,
-                          marginLeft: 7
-                        }}
-                      >{parseInt(String(audio_file_name_current == audio_file_name && position ? position / 1000 : 0))}</Text>
                       <IconButton
                         icon="close"
                         iconColor={colors.error}
@@ -1729,32 +1562,26 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                     </View>
                   )
                 })}
-
-
-
-
+                {(attachments.length > 0 || recordingURIs.length > 0) && (
+                  <Button
+                    compact
+                    theme={theme}
+                    mode="outlined"
+                    uppercase={false}
+                    disabled={uploadingAttachments}
+                    loading={uploadingAttachments}
+                    style={{ alignSelf: 'flex-start', marginTop: 10, marginLeft: 5, borderColor: colors.primary }}
+                    labelStyle={{ color: colors.primary, fontFamily: 'Poppins_400Regular', fontSize: 13 }}
+                    onPress={uploadRecordStepsAttachmentsNow}
+                  >
+                    {t('upload_files_now')}
+                  </Button>
+                )}
               </>
             )}
-            {isSyncing && <View>
-              <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" key={"task_progress_key_1"} />
-            </View>}
           </Dialog.Content>
           {!recordedSteps ? (
             <Dialog.Actions>
-              <IconButton
-                icon="sync"
-                iconColor={colors.lightgray}
-                style={{ backgroundColor: (isSyncing || !(recordingURIs.length != 0 || attachments.length != 0)) ? colors.disabled : colors.primary, margin: 'auto', alignSelf: 'center', marginRight: 25 }}
-                onPress={uploadImages}
-                loading={isSyncing}
-                theme={theme}
-                disabled={isSyncing || !(recordingURIs.length != 0 || attachments.length != 0)}
-                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-                mode="contained"
-              />
-              {/* {isSyncing ? t('sync_in_progress') : t('sync_files')}
-              </Button> */}
-
               <Button
                 theme={theme}
                 style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
@@ -1842,7 +1669,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                     {resolvePDF && (
                       <ImageBackground
                         key={resolvePDF.id}
-                        source={resolvePDF.mimeType && resolvePDF.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: attachment.uri }}
+                        source={resolvePDF.mimeType && resolvePDF.mimeType.includes('pdf') ? require('../../../../../assets/pdf.png') : { uri: resolvePDF.uri }}
                         style={{
                           height: 80,
                           width: 80,
@@ -1850,61 +1677,32 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                           alignSelf: 'center',
                           justifyContent: 'flex-end',
                           marginVertical: 20,
+                          borderWidth: 3,
+                          borderColor: attachmentStatusColor(resolvePDF.uri),
                         }}
                       >
-                        {resolvePDF.mimeType && resolvePDF.mimeType.includes('pdf') ? <TouchableOpacity
-                          onPress={async () => { await showDoc(resolvePDF, dbUsername, dbPassword) }}
-                          style={{
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            height: 60,
-                            backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                          }}
-                        >
-                          <Image
-                            resizeMode="stretch"
-                            style={{ width: 30, height: 30, borderRadius: 50 }}
-                            source={require('../../../../../assets/eye.png')}
-                          />
-                        </TouchableOpacity> : <></>}
                         <TouchableOpacity
-                          onPress={() => { setResolvePDF() }}
+                          onPress={clearResolvePDF}
                           style={{
                             justifyContent: 'center',
                             alignItems: 'center',
                             height: 20,
-                            backgroundColor: resolvePDF.uploaded ? colors.primary : 'rgba(255, 1, 1, 1)',
+                            backgroundColor: 'rgba(255, 1, 1, 1)',
                           }}
                         >
-                          <Text style={{ color: resolvePDF.uploaded ? 'rgba(255, 1, 1, 1)' : 'white' }}>X</Text>
+                          <Text style={{ color: 'white' }}>X</Text>
                         </TouchableOpacity>
                       </ImageBackground>
                     )}
                   </View>
-                  {isSyncing && <View>
-                    <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" key={"task_progress_key_2"} />
-                  </View>}
                   <View
                     style={{
                       flexDirection: 'row',
                       justifyContent: 'space-between',
                     }}
                   >
-                    <IconButton
-                      icon="sync"
-                      iconColor={colors.lightgray}
-                      style={{ backgroundColor: isSyncing ? colors.disabled : colors.primary, margin: 'auto', alignSelf: 'center', marginRight: 25 }}
-                      onPress={uploadImages}
-                      loading={isSyncing}
-                      theme={theme}
-                      disabled={isSyncing || !(resolvePDF)}
-                      labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-                      mode="contained"
-                    />
-
                     <Button
                       theme={theme}
-                      disabled={isSyncing}
                       style={{ alignSelf: 'center' }}
                       labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
                       mode="contained"
@@ -1914,6 +1712,21 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                       {t('attach_pv')}
                     </Button>
                   </View>
+                  {resolvePDF && (
+                    <Button
+                      compact
+                      theme={theme}
+                      mode="outlined"
+                      uppercase={false}
+                      disabled={uploadingAttachments}
+                      loading={uploadingAttachments}
+                      style={{ alignSelf: 'flex-start', marginTop: 10, borderColor: colors.primary }}
+                      labelStyle={{ color: colors.primary, fontFamily: 'Poppins_400Regular', fontSize: 13 }}
+                      onPress={uploadResolvePDFNow}
+                    >
+                      {t('upload_files_now')}
+                    </Button>
+                  )}
                 </View>
 
               </>

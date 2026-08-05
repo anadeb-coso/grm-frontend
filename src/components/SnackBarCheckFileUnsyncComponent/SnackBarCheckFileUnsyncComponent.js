@@ -3,17 +3,15 @@ import { Snackbar } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native';
-import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { getInfoAsync } from 'expo-file-system';
+import { Q } from '@nozbe/watermelondb';
 
-import { LocalGRMDatabase } from '../../utils/databaseManager';
+import { database } from '../../database';
 
 
 function SnackBarCheckFileUnsyncComponent() {
     const navigation = useNavigation();
     const { t } = useTranslation();
-    const { userDocument: eadl } = useSelector((state) => state.get('userDocument').toObject());
 
     const [errorVisible, setErrorVisible] = React.useState(false);
     const [errorMessage, setErrorMessage] = useState(t('files_not_sync_alert_message'));
@@ -21,59 +19,21 @@ function SnackBarCheckFileUnsyncComponent() {
 
     const onDismissSnackBar = () => setErrorVisible(false);
 
+    // Simplifié par rapport à la version PouchDB : la table `attachments` WatermelonDB suit déjà
+    // explicitement `upload_status` par pièce jointe (cf. database/schema.js), plus besoin de
+    // scanner les tableaux imbriqués `issue.attachments[]`/`issue.reasons[]`.
     const get_files = async () => {
         try {
-
-            LocalGRMDatabase.find({
-                selector: {
-                    type: 'issue',
-                    "$or": [
-                        {
-                            "assignee.id": eadl?.representative?.id
-                        },
-                        {
-                            "reporter.id": eadl?.representative?.id
-                        }
-
-                    ]
-                },
-            }).then(async (res) => {
-                let found = false;
-                for (let i = 0; i < res.docs.length; i++) {
-                    const attachments = res.docs[i]?.attachments;
-                    for (let k = 0; k < attachments?.length; k++) {
-                        if (attachments[k].uploaded === false && attachments[k].user_id == eadl?.representative?.id && (await getInfoAsync(attachments[k]?.local_url)).exists) {
-                            found = true;
-                            setErrorMessage(t('files_not_sync_alert_message'));
-                            setErrorVisible(true);
-                        }
-                        break;
-                    }
-                    if (found) {
-                        break;
-                    }
-
-                    const reasons = res.docs[i]?.reasons;
-                    for (let index = 0; index < reasons?.length; index++) {
-                        if (reasons[index].type == 'file' && reasons[index].uploaded === false && reasons[index].user_id == eadl?.representative?.id && (await getInfoAsync(reasons[index]?.local_url)).exists) {
-                            found = true;
-                            setErrorMessage(t('files_not_sync_alert_message'));
-                            setErrorVisible(true);
-                        }
-                        break;
-                    }
-                    if (found) {
-                        break;
-                    }
-                }
-            });
-
-
+            const pending = await database.get('attachments')
+                .query(Q.where('upload_status', Q.notEq('done')))
+                .fetch();
+            if (pending.length > 0) {
+                setErrorMessage(t('files_not_sync_alert_message'));
+                setErrorVisible(true);
+            }
         } catch (e) {
             console.log("Error1 : " + e);
         }
-
-
     };
 
     useEffect(() => {

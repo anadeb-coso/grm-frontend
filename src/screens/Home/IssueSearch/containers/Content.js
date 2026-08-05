@@ -2,14 +2,14 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ToggleButton } from 'react-native-paper';
 import { colors } from '../../../../utils/colors';
 import ListHeader from '../components/ListHeader';
 import SearchBar from "../../../../components/Search/SearchBar";
 import CustomDropDownPickerWithRender from '../../../../components/CustomDropDownPicker/CustomDropDownPickerWithRender';
 
-function Content({ issues, eadl, statuses, issueCategories }) {
+function Content({ issues, eadl, statuses, issueCategories, refreshing, onRefresh }) {
   const { t } = useTranslation();
 
   const navigation = useNavigation();
@@ -187,20 +187,110 @@ function Content({ issues, eadl, statuses, issueCategories }) {
   // console.log({ _issues, eadl });
 
   const renderHeader = () => (
-    <ListHeader
-      overdue={issues.overdue}
-      length={issues.length}
-      average={issues.average}
-      resolved={filteredIssues?.resolved?.length || 0}
+    <>
+      <ToggleButton.Row
+        style={{ justifyContent: 'space-between' }}
+        onValueChange={(value) => setStatus(value)}
+        value={status}
+      >
+        <ToggleButton
+          style={{ flex: 1, backgroundColor: status === 'registe' ? colors.primary : 'transparent' }}
+          icon={() => (
+            <View>
+              <Text style={{ color: status === 'registe' ? 'white' : colors.primary }}>{t('initial_status')}</Text>
+            </View>
+          )}
+          value="registe"
+        />
+        <ToggleButton
+          style={{ flex: 1, backgroundColor: status === 'assigned' ? colors.primary : 'transparent' }}
+          icon={() => (
+            <View>
+              <Text style={{ color: status === 'assigned' ? 'white' : colors.primary }}>{t('assigned')}</Text>
+            </View>
+          )}
+          value="assigned"
+        />
+        <ToggleButton
+          style={{ flex: 1, backgroundColor: status === 'open' ? colors.primary : 'transparent' }}
+          icon={() => (
+            <View>
+              <Text style={{ color: status === 'open' ? 'white' : colors.primary }}>{t('open')}</Text>
+            </View>
+          )}
+          value="open"
+        />
+        <ToggleButton
+          style={{ flex: 1, backgroundColor: status === 'resolved' ? colors.primary : 'transparent' }}
+          icon={() => (
+            <View>
+              <Text style={{ color: status === 'resolved' ? 'white' : colors.primary }}>{t('resolved')}</Text>
+            </View>
+          )}
+          value="resolved"
+        />
 
-      registe={filteredIssues?.registe?.length || 0}
-      assigned={filteredIssues?.assigned?.length || 0}
-      open={filteredIssues?.open?.length || 0}
-      yourResolution={filteredIssues?.yourResolution?.length || 0}
-      // rejected={filteredIssues?.rejected?.length || 0}
-      // YourRejecte={filteredIssues?.YourRejecte?.length || 0}
-      seeAllIssues={eadl.administrative_region == "1"}
-    />
+        {/* <ToggleButton
+          style={{ flex: 1 }}
+          icon={() => (
+            <View>
+              <Text style={{ color: colors.primary }}>{t('rejected_status')}</Text>
+            </View>
+          )}
+          value="rejected"
+        /> */}
+      </ToggleButton.Row>
+
+
+      <View style={{flexDirection: 'row'}}>
+      <View style={{flex: 0.8}}>
+      <SearchBar
+            searchPhrase={searchPhrase}
+            setSearchPhrase={setSearchPhrase}
+            clicked={clicked}
+            setClicked={setClicked}
+            onChangeFunction={(v) => {
+              setPickerValue2(null);
+              onChangeSearchFunction(v);
+            }}
+          />
+      </View>
+      <View style={{flex: 0.2}}>
+          <CustomDropDownPickerWithRender
+            schema={{
+              label: 'id',
+              value: 'id',
+              id: 'id',
+              confidentiality_level: 'confidentiality_level',
+              assigned_department: 'assigned_department',
+            }}
+            placeholder={'Cat'}
+            value={pickerValue2}
+            items={issueCategories}
+            setPickerValue={setPickerValue2}
+            setItems={setItems2}
+            onSelectItem={onSearchIssuesByCategory}
+            zIndex={5}
+            customDropdownWrapperStyle={{marginTop: 5, marginHorizontal: 0}}
+          />
+      </View>
+      </View>
+
+      <ListHeader
+        overdue={issues.overdue}
+        length={issues.length}
+        average={issues.average}
+        resolved={filteredIssues?.resolved?.length || 0}
+
+        registe={filteredIssues?.registe?.length || 0}
+        assigned={filteredIssues?.assigned?.length || 0}
+        open={filteredIssues?.open?.length || 0}
+        yourResolution={filteredIssues?.yourResolution?.length || 0}
+        // rejected={filteredIssues?.rejected?.length || 0}
+        // YourRejecte={filteredIssues?.YourRejecte?.length || 0}
+        seeAllIssues={eadl.administrative_region == "1"}
+      />
+    </>
   );
 
 
@@ -259,106 +349,17 @@ function Content({ issues, eadl, statuses, issueCategories }) {
 
 
   return (
-    <>
-      <ToggleButton.Row
-        style={{ justifyContent: 'space-between' }}
-        onValueChange={(value) => setStatus(value)}
-        value={status}
-      >
-        <ToggleButton
-          style={{ flex: 1, backgroundColor: status === 'registe' ? colors.primary : 'transparent' }}
-          icon={() => (
-            <View>
-              <Text style={{ color: status === 'registe' ? 'white' : colors.primary }}>{t('initial_status')}</Text>
-            </View>
-          )}
-          value="registe"
-        />
-        <ToggleButton
-          style={{ flex: 1, backgroundColor: status === 'assigned' ? colors.primary : 'transparent' }}
-          icon={() => (
-            <View>
-              <Text style={{ color: status === 'assigned' ? 'white' : colors.primary }}>{t('assigned')}</Text>
-            </View>
-          )}
-          value="assigned"
-        />
-        <ToggleButton
-          style={{ flex: 1, backgroundColor: status === 'open' ? colors.primary : 'transparent' }}
-          icon={() => (
-            <View>
-              <Text style={{ color: status === 'open' ? 'white' : colors.primary }}>{t('open')}</Text>
-            </View>
-          )}
-          value="open"
-        />
-        <ToggleButton
-          style={{ flex: 1, backgroundColor: status === 'resolved' ? colors.primary : 'transparent' }}
-          icon={() => (
-            <View>
-              <Text style={{ color: status === 'resolved' ? 'white' : colors.primary }}>{t('resolved')}</Text>
-            </View>
-          )}
-          value="resolved"
-        />
-        
-        {/* <ToggleButton
-          style={{ flex: 1 }}
-          icon={() => (
-            <View>
-              <Text style={{ color: colors.primary }}>{t('rejected_status')}</Text>
-            </View>
-          )}
-          value="rejected"
-        /> */}
-      </ToggleButton.Row>
-
-      
-      <View style={{flexDirection: 'row'}}>
-      <View style={{flex: 0.8}}>
-      <SearchBar
-            searchPhrase={searchPhrase}
-            setSearchPhrase={setSearchPhrase}
-            clicked={clicked}
-            setClicked={setClicked}
-            onChangeFunction={(v) => {
-              setPickerValue2(null);
-              onChangeSearchFunction(v);
-            }}
-          />
-      </View>
-      <View style={{flex: 0.2}}>
-          <CustomDropDownPickerWithRender
-            schema={{
-              label: 'id',
-              value: 'id',
-              id: 'id',
-              confidentiality_level: 'confidentiality_level',
-              assigned_department: 'assigned_department',
-            }}
-            placeholder={'Cat'}
-            value={pickerValue2}
-            items={issueCategories}
-            setPickerValue={setPickerValue2}
-            setItems={setItems2}
-            onSelectItem={onSearchIssuesByCategory}
-            zIndex={5}
-            customDropdownWrapperStyle={{marginTop: 5, marginHorizontal: 0}}
-          />
-      </View>
-      </View>
-
-
-
-      <FlatList
-        style={{ flex: 1 }}
-        data={__issues}
-        renderItem={renderItem}
-        ListHeaderComponent={renderHeader}
-        keyExtractor={(item) => {`${item.id}_${item._id}`}}
-        extraData={selectedId}
-      />
-    </>
+    <FlatList
+      style={{ flex: 1 }}
+      data={__issues}
+      renderItem={renderItem}
+      ListHeaderComponent={renderHeader}
+      keyExtractor={(item) => `${item.id}_${item._id}`}
+      extraData={selectedId}
+      refreshControl={
+        onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined
+      }
+    />
   );
 }
 

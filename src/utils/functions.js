@@ -4,12 +4,13 @@ import * as FileSystem from 'expo-file-system';
 // import * as Sharing from "expo-sharing";
 import RNFS from 'react-native-fs';
 import { getInfoAsync } from 'expo-file-system';
-import { couchDBURLBase } from './databaseManager';
+import { grmBaseURL } from '../services/env';
 import Share from 'react-native-share';
 import * as mime from 'react-native-mime-types';
 import ReactNativeBlobUtil from 'react-native-blob-util';
-import { Platform, ToastAndroid } from 'react-native';
+import { Platform, ToastAndroid, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { Audio } from 'expo-av';
 
 
 const padStart = (nbr) => {
@@ -17,6 +18,12 @@ const padStart = (nbr) => {
 }
 
 export const formatDuration = (seconds) => {
+    // `seconds` peut être `undefined`/`NaN` quand la durée n'a pas pu être déterminée (ex. audio
+    // distant momentanément inaccessible, cf. getAudioDuration ci-dessous) — sans cette garde,
+    // l'affichage montrait littéralement "NaN:NaN" plutôt qu'un état neutre.
+    if (!Number.isFinite(seconds)) {
+        return '--:--';
+    }
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = Math.floor(seconds % 60);
@@ -55,7 +62,7 @@ export function validatePassword(password) {
 
 export const openUrl = url => {
     if (!url.includes("http")) {
-        url = couchDBURLBase + url;
+        url = grmBaseURL + url;
     }
     Linking.openURL(url);
 };
@@ -95,7 +102,7 @@ export const showDoc = async (attach, username = null, password = null, share = 
           
     } else {
         if (!url.includes("http")) {
-            url = couchDBURLBase + url;
+            url = grmBaseURL + url;
         }
         try {
             // let mimeType = await getFileType(url);
@@ -180,7 +187,7 @@ export const download = async (url, username = null, password = null, share=true
 export const downloadToDownloadsFolder = async (url, username, password, progressCallback = null) => {
     try {
         if (!url.includes("http")) {
-            url = couchDBURLBase + url;
+            url = grmBaseURL + url;
         }
 
         const base64Creds = btoa(`${username}:${password}`);
@@ -254,3 +261,84 @@ const getMimeType = (filename) => {
         default: return 'application/octet-stream';
     }
 };
+
+export const getImageSize = async (imageUri) => {
+  let fileSizeInMB = 0;
+  try {
+    const fileInfo = await FileSystem.getInfoAsync(imageUri);
+
+    if (fileInfo.exists && fileInfo.size) {
+      fileSizeInMB = fileInfo.size / (1024 * 1024); // Convert bytes to MB
+    }
+  } catch (error) {
+    console.error('Error getting image size:', error);
+  }
+
+  return fileSizeInMB;
+};
+
+
+export const image_compress = (size) => {
+    let result;
+
+    if (size <= 0.5) {
+        result = 1;
+    } else if (size <= 1.5) {
+        result = 0.9;
+    } else if (size <= 2) {
+        result = 0.8;
+    } else if (size <= 3) {
+        result = 0.7;
+    } else if (size <= 4) {
+        result = 0.5;
+    } else if (size <= 5) {
+        result = 0.45;
+    } else {
+        result = 0.4;
+    }
+
+    return result;
+}
+
+export const getImageDimensions = async (imageUri) => {
+    return new Promise((resolve, reject) => {
+        Image.getSize(
+        imageUri,
+        (width, height) => {
+            resolve({ width, height });
+        },
+        (error) => {
+            reject(error);
+        }
+        );
+    });
+};
+
+export const getAudioDuration = async (sound_url) => {
+    const soundObject = new Audio.Sound();
+    let durationSecond;
+    try {
+    // Les URLs S3 distantes (`attachment.remoteUrl`) portent une signature de courte durée (1h,
+    // générée côté Django au moment de l'upload, cf. AWS_QUERYSTRING_EXPIRE par défaut) qui a très
+    // souvent expiré au moment où cette fonction tourne (ex. relecture d'une plainte plus tard) —
+    // S3 répond alors 403 "Request has expired" pour CETTE signature précise, même quand l'objet
+    // reste accessible sans signature (le bucket accepte déjà les accès anonymes non signés :
+    // même correctif déjà appliqué à files/downloadQueue.js et à la vue Django
+    // attachments.GetAttachmentAPIView, qui strippent toutes deux la query string avant l'accès).
+    const url = (sound_url ?? '').split('?')[0];
+    const { sound, status } = await Audio.Sound.createAsync(
+        { uri: url }
+    );
+
+    await sound.unloadAsync();
+
+      // Convert the duration from milliseconds to seconds
+      durationSecond = status.durationMillis / 1000;
+    } catch (error) {
+      console.error('Error loading audio:', error);
+    } finally {
+      // Unload the sound object to free up resources
+      await soundObject.unloadAsync();
+    }
+    return durationSecond;
+  };

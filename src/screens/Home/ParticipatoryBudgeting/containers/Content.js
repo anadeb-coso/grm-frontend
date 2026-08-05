@@ -1,25 +1,49 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Divider, Text } from "react-native-paper";
 import moment from "moment";
 import "moment/locale/fr";
 import { FontAwesome5 } from "@expo/vector-icons";
+import { Q } from "@nozbe/watermelondb";
 import { styles } from "./Content.styles";
 import { colors } from "../../../../utils/colors";
+import { database } from "../../../../database";
 
 moment.locale("fr");
 
 function Content({ eadl }) {
   const navigation = useNavigation();
+  const [phases, setPhases] = useState([]);
+
+  useEffect(() => {
+    if (!eadl) return;
+    (async () => {
+      const phaseRecords = await database.get('phases')
+        .query(Q.where('adl', eadl.id), Q.sortBy('ordinal', Q.asc))
+        .fetch();
+      const withTasks = await Promise.all(
+        phaseRecords.map(async (phase) => ({
+          record: phase,
+          ordinal: phase.ordinal,
+          title: phase.title,
+          open_at: phase.openAt,
+          due_at: phase.dueAt,
+          tasks: await database.get('tasks').query(Q.where('phase', phase.id)).fetch(),
+        }))
+      );
+      setPhases(withTasks);
+    })();
+  }, [eadl]);
+
   const goToPhase = (phase) =>
     navigation.navigate("PhaseTasks", {
       eadl,
-      phase,
+      phase: phase.record,
     });
   return (
     <FlatList
-      data={eadl?.phases || []}
+      data={phases}
       contentContainerStyle={{ padding: 21 }}
       keyExtractor={(item, index) => index.toString()}
       ItemSeparatorComponent={() => <Divider style={{ marginVertical: 10 }} />}

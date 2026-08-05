@@ -9,70 +9,73 @@ import {
 } from '@expo-google-fonts/poppins';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { View, Text, ToastAndroid } from 'react-native';
+import { View, Text } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { ActivityIndicator } from 'react-native-paper';
 // import { useTranslation } from 'react-i18next';
-import { init } from '../store/ducks/authentication.duck';
+import { init, logout } from '../store/ducks/authentication.duck';
 import { setCommune, setDocument } from '../store/ducks/userDocument.duck';
 import { getUserDocs } from '../utils/databaseManager';
 import { getEncryptedData } from '../utils/storageManager';
+import { getTokens, setOnSessionExpired } from '../api/client';
 import PrivateRoutes from './privateRoutes';
 import PublicRoutes from './publicRoutes';
-import { logout } from '../store/ducks/authentication.duck';
-import { verify_account_on_couchdb } from '../services/CouchDBRequest';
 
 function Router({ theme }) {
   const dispatch = useDispatch();
   // const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
 
-  const { userPassword, username: fetchedUser } = useSelector((state) =>
+  const { isAuthenticated, username: fetchedUser } = useSelector((state) =>
     state.get('authentication').toObject()
   );
 
 
   useEffect(() => {
     async function fetchData() {
-      // You can await here
-      const { userDoc, userCommune } = await getUserDocs(fetchedUser);
-      if (userDoc) {
-        dispatch(setDocument(userDoc)); // Dispatch setDocument action
+      try {
+        const { userDoc, userCommune } = await getUserDocs();
+        if (userDoc) {
+          dispatch(setDocument(userDoc)); // Dispatch setDocument action
+        }
+        if (userCommune) {
+          dispatch(setCommune(userCommune)); // Dispatch setCommune action
+        }
+      } catch (err) {
+        console.warn('Unable to load user profile', err);
       }
-      if (userCommune) {
-        dispatch(setCommune(userCommune)); // Dispatch setCommune action
-      }
-      // ...
     }
     if (fetchedUser) fetchData();
   }, [dispatch, fetchedUser]);
 
-  const getDBConfig = async () => {
-    const password = await getEncryptedData('userPassword');
-    let dbCredentials;
-    let username;
-    if (password) {
-      username = await getEncryptedData(`username`);
-      dbCredentials = await getEncryptedData(
-        `dbCredentials_${password}_${username.replace('@', '')}`
-      );
-
-      if (username) {
-        if (!(await verify_account_on_couchdb(dbCredentials, username))) {
-          // ToastAndroid.show(t('unable_retrieve_your_information'), ToastAndroid.LONG);
-          ToastAndroid.show("We are unable to retrieve your information from the server.", ToastAndroid.LONG);
-          dispatch(logout());
-        }
-      }
-
-      dispatch(init(dbCredentials, { password, email: username }));
+  // Restaure la session au lancement de l'app depuis le stockage chiffré local. La vérification
+  // du compte se fait désormais via le JWT (src/api/client.js, rafraîchi/validé automatiquement
+  // au premier appel réseau) plutôt que par un mot de passe mis de côté à cet effet : la
+  // présence d'un token d'accès stocké (`getTokens()`) sert directement d'indicateur de session
+  // — s'il est expiré/révoqué, le premier appel réseau échouera et `setOnSessionExpired`
+  // (ci-dessous) déconnectera l'utilisateur proprement.
+  const restoreSession = async () => {
+    const tokens = await getTokens();
+    if (tokens?.access) {
+      const username = await getEncryptedData('username');
+      dispatch(init({ email: username }));
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    getDBConfig();
+    restoreSession();
   }, []);
+
+  // Quand le token JWT est expiré/révoqué et que le rafraîchissement automatique échoue
+  // (src/api/client.js), on déconnecte réellement l'utilisateur : `logout()` remet
+  // `isAuthenticated` à `false` dans le store, ce qui fait basculer automatiquement ce composant
+  // sur `PublicRoutes` (écran de connexion) via le rendu conditionnel ci-dessous — pas besoin de
+  // navigation manuelle.
+  useEffect(() => {
+    setOnSessionExpired(() => dispatch(logout()));
+    return () => setOnSessionExpired(null);
+  }, [dispatch]);
 
   const [fontsLoaded] = useFonts({
     Poppins_400Regular,
@@ -92,7 +95,7 @@ function Router({ theme }) {
 
   return (
     <NavigationContainer theme={theme || DefaultTheme}>
-      {userPassword ? <PrivateRoutes /> : <PublicRoutes />}
+      {isAuthenticated ? <PrivateRoutes /> : <PublicRoutes />}
     </NavigationContainer>
   );
 }

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { SafeAreaView, ActivityIndicator } from "react-native";
+import { Q } from "@nozbe/watermelondb";
 import Content from "./containers/Content";
 import { styles } from "./ParticipatoryBudgetingList.styles";
-import LocalDatabase from "../../../utils/databaseManager";
+import { database } from "../../../database";
+import { getCurrentUserId } from "../../../api/client";
 import { useSelector } from "react-redux";
 import { colors } from "../../../utils/colors";
 
@@ -15,20 +17,17 @@ const ParticipatoryBudgetingList = () => {
   });
   useEffect(() => {
     if (username) {
-      LocalDatabase.find({
-        selector: { "representative.email": username },
-        // fields: ["_id", "commune", "phases"],
-      })
-        .then(function (result) {
-          setLoading(false);
-          setEadl(result.docs[0]);
-
-          // handle result
-        })
-        .catch(function (err) {
-          setLoading(false);
+      (async () => {
+        try {
+          const userId = await getCurrentUserId();
+          const adls = await database.get('adls').query(Q.where('representative', userId)).fetch();
+          setEadl(adls[0]);
+        } catch (err) {
           console.log(err);
-        });
+        } finally {
+          setLoading(false);
+        }
+      })();
     }
   }, [username]);
   // console.log(phases);

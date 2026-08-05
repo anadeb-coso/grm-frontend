@@ -1,20 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { View, Platform, Modal, Text } from 'react-native';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Modal, Text, ScrollView, RefreshControl } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
-import { useSelector } from 'react-redux';
-import { getInfoAsync, uploadAsync } from 'expo-file-system';
-import * as FileSystem from 'expo-file-system';
 import { useTranslation } from 'react-i18next';
-import LocalDatabase, { LocalGRMDatabase } from '../../../utils/databaseManager';
+import { Q } from '@nozbe/watermelondb';
+import { database } from '../../../database';
+import { enqueuePendingUploads } from '../../../files/uploadQueue';
 import { colors } from '../../../utils/colors';
 import ImagesList from './components/ImagesList';
-import { getEncryptedData } from '../../../utils/storageManager';
 import CustomGreenButton from '../../../components/CustomGreenButton/CustomGreenButton';
 import SyncImage from '../../../../assets/sync-image.svg';
 import CheckCircle from '../../../../assets/check-circle.svg';
-import { baseURL } from '../../../services/API';
-import { SyncToRemoteDatabase } from "../../../utils/databaseManager";
 
 function SyncAttachments({ navigation }) {
   const { t } = useTranslation();
@@ -22,275 +17,76 @@ function SyncAttachments({ navigation }) {
   const FILE_READ_ERROR = t('file_read_error');
   const FILE_READ_ERROR_TRY_AGAIN = t('file_read_error_try_again');
 
-
   const [loading, setLoading] = useState(true);
   const [attachments, setAttachments] = useState([]);
   const [successModal, setSuccessModal] = useState(false);
-  const [fetchedContent, setFetchedContent] = useState(false);
   const [errorVisible, setErrorVisible] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState(FILE_READ_ERROR);
+  const [refreshing, setRefreshing] = useState(false);
 
   const onDismissSnackBar = () => setErrorVisible(false);
 
-  const { username, userPassword } = useSelector((state) => state.get('authentication').toObject());
-  const { userDocument: eadl } = useSelector((state) => state.get('userDocument').toObject());
-
-  const getAndSetAttachments = async () => {
-    if (!fetchedContent) {
-      async function fetchContent() {
-        // LocalDatabase.find({
-        //   selector: { 'representative.email': username },
-        //   // fields: ["_id", "phases"],
-        // })
-        //   .then((result) => {
-        //     const phases = result?.docs[0]?.phases;
-        //     const docId = result?.docs[0]?._id;
-        //     const attachmentsArray = [];
-        //     for (let i = 0; i < phases.length; i++) {
-        //       const phaseOrdinal = phases[i]?.ordinal;
-        //       const tasks = phases[i]?.tasks;
-        //       for (let j = 0; j < tasks?.length; j++) {
-        //         const taskOrdinal = tasks[j]?.ordinal;
-        //         const attachments = tasks[j]?.attachments;
-        //         for (let k = 0; k < attachments?.length; k++) {
-        //           const attachment = attachments[k];
-        //           attachmentsArray.push({
-        //             attachment,
-        //             phaseOrdinal,
-        //             taskOrdinal,
-        //             docId,
-        //           });
-        //         }
-        //       }
-        //     }
-
-        //     // fetch EADL
-        //     const issuesAttachments = [];
-        //     const eadl = result;
-        //     // LocalDatabase.find({
-        //     //   selector: { 'representative.email': username },
-        //     //   // fields: ["_id", "commune", "phases"],
-        //     // })
-        //     //   .then((eadl) => {
-        //         // FETCH GRM ISSUES
-        //         LocalGRMDatabase.find({
-        //           selector: {
-        //             type: 'issue',
-        //             // 'reporter.id': eadl.docs[0].representative.id,
-        //             'assignee.id': eadl.docs[0].representative.id,
-        //             // "$or": [
-        //             //   {
-        //             //     "reporter.id": eadl.docs[0].representative.id
-        //             //   },
-        //             //   {
-        //             //     "assignee.id": eadl.docs[0].representative.id
-        //             //   }
-        //             // ]
-        //           },
-        //         }).then((res) => {
-        //           for (let i = 0; i < res.docs.length; i++) {
-        //             const attachments = res.docs[i]?.attachments;
-        //             for (let k = 0; k < attachments?.length; k++) {
-        //               issuesAttachments.push({
-        //                 attachment: attachments[k],
-        //                 docId: res?.docs[i]?._id,
-        //               });
-        //             }
-
-        //             const reasons = res.docs[i]?.reasons;
-        //             for (let index = 0; index < reasons?.length; index++) {
-        //               issuesAttachments.push({
-        //                 attachment: reasons[index],
-        //                 docId: res?.docs[i]?._id,
-        //               });
-        //             }
-
-        //             // console.log(res.docs[i].attachments)
-        //           }
-        //           setAttachments([...attachmentsArray.flat(2), ...issuesAttachments]);
-        //           setLoading(false);
-        //         });
-
-        //         // handle result
-        //       // })
-        //       // .catch((err) => {
-        //       //   setLoading(false);
-        //       // });
-
-        //     // handle result
-        //   })
-        //   .catch((err) => {
-        //     setLoading(false);
-        //   });
-
-
-
-        const attachmentsArray = [];
-        const issuesAttachments = [];
-        LocalGRMDatabase.find({
-          selector: {
-            type: 'issue',
-            // 'reporter.id': eadl.docs[0].representative.id,
-            // 'assignee.id': eadl.representative.id,
-            "$or": [
-              {
-                "assignee.id": eadl.representative.id
-              },
-              {
-                "reporter.id": eadl.representative.id
-              }
-                
-            ]
-            // "$or": [
-            //   {
-            //     "reporter.id": eadl.docs[0].representative.id
-            //   },
-            //   {
-            //     "assignee.id": eadl.docs[0].representative.id
-            //   }
-            // ]
-          },
-        }).then(async (res) => {
-          for (let i = 0; i < res.docs.length; i++) {
-            const attachments = res.docs[i]?.attachments;
-            for (let k = 0; k < attachments?.length; k++) {
-              if(attachments[k].uploaded === false && attachments[k].user_id == eadl.representative.id && (await getInfoAsync(attachments[k]?.local_url)).exists){
-                issuesAttachments.push({
-                  attachment: attachments[k],
-                  docId: res?.docs[i]?._id,
-                });
-              }
-            }
-
-            const reasons = res.docs[i]?.reasons;
-            for (let index = 0; index < reasons?.length; index++) {
-              if(reasons[index].type == 'file' && reasons[index].uploaded === false && reasons[index].user_id == eadl.representative.id && (await getInfoAsync(reasons[index]?.local_url)).exists){
-                issuesAttachments.push({
-                  attachment: reasons[index],
-                  docId: res?.docs[i]?._id,
-                });
-              }
-            }
-
-            // console.log(res.docs[i].attachments)
-          }
-          setAttachments([...attachmentsArray.flat(2), ...issuesAttachments]);
-          setLoading(false);
-        });
-
-        setLoading(false);
-      }
-      setLoading(true);
-      await fetchContent();
+  // Simplifié par rapport à la version PouchDB : la table `attachments` WatermelonDB suit déjà
+  // `upload_status` par pièce jointe (cf. database/schema.js et
+  // SnackBarCheckFileUnsyncComponent.js), plus besoin de scanner les tableaux imbriqués
+  // `issue.attachments[]`/`issue.reasons[]`/`phases[].tasks[].attachments[]` d'un unique gros
+  // document ADL comme le faisait la version CouchDB.
+  const getAndSetAttachments = useCallback(async () => {
+    setLoading(true);
+    setRefreshing(true);
+    try {
+      const pending = await database.get('attachments')
+        .query(Q.where('upload_status', Q.notEq('done')))
+        .fetch();
+      setAttachments(pending.map((a) => ({
+        attachment: {
+          id: a.id,
+          isAudio: !!(a.contentType && a.contentType.startsWith('audio/')),
+          local_url: a.localUri,
+          uploaded: a.uploadStatus === 'done',
+        },
+        taskOrdinal: a.taskId || undefined,
+      })));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
-  useEffect(() => {
-    getAndSetAttachments();
   }, []);
 
-  const uploadFile = async (file, dbConfig) => {
-    try {
-      const tmp = await getInfoAsync(file?.attachment?.local_url);
-      if (tmp.exists) {
-        // const formData = new FormData();
-        // formData.append('username', dbConfig?.username);
-        // formData.append('password', dbConfig?.password);
-        // formData.append('doc_id', file?.docId);
-        // formData.append('phase', file?.phaseOrdinal);
-        // formData.append('task', file?.taskOrdinal);
-        // formData.append('attachment_id', file?.attachment?.id);
-        // formData.append('file', {
-        //   uri:
-        //     Platform.OS === 'android'
-        //       ? file?.attachment?.local_url
-        //       : file?.attachment?.local_url.replace('file://', ''),
-        //   name: file?.attachment?.name,
-        //   type: 
-        //     file.attachment?.isAudio ? 
-        //       'audio/m4a' 
-        //     : (file?.attachment?.local_url.includes('.pdf') ? 'application/pdf' : 'image/*'), //'image/jpeg' // it may be necessary in Android.
-        // });
+  useEffect(() => {
+    getAndSetAttachments();
+  }, [getAndSetAttachments]);
 
-        // await axios.post(
-        //   `${baseURL}${
-        //     file.taskOrdinal ? '/attachments/upload-to-task' : '/attachments/upload-to-issue'
-        //   }`,
-        //   formData,
-        //   { 'Content-Type': 'multipart/form-data' }
-        // );
-        // return {};
-
-
-
-
-
-        try {
-          const response = await uploadAsync(
-            `${baseURL}${file.taskOrdinal ? '/attachments/upload-to-task' : '/attachments/upload-to-issue'
-            }`,
-            Platform.OS === 'android'
-              ? file?.attachment?.local_url
-              : file?.attachment?.local_url.replace('file://', ''),
-            {
-              fieldName: 'file',
-              httpMethod: 'POST',
-              uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-              ContentType: 'multipart/form-data',
-              mimeType:
-                file.attachment?.isAudio ?
-                  'audio/m4a'
-                  : (file?.attachment?.local_url.includes('.pdf') ? 'application/pdf' : 'image/*'),
-              parameters: {
-                username: dbConfig?.username,
-                password: dbConfig?.password,
-                doc_id: file?.docId,
-                phase: file?.phaseOrdinal,
-                task: file?.taskOrdinal,
-                attachment_id: file?.attachment?.id
-              },
-            },
-          );
-          // console.log(response);
-          if (response.status < 300) {
-            return {};
-          }
-
-        } catch (e) {
-          setErrorMessage(FILE_READ_ERROR);
-          setErrorVisible(true);
-          return { error: FILE_READ_ERROR };
-        }
-
-      }
-      setErrorMessage(FILE_READ_ERROR);
-      setErrorVisible(true);
-      return { error: FILE_READ_ERROR };
-    } catch (e) {
-      console.log(e);
-      setErrorMessage(FILE_READ_ERROR_TRY_AGAIN);
-      setErrorVisible(true);
-      return { error: FILE_READ_ERROR_TRY_AGAIN };
-    }
-  };
-
+  // Réutilise la même file d'upload JWT que la synchronisation automatique
+  // (src/files/uploadQueue.js) — compression, limite de taille, retry compris.
   const syncImages = async () => {
-    const dbConfig = await getEncryptedData(
-      `dbCredentials_${userPassword}_${username.replace('@', '')}`
-    );
     setLoading(true);
     let isError = false;
-    for (let i = 0; i < attachments.length; i++) {
-      if (attachments[i]?.attachment?.uploaded === false) {
-        const response = await uploadFile(attachments[i], dbConfig);
-        if (response.error) isError = true;
-      }
+
+    try {
+      // Feedback déjà géré ci-dessous (Snackbar dédiée) : pas besoin du toast générique.
+      await enqueuePendingUploads({ notifyOnError: false });
+    } catch (err) {
+      console.log(err);
+      isError = true;
+      setErrorMessage(FILE_READ_ERROR_TRY_AGAIN);
+      setErrorVisible(true);
     }
+
+    const failedUploads = await database.get('attachments')
+      .query(Q.where('upload_status', 'error'))
+      .fetch();
+    if (failedUploads.length > 0) {
+      isError = true;
+      setErrorMessage(FILE_READ_ERROR);
+      setErrorVisible(true);
+    }
+
     setLoading(false);
     if (!isError) setSuccessModal(true);
-
-    await SyncToRemoteDatabase(dbConfig, username);
     await getAndSetAttachments();
   };
+
   return (
     <View style={{ flex: 1 }}>
       <Modal animationType="slide" style={{ flex: 1 }} visible={successModal}>
@@ -341,10 +137,27 @@ function SyncAttachments({ navigation }) {
           </CustomGreenButton>
         </View>
       </Modal>
-      <ImagesList attachments={attachments} />
+      {
+        attachments?.filter(elt => ![undefined, null, ""].includes(elt?.local_url))?.length > 0 ? 
+        <ImagesList attachments={attachments} getAndSetAttachments={getAndSetAttachments} refreshing={refreshing} /> 
+        : <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ justifyContent: 'center', alignItems: 'center', padding: 20 }} 
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={getAndSetAttachments} />
+              }
+            >
+              <View style={{marginTop: 25}}>
+                <Text style={{color: 'grey'}}>{t('files_sync_currently')}</Text>
+              </View>
+          </ScrollView>
+      }
+      
+
       {loading ? (
         <ActivityIndicator color={colors.primary} style={{ marginVertical: 10 }} />
-      ) : (
+      ) : <>
+        {/* {attachments?.filter(elt => ![undefined, null, ""].includes(elt?.local_url))?.length > 0  ?  */}
         <View>
           <CustomGreenButton
             onPress={syncImages}
@@ -367,7 +180,8 @@ function SyncAttachments({ navigation }) {
             {t('sync')}
           </CustomGreenButton>
         </View>
-      )}
+         {/* : <></>} */}
+      </>}
       <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
         {errorMessage}
       </Snackbar>

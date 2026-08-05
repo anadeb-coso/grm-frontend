@@ -44,32 +44,34 @@ const ChartIssues = ({ issues }) => {
     const _dataBar = [0, 0, 0, 0];
     let index;
     for (const issue of issues) {
-        index = data.findIndex(item => item.id === issue.category.id);
-        if (index < 0) {
-            data.push(
-                {
-                    id: issue.category.id,
-                    name: issue.category.name,
-                    number_issues: 1,
-                    color: categories_colors[issue.category.id],
-                    legendFontColor: "#7F7F7F",
-                    legendFontSize: 11
-                }
-            )
-        } else {
-            data[index].number_issues++;
+        if (issue.category) {
+            index = data.findIndex(item => item.id === issue.category.id);
+            if (index < 0) {
+                data.push(
+                    {
+                        id: issue.category.id,
+                        name: issue.category.name,
+                        number_issues: 1,
+                        color: categories_colors[issue.category.id],
+                        legendFontColor: "#7F7F7F",
+                        legendFontSize: 11
+                    }
+                )
+            } else {
+                data[index].number_issues++;
+            }
         }
 
-
-
-        if(issue.status.id === 1){//Enregistrée
-            _dataBar[0]++;
-        }else if(issue.status.id === 2){//En cours de traitement
-            _dataBar[1]++;
-        }else if(issue.status.id === 5){//Non Résoluée
-            _dataBar[2]++;
-        }else if(issue.status.id === 3){//Résoluée
-            _dataBar[3]++;
+        if (issue.status) {
+            if(issue.status.id === 1){//Enregistrée
+                _dataBar[0]++;
+            }else if(issue.status.id === 2){//En cours de traitement
+                _dataBar[1]++;
+            }else if(issue.status.id === 5){//Non Résoluée
+                _dataBar[2]++;
+            }else if(issue.status.id === 3){//Résoluée
+                _dataBar[3]++;
+            }
         }
     }
 

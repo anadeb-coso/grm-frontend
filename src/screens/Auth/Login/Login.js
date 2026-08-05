@@ -14,14 +14,11 @@ import {
 import { ActivityIndicator, Button, TextInput } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
-import API from '../../../services/API';
+import { login as jwtLogin } from '../../../api/client';
 import { login } from '../../../store/ducks/authentication.duck';
-import { setCommune, setDocument } from '../../../store/ducks/userDocument.duck';
 
-import { getUserDocs } from '../../../utils/databaseManager';
 import MESSAGES from '../../../utils/formErrorMessages';
 import { emailRegex, passwordRegex } from '../../../utils/formUtils';
-import { getEncryptedData } from '../../../utils/storageManager';
 import styles from './Login.style';
 import ThinkingSVG from '../../../../assets/think.svg';
 
@@ -35,43 +32,24 @@ function Login() {
 
   const onLoginPress = async (data) => {
     setLoading(true);
-    const dbConfig = await getEncryptedData(
-      `dbCredentials_${data?.password}_${data?.email.replace('@', '')}`
-    );
-    // console.log(dbConfig);
-    if (dbConfig) {
-      const { userDoc, userCommune } = await getUserDocs(data?.email);
-      if (userDoc) {
-        dispatch(setDocument(userDoc)); // Dispatch setDocument action
-      }
-      if (userCommune) {
-        dispatch(setCommune(userCommune)); // Dispatch setCommune action
-      }
-      dispatch(login(dbConfig, { email: data?.email, password: data?.password }));
-    } else {
-      new API()
-        .login({ email: data?.email, password: data?.password })
-        .then(async (response) => {
-          // console.log(response);
-          if (response.error) {
-            setLoading(false); //Hidd loading widget when the credentials are wrong
-            return;
-          }
-          const { userDoc, userCommune } = await getUserDocs(data?.email);
-          if (userDoc) {
-            dispatch(setDocument(userDoc)); // Dispatch setDocument action
-          }
-          if (userCommune) {
-            dispatch(setCommune(userCommune)); // Dispatch setCommune action
-          }
-          dispatch(login(response, data));
+    try {
+      // Authentification JWT (grm-backend/src/sync : /api/auth/token/) — remplace l'ancien flux
+      // de connexion CouchDB. `jwtLogin` stocke déjà les tokens de façon chiffrée
+      // (src/api/client.js), la synchronisation WatermelonDB démarre depuis le duck (voir
+      // authentication.duck.js::login -> startWatermelonSync()).
+      await jwtLogin(data?.email, data?.password);
 
-          setLoading(false);
-        })
-        .catch((error) => {
-          setLoading(false);
-          console.error(error);
-        });
+      // Le profil ADL (village/commune géré) est chargé séparément par `router/index.js`, dès
+      // que `username` change dans le store `authentication` (déclenché par `dispatch(login(...))`
+      // ci-dessous) — inutile de le refaire ici (c'était auparavant un appel direct CouchDB,
+      // systématiquement en échec depuis le passage au JWT, qui empêchait ce dispatch de
+      // s'exécuter). Le mot de passe n'est pas transmis au store : seul le JWT (déjà stocké par
+      // `jwtLogin` ci-dessus) sert à authentifier les appels suivants.
+      dispatch(login({ email: data?.email }));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 

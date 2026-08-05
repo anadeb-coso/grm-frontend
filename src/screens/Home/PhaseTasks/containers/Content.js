@@ -1,46 +1,66 @@
-import React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, FlatList, TouchableOpacity, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Divider, FAB } from "react-native-paper";
 import { FontAwesome5 } from "@expo/vector-icons";
+import { Q } from "@nozbe/watermelondb";
 import { styles } from "./Content.styles";
 import moment from "moment";
 import "moment/locale/fr";
 import { ImageBackground } from "react-native";
 import TagIcon from "../../../../../assets/tag_solid.svg";
-import LocalDatabase from "../../../../utils/databaseManager";
+import { database } from "../../../../database";
 
 moment.locale("fr");
 
 function Content({ eadl, phase }) {
   const navigation = useNavigation();
-  const [update, setUpdate] = React.useState(false);
+  const [tasks, setTasks] = useState([]);
+
+  const loadTasks = useCallback(async () => {
+    const records = await database.get('tasks')
+      .query(Q.where('phase', phase.id), Q.sortBy('ordinal', Q.asc))
+      .fetch();
+    setTasks(records.map((t) => ({
+      record: t,
+      type: t.taskType,
+      title: t.title,
+      status: t.status,
+      open_at: t.openAt,
+      due_at: t.dueAt,
+    })));
+  }, [phase]);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
   const goToTaskDetail = (task) => {
     if (task.type === "multiple_list_activity") {
       //navigate to subtasks
       navigation.navigate("RegisterSubprojects", {
-        task,
+        task: task.record,
         phase,
         eadl,
         update: updatePhase,
       });
     } else if (task.type === "vote_activity") {
       navigation.navigate("RegisterVotesActivity", {
-        task,
+        task: task.record,
         phase,
         eadl,
         update: updatePhase,
       });
     } else if (task.type === "input_activity") {
       navigation.navigate("BudgetAllocation", {
-        task,
+        task: task.record,
         phase,
         eadl,
         // update: updatePhase,
       });
     } else {
       navigation.navigate("DocumentTask", {
-        task,
+        task: task.record,
         phase,
         eadl,
         update: updatePhase,
@@ -48,31 +68,26 @@ function Content({ eadl, phase }) {
     }
   };
 
-  const updatePhase = () => {
-    setUpdate(!update);
-    const completedTasks = phase.tasks.filter(
-      ({ status }) => status === "completed"
-    ).length;
-    if (completedTasks === phase.tasks.length) {
-      phase.closed_at = moment();
-    } else {
-      phase.closed_at = null;
-    }
-    LocalDatabase.upsert(eadl._id, function (doc) {
-      doc.phases = eadl.phases;
-      return doc;
+  const updatePhase = async () => {
+    const freshTasks = await database.get('tasks').query(Q.where('phase', phase.id)).fetch();
+    const completedTasks = freshTasks.filter(({ status }) => status === "completed").length;
+    await database.write(async () => {
+      await phase.update((p) => {
+        p.closedAt = completedTasks === freshTasks.length ? new Date() : null;
+      });
     });
+    loadTasks();
   };
 
   return (
     <View style={{ flex: 1 }}>
       <FlatList
-        data={phase?.tasks || []}
+        data={tasks}
         contentContainerStyle={{ padding: 21 }}
         keyExtractor={(item, index) => index.toString()}
         ItemSeparatorComponent={() => <View style={{ marginVertical: 10 }} />}
         renderItem={({ item, index }) => {
-          const completedTasks = phase.tasks.filter(
+          const completedTasks = tasks.filter(
             ({ status }) => status === "completed"
           ).length;
           return (
@@ -122,18 +137,6 @@ function Content({ eadl, phase }) {
                     style={{ marginVertical: 8, backgroundColor: "#f6f6f6" }}
                   />
                   <View style={styles.cardFooter}>
-                    {/*<View>*/}
-                    {/*  <Text style={styles.footerTitle}>Location</Text>*/}
-                    {/*  <View style={styles.cardDateContainer}>*/}
-                    {/*    <FontAwesome5*/}
-                    {/*      style={{ marginLeft: 10, marginRight: 13 }}*/}
-                    {/*      name="map-marker-alt"*/}
-                    {/*      size={15}*/}
-                    {/*      color="#f5ba74"*/}
-                    {/*    />*/}
-                    {/*    <Text style={styles.cardDateText}>{item.address}</Text>*/}
-                    {/*  </View>*/}
-                    {/*</View>*/}
                     <View>
                       <Text style={styles.footerTitle}>Estimated Date</Text>
                       <View style={styles.cardDateContainer}>

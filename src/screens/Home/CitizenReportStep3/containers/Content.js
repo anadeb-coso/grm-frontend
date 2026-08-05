@@ -2,34 +2,28 @@ import { useNavigation } from '@react-navigation/native';
 import { Audio } from 'expo-av';
 import * as ImagePicker from 'expo-image-picker';
 import moment from 'moment';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Image, Platform, ScrollView, Text, View, ImageBackground, TouchableOpacity, ToastAndroid,
-  StyleSheet, Animated, Alert, Modal, Dimensions
+  Image, Platform, ScrollView, Text, View, ImageBackground, TouchableOpacity,
+  StyleSheet, Animated, Alert, Modal, Dimensions, KeyboardAvoidingView
 } from 'react-native';
 import { useToast } from 'react-native-toast-notifications';
-import { Button, IconButton, ActivityIndicator } from 'react-native-paper';
+import { Button, IconButton, ActivityIndicator, RadioButton, Checkbox, TextInput } from 'react-native-paper';
 import { Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import { FontAwesome } from '@expo/vector-icons';
 import Pdf from 'react-native-pdf';
-import { v4 as uuidv4 } from 'uuid';
-import { WebView } from 'react-native-webview';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { Q } from '@nozbe/watermelondb';
 import { colors } from '../../../../utils/colors';
-import LocalDatabase, { LocalGRMDatabase } from '../../../../utils/databaseManager';
+import { database } from '../../../../database';
+import { createWithId } from '../../../../database/utils/createWithId';
 import { styles } from './Content.styles';
-import { logout } from '../../../../store/ducks/authentication.duck';
-import { useDispatch, useSelector } from 'react-redux';
-import { getEncryptedData } from '../../../../utils/storageManager';
-import { verify_account_on_couchdb } from '../../../../services/CouchDBRequest';
 import { VERY_SENSITIVE } from '../../../../utils/utils';
-import { showDoc } from '../../../../utils/functions';
-import { baseURL } from '../../../../services/API';
-import { uploadFile } from '../../../../services/upload';
-import { couchDBURLBase } from '../../../../utils/databaseManager';
-import DownloadComponent from '../../../../components/DownloadComponent/DownloadComponent';
 import { check_issues } from '../../../../utils/functionsRequestsToApi';
+import { enqueuePendingUploads, deleteAttachmentRemote } from '../../../../files/uploadQueue';
+import CustomDropDownPicker from '../../../../components/CustomDropDownPicker/CustomDropDownPicker';
 
 const SAMPLE_WORDS = ['car', 'house', 'tree', 'ball'];
 const theme = {
@@ -57,46 +51,78 @@ const styles_audio = StyleSheet.create({
   },
 });
 const screenWidth = Dimensions.get("window").width;
-const screenHeight = Dimensions.get("window").height;
 
-function Content({ issue, eadl, issues }) {
+function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenGroupsI, citizenGroupsII }) {
   const { t, i18n } = useTranslation();
   var toast = useToast();
+  const navigation = useNavigation();
   const [isSyncing, setIsSyncing] = useState(false);
-  const [dbUsername, setDBUsername] = useState(null);
-  const [dbPassword, setDBPassword] = useState(null);
-  const [modalVisibleFile, setModalVisibleFile] = useState(false);
-  const [localPath, setLocalPath] = useState(null);
-  const [url, setUrl] = useState(null);
-  const [urlSyncing, setUrlSyncing] = useState(null);
+
+  // --- Champs modifiables du récapitulatif -----------------------------------------------------
+  // Initialisés depuis `issue` (fusion de stepOneParams/stepTwoParams/stepLocationParams, cf.
+  // CitizenReportStep3.js), pour que l'utilisateur puisse revoir ET corriger tout ce qui a été
+  // saisi dans l'assistant, directement sur cet écran, sans perdre sa saisie en retournant dans
+  // les écrans précédents (ceux-ci ne se réinitialisent pas depuis des paramètres entrants — voir
+  // la seule exception gérée : `editLocation()` ci-dessous, pour le village/canton).
+  const [typeOfPerson, setTypeOfPerson] = useState(issue.typeOfPerson ?? 'facilitator');
+  const [methodOfContact, setMethodOfContact] = useState(issue.methodOfContact ?? 'email');
+  const [contactInfo, setContactInfo] = useState(issue.contactInfo ?? '');
+  const [citizenName, setCitizenName] = useState(issue.name ?? '');
+  const [citizenType, setCitizenType] = useState(issue.citizen_type ?? null);
+  const [citizenOrGroup, setCitizenOrGroup] = useState(issue.citizen_or_group ?? null);
+  const [gender, setGender] = useState(issue.gender ?? null);
+  const [ageGroup, setAgeGroup] = useState(issue.ageGroup ?? null);
+  const [citizenGroup1, setCitizenGroup1] = useState(issue.citizen_group_1 ?? null);
+  const [citizenGroup2, setCitizenGroup2] = useState(issue.citizen_group_2 ?? null);
+  const [issueDate, setIssueDate] = useState(issue.date ? new Date(issue.date) : null);
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [category, setCategory] = useState(issue.category ?? null);
+  const [issueType, setIssueType] = useState(issue.issueType ?? null);
+  // `react-native-dropdown-picker` exige une valeur "brute" (l'id) séparée, contrôlée par
+  // `setValue`, en plus de l'objet complet ci-dessus capturé via `onSelectItem` — même patron que
+  // CitizenReportContactInfo/containers/Content.js (`pickerAgeValue` + `selectedAge`).
+  const [ageGroupPickerValue, setAgeGroupPickerValue] = useState(issue.ageGroup?.id ?? null);
+  const [citizenGroup1PickerValue, setCitizenGroup1PickerValue] = useState(issue.citizen_group_1?.id ?? null);
+  const [citizenGroup2PickerValue, setCitizenGroup2PickerValue] = useState(issue.citizen_group_2?.id ?? null);
+  const [categoryPickerValue, setCategoryPickerValue] = useState(issue.category?.id ?? null);
+  const [issueTypePickerValue, setIssueTypePickerValue] = useState(issue.issueType?.id ?? null);
+  const [ongoingEvent, setOngoingEvent] = useState(!!issue.ongoingEvent);
+  const [eventRecurrence, setEventRecurrence] = useState(!!issue.eventRecurrence);
+  const [description, setDescription] = useState(issue.additionalDetails ?? '');
+  const [locationDescription, setLocationDescription] = useState(issue.locationDescription ?? '');
+  const [structureName, setStructureName] = useState(issue.structure_in_charge?.name ?? '');
+  const [structurePhone, setStructurePhone] = useState(issue.structure_in_charge?.phone ?? '');
+  const [structureEmail, setStructureEmail] = useState(issue.structure_in_charge?.email ?? '');
+
+  // Le village/canton (`issue.issueLocation`) n'est pas ré-éditable en place ici : reproduire son
+  // sélecteur en cascade (canton -> village, résolu depuis le périmètre de l'ADL ou par appel
+  // réseau, cf. CitizenReportLocationStep) dupliquerait une logique déjà complexe. On renvoie
+  // plutôt l'utilisateur vers cet écran, qui a conservé son état (React Navigation ne démonte pas
+  // les écrans plus bas dans la pile) ; "Suivant" y revient directement sur CitizenReportStep3
+  // puisque c'est l'étape suivante immédiate. Les autres champs modifiés ci-dessus sont reconstruits
+  // et transmis pour ne pas être perdus au passage — à l'exception de `locationDescription`/
+  // `structure_in_charge`, propres à cet écran-là : s'ils sont modifiés ici ET que l'utilisateur
+  // change aussi la localisation, cette édition ponctuelle sera écrasée par ce que LocationStep
+  // renvoie de son côté (limite connue, acceptée : cas rare de double édition simultanée).
+  const editLocation = () => {
+    navigation.navigate('CitizenReportLocationStep', {
+      stepOneParams: {
+        typeOfPerson, methodOfContact, contactInfo,
+        name: citizenName, citizen_type: citizenType, citizen_or_group: citizenOrGroup,
+        gender, ageGroup, citizen_group_1: citizenGroup1, citizen_group_2: citizenGroup2,
+        filledOnSomebodyElseBehalf: issue.filledOnSomebodyElseBehalf,
+      },
+      stepTwoParams: {
+        date: issueDate ? issueDate.toISOString() : undefined,
+        issueType, ongoingEvent, eventRecurrence, category,
+        additionalDetails: description,
+        attachments,
+        recordings: [],
+      },
+    });
+  };
 
   let _index = 0;
-
-  const dispatch = useDispatch();
-
-  const { username, userPassword } = useSelector((state) => state.get('authentication').toObject());
-
-  const getDBConfig = async () => {
-    const password = await getEncryptedData('userPassword');
-    let dbCredentials;
-    let user_name;
-    if (password) {
-      user_name = await getEncryptedData(`username`);
-      dbCredentials = await getEncryptedData(
-        `dbCredentials_${password}_${user_name.replace('@', '')}`
-      );
-
-      if (user_name) {
-        if (!(await verify_account_on_couchdb(dbCredentials, user_name))) {
-          ToastAndroid.show(t('unable_retrieve_your_information'), ToastAndroid.LONG);
-          dispatch(logout());
-        }
-      }
-    }
-  };
-  useEffect(() => {
-    getDBConfig();
-  }, []);
 
   const [connected, setConnected] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -117,12 +143,6 @@ function Content({ issue, eadl, issues }) {
     });
   }
 
-  const navigation = useNavigation();
-  // const incrementId = () => {
-  //   const last = eadl.bp_projects[eadl.bp_projects.length - 1];
-  //   if (!eadl.bp_projects[0]) return 1;
-  //   return parseInt(last.id.split('-')[1]) + 1;
-  // };
   const randomWord = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const [sound, setSound] = useState();
   const [soundOnPause, setSoundOnPause] = useState(false);
@@ -133,10 +153,24 @@ function Content({ issue, eadl, issues }) {
   const [attachments, setAttachments] = useState(
     [
       ...(issue?.attachments ? issue.attachments : []),
-      ...(issue?.recordings ? issue.recordings : [])//,
-      // ...(issue?.recording ? [issue.recording] : [])
+      ...(issue?.recordings ? issue.recordings : [])
     ]
   );
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadingAttachments, setUploadingAttachments] = useState(false);
+  // Reflète, par fichier (clé = `attachment.id`), s'il a été effectivement envoyé au serveur —
+  // piloté par le vrai `upload_status` WatermelonDB (pas une simple supposition optimiste),
+  // relu après chaque tentative d'envoi. Un fichier absent de cette map (jamais encore tenté) est
+  // traité comme "non envoyé", donc rouge, au même titre qu'un échec explicite.
+  const [attachmentUploadStatuses, setAttachmentUploadStatuses] = useState({});
+  const isAttachmentUploaded = (id) => attachmentUploadStatuses[id] === 'done';
+  const attachmentStatusColor = (id) => (isAttachmentUploaded(id) ? colors.primary : colors.error);
+  // Fait le pont entre les pièces jointes en mémoire (objets JS venant des étapes précédentes,
+  // pas encore d'enregistrement WatermelonDB) et l'enregistrement `Attachment` créé pour elles dès
+  // qu'on tente un envoi manuel (bouton "Envoyer les fichiers maintenant" ci-dessous) — un `ref`
+  // plutôt qu'un state : cette correspondance n'a pas besoin de déclencher un re-rendu, seulement
+  // d'être lue/écrite par `uploadAttachmentsManually`/`submitIssue`/`removeAttachment`.
+  const attachmentRecordsRef = useRef({});
 
   function removeAttachment(id) {
     setSoundOnPause(false);
@@ -145,219 +179,234 @@ function Content({ issue, eadl, issues }) {
       stopASound();
     }
 
+    // Si un envoi manuel avait déjà créé un enregistrement pour ce fichier (éventuellement déjà
+    // envoyé au serveur), on le supprime : sinon il resterait orphelin (`issue_id` jamais rempli)
+    // jusqu'au nettoyage automatique de `cleanup_orphan_attachments` (CLAUDE.md §8, 7 jours).
+    const recordId = attachmentRecordsRef.current[id];
+    if (recordId) {
+      // `markAsDeleted()` (comme DocumentTask/RegisterSubprojects containers/Content.js) plutôt
+      // qu'une destruction immédiate : reste cohérent avec le reste du code si jamais le fichier
+      // avait déjà commencé à être poussé/lu ailleurs pendant l'envoi manuel.
+      // `deleteAttachmentRemote` AVANT `markAsDeleted()` : `attachments` n'étant pas poussée par
+      // le protocole de sync habituel, c'est le seul moyen de répercuter la suppression côté
+      // serveur si le fichier avait déjà été envoyé (cf. files/uploadQueue.js).
+      database.get('attachments').find(recordId)
+        .then(async (record) => {
+          await deleteAttachmentRemote(record);
+          await database.write(() => record.markAsDeleted());
+        })
+        .catch(() => {});
+      delete attachmentRecordsRef.current[id];
+    }
+
     const array = attachments.filter(elt => elt.id !== id);
     setAttachments(array);
   }
 
-
-
-  const uploadImages = async () => {
-    setConnected(true);
-    check_network();
-    if (connected) {
-      setIsSyncing(true);
-
-      const dbConfig = await getEncryptedData(
-        `dbCredentials_${userPassword}_${username.replace('@', '')}`
-      );
-      setDBUsername(dbConfig?.username);
-      setDBPassword(dbConfig?.password);
-
-      try {
-        let count = 0;
-        let elt_id;
-        const updatedAttachments = [...attachments];
-        for (let i = 0; i < attachments.length; i++) {
-          let elt = attachments[i];
-
-          if (elt && elt?.local_url && elt?.local_url && elt?.local_url.includes("file://") && !elt.uploaded) {
-            try {
-              const response = await uploadFile(
-                `${baseURL}/attachments/upload-to-issue`,
-                {
-
-                  username: dbConfig?.username,
-                  password: dbConfig?.password,
-                  url: elt?.local_url,
-                  isAudio: elt?.isAudio,
-                  mimeType: elt?.mimeType
-                }
-              );
-
-              if (response.fileUrl) {
-                elt_id = updatedAttachments.findIndex((e, i) => e.id == elt.id);
-                elt.url_uploaded = response.fileUrl;
-                updatedAttachments[elt_id] = {
-                  ...updatedAttachments[elt_id],
-                  uploaded: true,
-                  bd_id: response.bd_id,
-                  url: response.fileUrl,
-                  local_url: '',
-                };
-
-                count++;
-              } else if (response.file) {
-                Alert.alert('Alert', response.file[0], [
-                  {
-                    text: "OK", onPress: () => { }
-                  }
-                ]);
-              } else {
-                Alert.alert('Alert', t('attachment_error', { name: elt.name }), [
-                  {
-                    text: "OK", onPress: () => { }
-                  }
-                ]);
-              }
-
-            } catch (e) {
-              setIsSyncing(false);
-              Alert.alert('Alert', t('attachment_error', { name: elt.name }), [
-                {
-                  text: "OK", onPress: () => { }
-                }
-              ]);
-            }
-
-          }
-        }
-        setIsSyncing(false);
-        if (count != 0) {
-          setAttachments(updatedAttachments);
-          if (count == 1) {
-            toast.show(t('attachment_synchronized'), {
-              type: "success",
-              placement: "bottom",
-              duration: 3000,
-            });
-          } else {
-            toast.show(t('attachments_synchronized'), {
-              type: "success",
-              placement: "bottom",
-              duration: 3000,
-            });
-          }
-
-        }
-
-      } catch (e) {
-        setIsSyncing(false);
-        Alert.alert('Alert', t('attach_all_attachments'), [
-          {
-            text: "OK", onPress: () => { }
-          }
-        ]);
+  // Permet d'envoyer les fichiers vers le serveur avant même de soumettre la plainte (utile si
+  // l'utilisateur reste un moment sur cet écran à relire/corriger le récapitulatif : les photos/
+  // audio, souvent volumineux, partent déjà pendant ce temps au lieu d'attendre "Envoyer").
+  // `attachmentRecordsRef` évite tout doublon : un fichier déjà créé (et a fortiori déjà envoyé,
+  // `upload_status: 'done'`) n'est jamais recréé ni ré-uploadé, ici comme dans `submitIssue`
+  // (`enqueuePendingUploads` exclut déjà `'done'` de son côté, cf. files/uploadQueue.js).
+  const uploadAttachmentsManually = async () => {
+    if (attachments.length === 0 || uploadingAttachments) return;
+    setUploadingAttachments(true);
+    try {
+      for (const attachment of attachments) {
+        if (attachmentRecordsRef.current[attachment.id]) continue;
+        const record = await createWithId(database.get('attachments'), (a) => {
+          a.fileName = attachment.name || (attachment.local_url || '').split('/').pop() || 'attachment';
+          a.contentType = attachment.isAudio ? 'audio/m4a' : (attachment.mimeType || 'image/jpeg');
+          a.localUri = attachment.local_url;
+          a.uploadStatus = 'pending';
+          a.downloadStatus = 'done';
+        });
+        attachmentRecordsRef.current[attachment.id] = record.id;
       }
+
+      // Feedback dédié ci-dessous (toast succès/échec) : pas besoin du toast générique.
+      await enqueuePendingUploads({ notifyOnError: false });
+
+      const idRecordPairs = Object.entries(attachmentRecordsRef.current);
+      const records = await Promise.all(
+        idRecordPairs.map(([, recordId]) => database.get('attachments').find(recordId)),
+      );
+      // Reflète le statut réel de chaque fichier (vert = envoyé, rouge sinon) sur les vignettes.
+      setAttachmentUploadStatuses((prev) => ({
+        ...prev,
+        ...Object.fromEntries(idRecordPairs.map(([localId], i) => [localId, records[i].uploadStatus])),
+      }));
+      const anyError = records.some((r) => r.uploadStatus === 'error');
+      if (anyError) {
+        toast?.show(t('attachments_upload_deferred'), { type: 'danger', duration: 3000 });
+      } else {
+        toast?.show(t('attachments_synchronized'), { type: 'success', duration: 2500 });
+      }
+    } catch (err) {
+      console.log(err);
+      toast?.show(t('attachments_upload_deferred'), { type: 'danger', duration: 3000 });
+    } finally {
+      setUploadingAttachments(false);
     }
   };
 
-
-
-
-
-  const submitIssue = async () => {
-
-    // const isAssignee =
-    //   issue.category?.assigned_department === eadl?.department
-    //   && issue.administrative_region?.administrative_id === eadl?.administrative_region;
-    const isAssignee = issue.category?.confidentiality_level != VERY_SENSITIVE;
-
-    //  &&
-    // issue.category?.administrative_level === eadl?.administrative_level;
-    // submit params
-    const randomCodeNumber = Math.floor(Math.random() * 1000);
-    // const newId = incrementId();
-    const _issue = {
-      uuid: uuidv4(),
-      internal_code: "",//issue.category?.abbreviation+'-'+issue.issueLocation.administrative_id+'-'+String(issues ? (issues.length+1) : 1),
-      tracking_code: `${randomWord(SAMPLE_WORDS)}${randomCodeNumber}`,
-      auto_increment_id: "",//issues ? (issues.length+1) : 1,
-      title: issue.issueSummary,
-      description: issue.additionalDetails,
-      attachments: attachments,
-      // [
-      //   ...(issue?.attachments ? issue.attachments : []),
-      //   ...(issue?.recording ? [issue.recording] : []),
-      // ],
-      status: {
-        name: t('initial_status'),
-        id: 1,
-      },
-      confirmed: true,
-      assignee: isAssignee ? { id: eadl.representative?.id, name: eadl.representative?.name } : '',
-      reporter: {
-        id: eadl.representative?.id,
-        name: eadl.representative?.name,
-      },
-      citizen_age_group: issue.ageGroup,
-      citizen: issue.name ?? '',
-      contact_medium: issue.typeOfPerson,
-      citizen_type: issue.citizen_type,
-      citizen_group_1: issue.citizen_group_1,
-      citizen_group_2: issue.citizen_group_2,
-      citizen_or_group: issue.citizen_or_group,
-      location_info: {
-        issue_location: issue.issueLocation,
-        location_description: issue.locationDescription,
-      },
-      administrative_region: issue.issueLocation,
-      structure_in_charge: issue.structure_in_charge,
-      // category: {
-      //   id: 1,
-      //   name: "Environmental",
-      //   confidentiality_level: "Confidential",
-      // },
-      category: issue.category,
-      issue_type: issue.issueType,
-      //   type: {
-      //   id: 1,
-      //   name: "Complaint",
-      // },
-      created_date: new Date(),
-      resolution_days: 0,
-      resolution_date: '',
-      reject_date: '',
-      intake_date: new Date(),
-      issue_date: issue.date,
-      ongoing_issue: issue.ongoingEvent,
-      event_recurrence: issue.eventRecurrence,
-      comments: [],
-      contact_information: {
-        type: issue.methodOfContact,
-        contact: issue.contactInfo,
-      },
-      commune: {
-        code: eadl.commune,
-        name: eadl.name,
-        prefecture: '',
-      },
-      type: 'issue',
-      source: 'mobile',
-      publish: false,
-      notification_send: false
-    };
-    createIssue(_issue);
-
-
-    //Check Issues to sync (new issues, escalade issues, assignment)
-    check_issues(
-      await getEncryptedData(
-        `dbCredentials_${userPassword}_${username.replace('@', '')}`
-      ),
-      eadl, i18n.language);
-
-
-    // navigation.navigate("CitizenReportStep4");
+  // Résout la clé primaire WatermelonDB (UUID) d'un enregistrement de référence à partir de son
+  // `legacy_id` numérique (l'id CouchDB historique, conservé côté serveur — cf. issue/models.py).
+  const resolveReferenceId = async (tableName, legacyId) => {
+    if (legacyId === undefined || legacyId === null) return null;
+    const records = await database.get(tableName).query(Q.where('legacy_id', Number(legacyId))).fetch();
+    return records[0]?.id ?? null;
   };
 
-  const createIssue = (_issue) => {
-    LocalGRMDatabase.post(_issue)
-      .then((response) => {
-        navigation.navigate('CitizenReportStep4', { issue: _issue });
-      })
-      .catch((err) => {
-        console.log(err);
+  const showIssueDatePicker = () => setDatePickerVisibility(true);
+  const hideIssueDatePicker = () => setDatePickerVisibility(false);
+  const handleIssueDateConfirm = (pickedDate) => {
+    setIssueDate(pickedDate);
+    hideIssueDatePicker();
+  };
+
+  const submitIssue = async () => {
+    setSubmitting(true);
+    try {
+      const isAssignee = category?.confidentiality_level != VERY_SENSITIVE;
+      const randomCodeNumber = Math.floor(Math.random() * 1000);
+      const trackingCode = `${randomWord(SAMPLE_WORDS)}${randomCodeNumber}`;
+
+      const [statusId, categoryId, issueTypeId, ageGroupId] = await Promise.all([
+        resolveReferenceId('issue_statuses', 1), // "Enregistrée" (statut initial)
+        resolveReferenceId('issue_categories', category?.id),
+        resolveReferenceId('issue_types', issueType?.id),
+        resolveReferenceId('issue_age_groups', ageGroup?.id),
+      ]);
+      // `administrative_region` est requis côté serveur (sync/serializers.py::IssueSyncSerializer,
+      // `required=True`) : un défaut silencieux à 0 (id inexistant) ferait échouer le push bien
+      // plus tard, au moment de la synchronisation, au lieu d'être bloqué ici avec un message
+      // clair — même garde-fou que pour statusId/categoryId/issueTypeId ci-dessus.
+      const administrativeRegionId = parseInt(issue.issueLocation?.administrative_id, 10);
+
+      if (!statusId || !categoryId || !issueTypeId || !administrativeRegionId || Number.isNaN(administrativeRegionId)) {
+        Alert.alert('Erreur', "Référentiel introuvable localement — relancez une synchronisation.");
+        setSubmitting(false);
+        return;
+      }
+
+      const newIssue = await createWithId(database.get('issues'), (r) => {
+        // `internal_code` doit être unique côté serveur (issue.models.Issue) : on génère une
+        // valeur stable dès la création plutôt que la chaîne vide de l'ancien flux CouchDB.
+        r.internalCode = `${category?.abbreviation || 'ISS'}-${Date.now()}-${randomCodeNumber}`;
+        r.trackingCode = trackingCode;
+        r.autoIncrementId = parseInt(String(Date.now()).slice(-8));
+        r.description = description;
+        r.confirmed = true;
+        r.statusId = statusId;
+        r.categoryId = categoryId;
+        r.issueTypeId = issueTypeId;
+        r.ageGroupId = ageGroupId;
+        r.assigneeId = isAssignee ? eadl.representative?.id : null;
+        r.assigneeName = isAssignee ? eadl.representative?.name : null;
+        r.reporterId = eadl.representative?.id;
+        r.reporterName = eadl.representative?.name;
+        r.citizen = citizenName ?? '';
+        r.contactMedium = typeOfPerson;
+        r.citizenType = citizenType;
+        r.citizenGroup1 = citizenGroup1;
+        r.citizenGroup2 = citizenGroup2;
+        r.citizenOrGroup = citizenOrGroup;
+        r.locationInfo = {
+          issue_location: issue.issueLocation,
+          location_description: locationDescription,
+        };
+        r.administrativeRegionId = administrativeRegionId;
+        r.administrativeRegionName = issue.issueLocation?.name;
+        r.structureInCharge = { name: structureName, phone: structurePhone, email: structureEmail };
+        r.createdDate = new Date();
+        r.intakeDate = new Date();
+        r.issueDate = issueDate ?? new Date();
+        r.resolutionDays = 0;
+        r.ongoingIssue = !!ongoingEvent;
+        r.eventRecurrence = !!eventRecurrence;
+        r.contactInformation = {
+          type: methodOfContact,
+          contact: contactInfo,
+        };
+        r.commune = {
+          code: eadl.commune,
+          name: eadl.name,
+          prefecture: '',
+        };
+        r.source = 'mobile';
+        r.publish = false;
+        r.notificationSend = false;
       });
+
+      // Les pièces jointes deviennent des enregistrements `Attachment` séparés — sauf celles déjà
+      // créées (et potentiellement déjà envoyées) via le bouton d'upload manuel ci-dessus : on se
+      // contente alors de les rattacher à la plainte, sans en recréer un doublon ni relancer leur
+      // envoi (`enqueuePendingUploads` exclut de toute façon déjà `upload_status: 'done'`).
+      for (const attachment of attachments) {
+        const existingRecordId = attachmentRecordsRef.current[attachment.id];
+        if (existingRecordId) {
+          const record = await database.get('attachments').find(existingRecordId);
+          await database.write(async () => {
+            await record.update((a) => { a.issueId = newIssue.id; });
+          });
+        } else {
+          await createWithId(database.get('attachments'), (a) => {
+            a.issueId = newIssue.id;
+            a.fileName = attachment.name || (attachment.local_url || '').split('/').pop() || 'attachment';
+            a.contentType = attachment.isAudio ? 'audio/m4a' : (attachment.mimeType || 'image/jpeg');
+            a.localUri = attachment.local_url;
+            a.uploadStatus = 'pending';
+            a.downloadStatus = 'done';
+          });
+        }
+      }
+
+      // Tentative d'envoi immédiate vers le serveur : la plainte est déjà enregistrée localement
+      // (offline-first, ce qui précède ne dépend jamais du réseau) — cet appel est donc non
+      // bloquant, et un échec (hors-ligne, etc.) laisse simplement les pièces jointes `pending`,
+      // reprises plus tard par la synchronisation périodique ou par l'écran SyncAttachments.
+      if (attachments.length > 0) {
+        // Feedback dédié ci-dessous (toast succès/échec) : pas besoin du toast générique.
+        enqueuePendingUploads({ notifyOnError: false })
+          .then(async () => {
+            const stillPending = await database.get('attachments')
+              .query(Q.where('issue', newIssue.id), Q.where('upload_status', Q.notEq('done')))
+              .fetch();
+            if (stillPending.length > 0) {
+              toast?.show(t('attachments_upload_deferred'), { type: 'danger', duration: 3000 });
+            } else {
+              toast?.show(t('attachments_synchronized'), { type: 'success', duration: 2500 });
+            }
+          })
+          .catch(() => {
+            toast?.show(t('attachments_upload_deferred'), { type: 'danger', duration: 3000 });
+          });
+      }
+
+      //Check Issues to sync (new issues, escalade issues, assignment)
+      check_issues(null, eadl, i18n.language);
+
+      navigation.navigate('CitizenReportStep4', {
+        issue: {
+          ...issue,
+          id: newIssue.id,
+          tracking_code: trackingCode,
+          name: citizenName,
+          category,
+          issueType,
+          ageGroup,
+          date: issueDate,
+          additionalDetails: description,
+        },
+      });
+    } catch (err) {
+      console.log(err);
+      Alert.alert('Erreur', "Impossible d'enregistrer la plainte localement.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const playSound = async (recordingUri) => {
@@ -375,13 +424,11 @@ function Content({ issue, eadl, issues }) {
         }
       });
     }
-    // setPlaying(false)
   };
 
   const onPlaybackStatusUpdate = (status) => {
     setDuration(status.durationMillis);
     setPosition(status.positionMillis);
-    // setFinish(status.didJustFinish);
 
     if (status.didJustFinish) {
       setSound(undefined);
@@ -408,13 +455,6 @@ function Content({ issue, eadl, issues }) {
 
 
   const playASound = async (sound_url) => {
-    
-    if (sound_url && !sound_url.includes("file://")) {
-      setIsSyncing(true);
-      sound_url = `file://${await showDoc({ url: sound_url }, dbUsername, dbPassword, false)}`;
-      setIsSyncing(false);
-    }
-    
     setSoundOnPause(false);
 
     if (sound) {
@@ -467,6 +507,21 @@ function Content({ issue, eadl, issues }) {
       }
     })();
   }, []);
+
+  const cardStyle = {
+    margin: 23,
+    marginBottom: 12,
+    padding: 18,
+    borderRadius: 10,
+    shadowColor: 'rgba(0, 0, 0, 0.05)',
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 15,
+    shadowOpacity: 1,
+    elevation: 7,
+    backgroundColor: 'white',
+  };
+  const radioRowStyle = { flexDirection: 'row', alignItems: 'center', marginVertical: 3 };
+
   return (
     <ScrollView>
       <View style={{ padding: 23 }}>
@@ -475,81 +530,336 @@ function Content({ issue, eadl, issues }) {
         <Text style={styles.stepDescription}>{t('step_3_subtitle')}</Text>
       </View>
 
-      <View
-        style={{
-          margin: 23,
-          padding: 18,
-          borderRadius: 10,
-          shadowColor: 'rgba(0, 0, 0, 0.05)',
-          shadowOffset: {
-            width: 0,
-            height: 3,
-          },
-          shadowRadius: 15,
-          shadowOpacity: 1,
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'position' : null}>
+        {/* --- Déclarant ---------------------------------------------------------------------- */}
+        <View style={cardStyle}>
+          <Text style={styles.stepSubtitle}>{t('step_3_section_reporter')}</Text>
+          <RadioButton.Group onValueChange={setTypeOfPerson} value={typeOfPerson}>
+            <View style={radioRowStyle}>
+              <RadioButton.Android value="anonymous" uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('step_1_option_1')}</Text>
+            </View>
+            <View style={radioRowStyle}>
+              <RadioButton.Android value="facilitator" uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('step_1_option_2')}</Text>
+            </View>
+            <View style={radioRowStyle}>
+              <RadioButton.Android value="channel-alert" uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('step_1_option_3')}</Text>
+            </View>
+          </RadioButton.Group>
+          {typeOfPerson === 'channel-alert' && (
+            <View style={{marginLeft: 25}}>
+              <RadioButton.Group onValueChange={setMethodOfContact} value={methodOfContact}>
+                <View style={radioRowStyle}>
+                  <RadioButton.Android value="email" uncheckedColor="#dedede" color={colors.primary} />
+                  <Text style={styles.radioLabel}>{t('step_1_method_3')}</Text>
+                </View>
+                <View style={radioRowStyle}>
+                  <RadioButton.Android value="phone_number" uncheckedColor="#dedede" color={colors.primary} />
+                  <Text style={styles.radioLabel}>{t('step_1_method_4')}</Text>
+                </View>
+                <View style={radioRowStyle}>
+                  <RadioButton.Android value="sms" uncheckedColor="#dedede" color={colors.primary} />
+                  <Text style={styles.radioLabel}>{t('step_1_method_1')}</Text>
+                </View>
+                <View style={radioRowStyle}>
+                  <RadioButton.Android value="whatsapp" uncheckedColor="#dedede" color={colors.primary} />
+                  <Text style={styles.radioLabel}>{t('step_1_method_2')}</Text>
+                </View>
+                <View style={radioRowStyle}>
+                  <RadioButton.Android value="letter" uncheckedColor="#dedede" color={colors.primary} />
+                  <Text style={styles.radioLabel}>{t('step_1_method_5')}</Text>
+                </View>
+              </RadioButton.Group>
+              <TextInput
+                style={styles.grmInput}
+                placeholder={t('step_1_placeholder_2')}
+                outlineColor="#3e4000"
+                placeholderTextColor="#5f6800"
+                theme={theme}
+                mode="outlined"
+                value={contactInfo}
+                onChangeText={setContactInfo}
+              />
+            </View>
+          )}
+        </View>
 
-          elevation: 7,
-          backgroundColor: 'white',
-        }}
-      >
-        <Text style={styles.stepSubtitle}>{t('step_3_field_title_1')}</Text>
-        <Text style={styles.stepDescription}>
-          {issue.date !== 'null' && !!issue.date ? moment(issue.date).format('DD-MMMM-YYYY') : '--'}
-        </Text>
-        <Text style={styles.stepSubtitle}>{t('step_3_field_title_2')}</Text>
-        {/* <Text style={styles.stepDescription}>{issue.issueType?.name ?? '--'}</Text>
-        <Text style={styles.stepSubtitle}>{t('step_3_field_title_3')}</Text> */}
-        <Text style={styles.stepDescription}>{issue.category?.name ?? '--'}</Text>
+        {/* --- Plaignant ----------------------------------------------------------------------- */}
+        <View style={cardStyle}>
+          <Text style={styles.stepSubtitle}>{t('step_3_section_citizen')}</Text>
+          <TextInput
+            style={styles.grmInput}
+            placeholder={t('contact_step_placeholder_1')}
+            outlineColor="#3e4000"
+            placeholderTextColor="#5f6800"
+            theme={theme}
+            mode="outlined"
+            value={citizenName}
+            onChangeText={setCitizenName}
+          />
+          <Text />
+          <RadioButton.Group onValueChange={setCitizenType} value={citizenType}>
+            <View style={radioRowStyle}>
+              <RadioButton.Android value={1} uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('step_2_keep_name_confidential')}</Text>
+            </View>
+            <View style={radioRowStyle}>
+              <RadioButton.Android value={2} uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('step_2_on_behalf_of_someone')}</Text>
+            </View>
+            <View style={radioRowStyle}>
+              <RadioButton.Android value={3} uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('step_2_organization_behalf_someone')}</Text>
+            </View>
+          </RadioButton.Group>
+          <Text style={styles.radioLabel}>{t('step_2_citizen_or_group_label')}</Text>
+          <RadioButton.Group onValueChange={setCitizenOrGroup} value={citizenOrGroup}>
+            <View style={radioRowStyle}>
+              <RadioButton.Android value="Individual" uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('step_2_citizen_or_group_individual')}</Text>
+            </View>
+            <View style={radioRowStyle}>
+              <RadioButton.Android value="Group" uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('step_2_citizen_or_group_group')}</Text>
+            </View>
+          </RadioButton.Group>
+          <Text style={styles.radioLabel}>{t('contact_step_placeholder_3')}</Text>
+          <RadioButton.Group onValueChange={setGender} value={gender}>
+            <View style={radioRowStyle}>
+              <RadioButton.Android value="male" uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('male')}</Text>
+            </View>
+            <View style={radioRowStyle}>
+              <RadioButton.Android value="female" uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('female')}</Text>
+            </View>
+          </RadioButton.Group>
+          {issueAges && issueAges.length > 0 && (
+            <View style={{ zIndex: 5000 }}>
+              <CustomDropDownPicker
+                schema={{ label: 'name', value: 'id' }}
+                placeholder={t('contact_step_placeholder_2')}
+                value={ageGroupPickerValue}
+                items={issueAges}
+                setPickerValue={setAgeGroupPickerValue}
+                setItems={() => {}}
+                onSelectItem={(item) => setAgeGroup(item)}
+                zIndex={5000}
+                zIndexInverse={1000}
+              />
+            </View>
+          )}
+          {citizenGroupsI && citizenGroupsI.length > 0 && (
+            <View style={{ zIndex: 4000 }}>
+              <CustomDropDownPicker
+                schema={{ label: 'name', value: 'id' }}
+                placeholder="Citizen Group I"
+                value={citizenGroup1PickerValue}
+                items={citizenGroupsI}
+                setPickerValue={setCitizenGroup1PickerValue}
+                setItems={() => {}}
+                onSelectItem={(item) => setCitizenGroup1(item)}
+                zIndex={4000}
+                zIndexInverse={2000}
+              />
+            </View>
+          )}
+          {citizenGroupsII && citizenGroupsII.length > 0 && (
+            <View style={{ zIndex: 3000 }}>
+              <CustomDropDownPicker
+                schema={{ label: 'name', value: 'id' }}
+                placeholder="Citizen Group II"
+                value={citizenGroup2PickerValue}
+                items={citizenGroupsII}
+                setPickerValue={setCitizenGroup2PickerValue}
+                setItems={() => {}}
+                onSelectItem={(item) => setCitizenGroup2(item)}
+                zIndex={3000}
+                zIndexInverse={3000}
+              />
+            </View>
+          )}
+        </View>
 
-        <Text style={styles.stepSubtitle}>{t('step_3_field_title_4')}</Text>
-        <Text style={styles.stepDescription}>{issue.additionalDetails ?? '--'}</Text>
-        <Text style={styles.stepSubtitle}>{t('step_3_attachments')}</Text>
-        {/* {issue.recording && (
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              // justifyContent: 'center',
-            }}
-          >
-            <IconButton
-              icon="play"
-              iconColor={playing ? colors.disabled : colors.primary}
-              size={24}
-              onPress={() => playSound(issue.recording.local_url)}
-            />
-            <Text
-              style={{
+        {/* --- Détails de la plainte ------------------------------------------------------------ */}
+        <View style={cardStyle}>
+          <Text style={styles.stepSubtitle}>{t('step_3_field_title_1')}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Button
+              compact
+              theme={theme}
+              mode="outlined"
+              uppercase={false}
+              style={{ borderColor: colors.primary }}
+              labelStyle={{ color: colors.primary, fontFamily: 'Poppins_400Regular', fontSize: 13 }}
+              onPress={showIssueDatePicker}
+            >
+              {issueDate ? moment(issueDate).format('DD-MMMM-YY') : t('step_2_select_date')}
+            </Button>
+            <Button
+              compact
+              theme={theme}
+              labelStyle={{
+                color: 'white',
                 fontFamily: 'Poppins_400Regular',
                 fontSize: 12,
-                fontWeight: 'normal',
-                fontStyle: 'normal',
-                lineHeight: 18,
-                letterSpacing: 0,
-                textAlign: 'left',
-                color: '#707070',
-                marginVertical: 13,
               }}
+              mode="contained"
+              uppercase={false}
+              onPress={() => setIssueDate(new Date())}
             >
-              {t('play_recorded_audio')}
-            </Text>
-            <IconButton
-              icon="close"
-              iconColor={colors.error}
-              size={24}
-              onPress={() => removeAttachment(issue.recording.id)}
-            />
+              {t('step_2_set_today')}
+            </Button>
           </View>
-        )} */}
+          <DateTimePickerModal
+            isVisible={isDatePickerVisible}
+            mode="date"
+            maximumDate={new Date()}
+            date={issueDate ?? new Date()}
+            onConfirm={handleIssueDateConfirm}
+            onCancel={hideIssueDatePicker}
+          />
+
+          <Text style={styles.stepSubtitle}>{t('step_3_field_title_2')}</Text>
+          {issueCategories && issueCategories.length > 0 ? (
+            <View style={{ zIndex: 2000 }}>
+              <CustomDropDownPicker
+                schema={{ label: 'name', value: 'id' }}
+                placeholder={t('step_2_placeholder_1')}
+                value={categoryPickerValue}
+                items={issueCategories}
+                setPickerValue={setCategoryPickerValue}
+                setItems={() => {}}
+                onSelectItem={(item) => setCategory(item)}
+                zIndex={2000}
+                zIndexInverse={4000}
+              />
+            </View>
+          ) : (
+            <Text style={styles.stepDescription}>{category?.name ?? '--'}</Text>
+          )}
+
+          {/* {issueTypes && issueTypes.length > 0 && (
+            <View style={{ zIndex: 1000 }}>
+              <CustomDropDownPicker
+                schema={{ label: 'name', value: 'id' }}
+                placeholder={t('step_3_field_title_3')}
+                value={issueTypePickerValue}
+                items={issueTypes}
+                setPickerValue={setIssueTypePickerValue}
+                setItems={() => {}}
+                onSelectItem={(item) => setIssueType(item)}
+                zIndex={1000}
+                zIndexInverse={5000}
+              />
+            </View>
+          )} */}
+
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Checkbox.Android
+              color={colors.primary}
+              status={ongoingEvent ? 'checked' : 'unchecked'}
+              onPress={() => setOngoingEvent(!ongoingEvent)}
+            />
+            <Text style={[styles.stepNote, { flex: 1 }]}>{t('step_2_ongoing_hint')}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Checkbox.Android
+              color={colors.primary}
+              status={eventRecurrence ? 'checked' : 'unchecked'}
+              onPress={() => setEventRecurrence(!eventRecurrence)}
+            />
+            <Text style={[styles.stepNote, { flex: 1 }]}>{t('step_2_recurrence')}</Text>
+          </View>
+
+          <Text style={styles.stepSubtitle}>{t('step_3_field_title_4')}</Text>
+          <TextInput
+            multiline
+            numberOfLines={4}
+            style={[styles.grmInput, { height: 100, justifyContent: 'flex-start', textAlignVertical: 'top' }]}
+            outlineColor="#3e4000"
+            placeholderTextColor="#5f6800"
+            theme={theme}
+            mode="outlined"
+            value={description}
+            onChangeText={setDescription}
+          />
+        </View>
+
+        {/* --- Localisation ----------------------------------------------------------------------- */}
+        <View style={cardStyle}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={styles.stepSubtitle}>{t('step_3_field_location')}</Text>
+            <Button compact mode="text" uppercase={false} onPress={editLocation} labelStyle={{ color: colors.primary }}>
+              {t('edit')}
+            </Button>
+          </View>
+          <Text style={styles.stepDescription}>{issue.issueLocation?.name ?? '--'}</Text>
+
+          <Text style={styles.stepSubtitle}>{t('step_3_field_location_description')}</Text>
+          <TextInput
+            multiline
+            numberOfLines={3}
+            style={[styles.grmInput, { height: 80, justifyContent: 'flex-start', textAlignVertical: 'top' }]}
+            placeholder={t('step_location_input_explanation')}
+            outlineColor="#3e4000"
+            placeholderTextColor="#5f6800"
+            theme={theme}
+            mode="outlined"
+            value={locationDescription}
+            onChangeText={setLocationDescription}
+          />
+
+          <Text style={styles.stepSubtitle}>{t('step_3_field_structure')}</Text>
+          <TextInput
+            style={styles.grmInput}
+            disabled={true}
+            placeholder={t('step_2_structure_in_charge_name')}
+            outlineColor="#3e4000"
+            placeholderTextColor="#5f6800"
+            theme={theme}
+            mode="outlined"
+            value={structureName}
+            onChangeText={setStructureName}
+          />
+          <Text />
+          {/* <TextInput
+            style={styles.grmInput}
+            placeholder={t('step_2_structure_in_charge_phone')}
+            outlineColor="#3e4000"
+            placeholderTextColor="#5f6800"
+            theme={theme}
+            mode="outlined"
+            value={structurePhone}
+            onChangeText={setStructurePhone}
+          />
+          <Text />
+          <TextInput
+            style={styles.grmInput}
+            placeholder={t('step_2_structure_in_charge_email')}
+            outlineColor="#3e4000"
+            placeholderTextColor="#5f6800"
+            theme={theme}
+            mode="outlined"
+            value={structureEmail}
+            onChangeText={setStructureEmail}
+          /> */}
+        </View>
+      </KeyboardAvoidingView>
+
+      <View style={cardStyle}>
+        <Text style={styles.stepSubtitle}>{t('step_3_attachments')}</Text>
         {attachments &&
           attachments.length > 0 &&
           attachments.map((attachment, index) => {
             if (attachment.isAudio) {
-              let audio_url = (attachment.local_url ? (attachment.local_url && attachment.local_url != "" ? attachment.local_url : undefined) : undefined) ?? (attachment.url ?? attachment.uri);
+              let audio_url = attachment.local_url || attachment.url || attachment.uri;
               let audio_url_split = audio_url.split("?")[0].split("/");
               let audio_file_name = audio_url_split[audio_url_split.length - 1];
 
-              let audio_url_current = (soundUrl ? (soundUrl && soundUrl != "" ? soundUrl : undefined) : undefined) ?? "";
+              let audio_url_current = soundUrl || "";
               let audio_url_split_current = audio_url_current.split("?")[0].split("/");
               let audio_file_name_current = audio_url_split_current[audio_url_split_current.length - 1];
 
@@ -560,43 +870,14 @@ function Content({ issue, eadl, issues }) {
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
-                    // justifyContent: 'center',
+                    borderLeftWidth: 4,
+                    borderLeftColor: attachmentStatusColor(attachment.id),
                   }}
                 >
-                  {/* <IconButton
-                    icon="play"
-                    iconColor={playing ? colors.disabled : colors.primary}
-                    size={24}
-                    onPress={() => playSound(attachment.local_url)}
-                  />
-                  <Text
-                    style={{
-                      fontFamily: 'Poppins_400Regular',
-                      fontSize: 12,
-                      fontWeight: 'normal',
-                      fontStyle: 'normal',
-                      lineHeight: 18,
-                      letterSpacing: 0,
-                      textAlign: 'left',
-                      color: '#707070',
-                      marginVertical: 13,
-                    }}
-                  >
-                    {t('play_recorded_audio')} 
-                  </Text> */}
                   <IconButton icon={!soundOnPause && audio_file_name_current == audio_file_name ? "pause" : "play"} iconColor={colors.primary} size={24} onPress={
                     () => audio_file_name_current == audio_file_name ? (soundOnPause ? playASoundOnCurrentPause() : pauseASound()) : playASound(audio_url)
                   } />
                   <View style={{ flex: 1, flexDirection: 'column' }}>
-                    <View style={{ flexDirection: 'row', alignSelf: 'center' }}>
-                      <Text style={{
-                        color: attachment.uploaded ? colors.primary : colors.error, fontSize: 10, textAlign: 'center'
-                      }}
-                      >{attachment.uploaded ? t('synchronized') : t('waiting_for_synchronization')}</Text>
-                      {isSyncing && audio_file_name_current == audio_file_name && <ActivityIndicator style={{}} color={colors.primary} size="small" />}
-                    </View>
-
-
                     <View style={[styles_audio.container, { marginHorizontal: 20, marginTop: 0 }]}>
                       <Animated.View style={[styles_audio.bar, { width: audio_file_name_current == audio_file_name ? getProgress() ?? 0 : 0 }]} />
                     </View>
@@ -617,19 +898,6 @@ function Content({ issue, eadl, issues }) {
                   >
                     {`(${_index})`}
                   </Text>
-                  <Text
-                    style={{
-                      fontFamily: 'Poppins_400Regular',
-                      fontSize: 12,
-                      fontWeight: 'normal',
-                      fontStyle: 'normal',
-                      lineHeight: 18,
-                      letterSpacing: 0,
-                      textAlign: 'left',
-                      marginVertical: 13,
-                      marginLeft: 7
-                    }}
-                  >{parseInt(String(audio_file_name_current == audio_file_name && position ? position / 1000 : 0))}</Text>
                   <IconButton
                     icon="close"
                     iconColor={colors.error}
@@ -646,40 +914,17 @@ function Content({ issue, eadl, issues }) {
 
         {attachments &&
           attachments.length > 0 &&
-          // issue.attachments.map((attachment) => (
-          //   <Image
-          //     source={{ uri: attachment.local_url }}
-          //     style={{
-          //       height: 80,
-          //       width: 80,
-          //       justifyContent: 'flex-end',
-          //       marginVertical: 20, 
-          //       marginLeft: 20,
-          //     }}
-          //   />
-          // ))
           <>
             <>
               {
                 attachments.map((attachment, index) => {
                   if (!attachment.isAudio) {
-                    let urlL = (attachment.local_url ? (attachment.local_url && attachment.local_url != "" ? attachment.local_url : undefined) : undefined) ?? (attachment.url ?? attachment.uri);
+                    let urlL = attachment.local_url || attachment.url || attachment.uri;
                     return (
                       <View style={{ flex: 1, flexDirection: 'row' }}>
                         <ImageBackground
                           key={`${attachment.id} ${urlL}`}
-                          source={(urlL && urlL.includes('.pdf')) ? require('../../../../../assets/pdf.png') : (
-                            (urlL && urlL.includes("file://")) ? { uri: urlL } : {
-                              // uri: `${couchDBURLBase}/grm_attachments/${attachment.bd_id}/${attachment.name}`,
-                              // headers: {
-                              //   Authorization: `Basic ${btoa(`${dbUsername}:${dbPassword}`)}`,
-                              // },
-                              uri: `${couchDBURLBase}${urlL}`, headers: {
-                                username: dbUsername,
-                                password: dbPassword,
-                              }
-                            }
-                          )}
+                          source={(urlL && urlL.includes('.pdf')) ? require('../../../../../assets/pdf.png') : { uri: urlL }}
                           style={{
                             height: 80,
                             width: 80,
@@ -687,39 +932,10 @@ function Content({ issue, eadl, issues }) {
                             alignSelf: 'flex-start',
                             justifyContent: 'flex-end',
                             marginVertical: 20,
+                            borderWidth: 3,
+                            borderColor: attachmentStatusColor(attachment.id),
                           }}
                         >
-
-                          <TouchableOpacity
-                            onPress={async () => {
-                              if (!urlL.includes("file://")) {
-                                setIsSyncing(true);
-                                setLocalPath(null);
-                                setUrl(null);
-                                setUrlSyncing(urlL);
-                              }
-                              setLocalPath(await showDoc(attachment, dbUsername, dbPassword, false));
-                              if (!urlL.includes("file://")) {
-                                setUrl(attachment.url);
-                                setIsSyncing(false);
-                                setModalVisibleFile(true);
-                                setUrlSyncing(null);
-                              }
-
-                            }}
-                            style={{
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                            }}
-                          >
-                            <Image
-                              resizeMode="stretch"
-                              style={{ width: 20, height: 20, borderRadius: 15, marginBottom: 5 }}
-                              source={require('../../../../../assets/eye.png')}
-                            />
-                          </TouchableOpacity>
-
                           <TouchableOpacity
                             onPress={() => removeAttachment(attachment.id)}
                             style={{
@@ -731,19 +947,6 @@ function Content({ issue, eadl, issues }) {
                             <Text style={{ color: 'white' }}>X</Text>
                           </TouchableOpacity>
                         </ImageBackground>
-                        <View style={{
-                          marginHorizontal: 1,
-                          alignSelf: 'flex-start',
-                          justifyContent: 'flex-end',
-                          marginVertical: 'auto',
-                          marginLeft: 7
-                        }}>
-                          <Text style={{
-                            color: attachment.uploaded ? colors.primary : colors.error
-                          }}
-                          >{attachment.uploaded ? t('synchronized') : t('waiting_for_synchronization')}</Text>
-                        </View>
-                        {isSyncing && urlSyncing == urlL && <ActivityIndicator style={{}} color={colors.primary} size="small" />}
                       </View>
 
                     )
@@ -751,140 +954,38 @@ function Content({ issue, eadl, issues }) {
                 })
               }
             </>
-
-            <Button
-              style={{ backgroundColor: isSyncing ? colors.disabled : colors.primary, margin: 'auto', alignSelf: 'center' }}
-              onPress={uploadImages}
-              loading={isSyncing}
-              theme={theme}
-              disabled={isSyncing}
-              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-              mode="contained"
-            >
-              {isSyncing ? t('sync_in_progress') : t('sync_files')}
-            </Button>
           </>
         }
+
+        {attachments && attachments.length > 0 && (
+          <Button
+            compact
+            theme={theme}
+            mode="outlined"
+            uppercase={false}
+            disabled={uploadingAttachments}
+            loading={uploadingAttachments}
+            style={{ alignSelf: 'flex-start', marginTop: 10, borderColor: colors.primary }}
+            labelStyle={{ color: colors.primary, fontFamily: 'Poppins_400Regular', fontSize: 13 }}
+            onPress={uploadAttachmentsManually}
+          >
+            {t('upload_files_now')}
+          </Button>
+        )}
       </View>
       <View style={{ paddingHorizontal: 50 }}>
         <Button
           theme={theme}
-          disabled={!eadl || isSyncing}
-          style={{ alignSelf: 'center', margin: 24, backgroundColor: isSyncing ? colors.disabled : colors.primary }}
+          disabled={!eadl || submitting}
+          style={{ alignSelf: 'center', margin: 24, backgroundColor: submitting ? colors.disabled : colors.primary }}
           labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
           mode="contained"
+          loading={submitting}
           onPress={() => submitIssue()}
         >
           {t('submit_button_text')}
         </Button>
       </View>
-
-
-
-
-
-
-
-
-
-      {localPath && <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisibleFile && !!localPath}
-        onRequestClose={() => {
-          setModalVisibleFile(!modalVisibleFile);
-        }}>
-        <View style={[styles.modalView, styles.modalViewPlanning]}>
-          <View style={styles.modalHeader}>
-            <View style={[styles.containerModalText, { flexDirection: 'row' }]}>
-              <Text style={[styles.modalDetailText]}>
-                {/* {localPath.split("/")[localPath.split("/").length-1]} */}
-                Fichier
-              </Text>
-            </View>
-            <View style={styles.containerModalHeaderIcon}>
-              <TouchableOpacity
-                onPress={() => setModalVisibleFile(false)} >
-                <FontAwesome name="close" size={24} color="grey" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.conatinerFieldsPlanning}>
-            <ScrollView
-              nestedScrollEnabled={true}
-              style={{ zIndex: 1 }}
-            >
-
-
-              <View style={{
-                flex: 1,
-                backgroundColor: '#fff',
-              }}>
-
-                {(localPath && localPath.includes('.pdf')) ? <Pdf
-                  source={{ uri: `file://${localPath}`, cache: true }}
-                  style={{ flex: 1 }}
-                  onError={(error) => console.log('PDF error:', error)}
-                /> : (<Image
-                  source={{
-                    uri: `file://${localPath}`, headers: {
-                      username: dbUsername,
-                      password: dbPassword,
-                    }
-                  }}
-                  style={{
-                    height: screenWidth * 0.8,
-                    width: screenWidth * 0.8,
-                    marginHorizontal: 1,
-                    alignSelf: 'flex-start',
-                    justifyContent: 'flex-end',
-                    marginVertical: 20,
-                  }}
-                />)}
-
-
-
-                {/* <Pdf source={{ uri: `file://${localPath}` }} /> */}
-
-                {/* <WebView
-                  style={{
-                    flex: 1,
-                  }}
-                  originWhitelist={['*']}
-                  allowFileAccess={true}
-                  source={{ uri: `file://${localPath}` }}
-                /> */}
-
-
-
-
-                {/* {url && <IconButton
-                    icon="download"
-                    iconColor={colors.primary}
-                    size={24}
-                    onPress={async () => {
-                      setIsSyncing(true);
-                      setErrorMessage(t('starting_download'));
-                      setErrorVisible(true);
-                      await downloadToDownloadsFolder(url, dbUsername, dbPassword);
-                      setErrorMessage(t('downloaded_file'));
-                      setErrorVisible(true);
-                      setIsSyncing(false);
-                    }}
-                  />} */}
-                {localPath && url && <DownloadComponent url={url} username={dbUsername} password={dbPassword} />}
-
-              </View>
-
-
-
-            </ScrollView>
-          </View>
-
-
-        </View>
-      </Modal>}
 
       <Snackbar visible={errorVisible} duration={1000} onDismiss={onDismissSnackBar}>
         {errorMessage}
