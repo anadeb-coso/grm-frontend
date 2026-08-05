@@ -1,3 +1,9 @@
+# GRM Frontend (MGP TG)
+
+L'application **MGP** (Mécanisme de Gestion des Plaintes) est une application mobile de gestion et de suivi des plaintes collectées sur le terrain. Elle offre une vue globale des incidents/problèmes liés au projet COSO et facilite l'échange entre les collaborateurs pour qu'ils soient à l'écoute des incidents survenus sur le terrain.
+
+L'application fonctionne en mode **hors-ligne d'abord (offline-first)** : les agents de terrain peuvent enregistrer, consulter et faire évoluer des plaintes sans connexion, la synchronisation avec le serveur se faisant automatiquement dès qu'une connexion réseau est disponible. Elle communique avec le backend `grm-backend` (Django/PostgreSQL) via le protocole de synchronisation [`@nozbe/watermelondb`](https://watermelondb.dev/), ainsi qu'avec les plateformes DCC et SIG pour le suivi des sous-projets, des activités de terrain et des données administratives.
+
 ### Installation
 1. Install packages using `yarn install` or use this command to clean all caches and install the packages `yarn clean:android:full` for android
 1. Run the porject as `yarn android`
@@ -85,6 +91,22 @@ You'll see the apk on `\android\app\build\outputs\apk`
 
 ### 1.5.2 (22) : 2026.05.18
 - `Added internet connection verification when calling certain functions`
+
+### 2.5.0 (23) : 2026.08.05
+- `Migrated the local database and data sync engine from PouchDB/CouchDB to WatermelonDB (SQLite), synchronized with the new PostgreSQL backend (grm-backend) via a dedicated pull/push REST protocol`
+- `Replaced direct CouchDB replication with an explicit sync manager (watermelonSyncManager): frequent auto-sync while the app is in the foreground, spaced-out sync in the background, and a manual "sync now" trigger, all guarded against concurrent/duplicate synchronizations`
+- `Added a global sync progress bar, visible on every screen, replacing the previous "synchronizing..." toast`
+- `Added automatic detection and handling of devices that are too far behind to sync incrementally: the app now clears its local database and performs a full resync from the server, with a progress indicator while the user waits`
+- `Added a dedicated, separately-scheduled synchronization for administrative levels (villages/cantons/préfectures/régions), refreshed once a day instead of on every sync`
+- `Reworked attachment (photo/audio/PDF) handling: files are now uploaded/downloaded through independent queues, decoupled from the data sync flow`
+- `Attachments are now downloaded on demand (via an explicit user action) instead of being auto-downloaded in bulk on every sync, to save data on limited connections`
+- `Added a fullscreen attachment viewer (images and PDFs) that displays remote files directly, without requiring them to be downloaded first`
+- `Added automatic compression of photos and audio recordings before upload to reduce data usage on the field`
+- `Ensured consistent identifiers between mobile and server by generating UUIDs locally at record creation, so records created offline keep the same id once pushed to PostgreSQL`
+- `Adopted JWT authentication (access/refresh tokens) with automatic token refresh and secure storage`
+- `Added a server health/connectivity check to avoid failed sync attempts and give clearer feedback when the backend is unreachable`
+- `Updated all issue-related screens (reporting steps, issue detail, issue history, issue actions, issue search, comments) and related modules (budget allocation/log, participatory budgeting, subprojects, statistics, sync/attachments screens) to work against the new WatermelonDB models`
+- `Added automated tests covering the new sync engine (pull/push, full resync, administrative levels sync, upload ordering)`
 
 
 ## Devices commands to know
