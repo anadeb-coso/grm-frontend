@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import * as FileSystem from 'expo-file-system';
 import * as IntentLauncher from 'expo-intent-launcher';
-import { View, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import { View, TouchableOpacity, Dimensions, Platform, Modal } from 'react-native';
 import { Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -136,24 +136,34 @@ function SnackBarCheckAppVersionComponent() {
 
   return (
     <>
-      <Snackbar visible={errorVisible}
-        //duration={10000} onDismiss={onDismissSnackBar}
-        duration={DURATION_INDEFINITE} onDismiss={() => {}}
-        style={{ backgroundColor: '#e1461c', height: height }}>
-        <View style={{ flexDirection: 'row', marginVertical: "auto", marginTop: height/2 }}>
-          <View style={{ flex: 0.8 }}>
-            <Text style={{color: 'white'}}>{errorMessage}</Text>
+      {/* `Snackbar` (react-native-paper) n'est, malgré le style `height`/`backgroundColor` qui la
+      fait ressembler à une page pleine, qu'une vue positionnée normalement dans l'arbre — elle
+      n'intercepte les touchers que sur ses propres limites internes, pas sur tout l'écran. Un
+      appui en dehors du texte/bouton "traversait" donc jusqu'aux éléments de l'écran affiché en
+      dessous (ex. Home) et les déclenchait. `Modal` (natif) garantit, lui, la capture de TOUS les
+      toucher de l'écran tant qu'il est visible — même pattern déjà utilisé par LoadingScreen/
+      AppUpdateProgressModal. `onRequestClose` neutralisé : cette notification doit être fermée en
+      appuyant sur "Mettre à jour", pas en la contournant via le bouton retour Android. */}
+      <Modal visible={errorVisible} transparent animationType="fade" onRequestClose={() => {}}>
+        <Snackbar visible={errorVisible}
+          //duration={10000} onDismiss={onDismissSnackBar}
+          duration={DURATION_INDEFINITE} onDismiss={() => {}}
+          style={{ backgroundColor: '#e1461c', height: height }}>
+          <View style={{ flexDirection: 'row', marginVertical: "auto", marginTop: height/2 }}>
+            <View style={{ flex: 0.8 }}>
+              <Text style={{color: 'white'}}>{errorMessage}</Text>
+            </View>
+            {storeProject && storeProject.app && storeProject.app.apk_aws_s3_url && <View style={{
+              flex: 0.2, alignContent: 'flex-end',
+              // flexDirection: 'column'
+            }}>
+              <TouchableOpacity onPress={downloadAndInstallUpdate}>
+                <Text style={{color: 'white'}} textAlign={'right'}>{t('update_download_button')}</Text>
+              </TouchableOpacity>
+            </View>}
           </View>
-          {storeProject && storeProject.app && storeProject.app.apk_aws_s3_url && <View style={{
-            flex: 0.2, alignContent: 'flex-end',
-            // flexDirection: 'column'
-          }}>
-            <TouchableOpacity onPress={downloadAndInstallUpdate}>
-              <Text style={{color: 'white'}} textAlign={'right'}>{t('update_download_button')}</Text>
-            </TouchableOpacity>
-          </View>}
-        </View>
-      </Snackbar>
+        </Snackbar>
+      </Modal>
 
       <AppUpdateProgressModal
         visible={downloadVisible}
