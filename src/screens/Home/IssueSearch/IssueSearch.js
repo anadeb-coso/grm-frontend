@@ -9,6 +9,7 @@ import { useNavigation } from '@react-navigation/native';
 import { colors } from '../../../utils/colors';
 import { database } from '../../../database';
 import { runSyncSafely } from '../../../database/watermelonSyncManager';
+import { useSyncCompletion } from '../../../database/useSyncCompletion';
 import { styles } from './IssueSearch.style';
 import Content from './containers';
 import SnackBarCheckFileUnsyncComponent from '../../../components/SnackBarCheckFileUnsyncComponent/SnackBarCheckFileUnsyncComponent';
@@ -55,55 +56,71 @@ function IssueSearch() {
       });
   }, []);
 
+  // Relit uniquement la base locale (déjà à jour après un sync) et applique les filtres de
+  // visibilité. Ne déclenche PAS de synchronisation : réutilisé tel quel à la fin de chaque
+  // synchronisation automatique (cf. `useSyncCompletion` plus bas), l'y appeler créerait une
+  // boucle de synchronisation.
+  const loadIssuesFromLocalDb = async () => {
+    if (!(eadl && eadl.representative)) return;
+
+    const issueRecords = await database.get('issues').query(Q.where('confirmed', true)).fetch();
+    let docs = await toLegacyIssueShapes(issueRecords);
+
+    const isGlobalViewer = eadl.administrative_region == '1'
+      && eadl.representative.groups
+      && (eadl.representative.groups.includes('ViewerOfAllIssues') || eadl.representative.groups.includes('Admin'));
+
+    if (isGlobalViewer) {
+      // pas de filtre supplémentaire : toutes les issues confirmées
+    } else if (eadl.administrative_region == '1') {
+      docs = docs.filter((issue) => issue.publish);
+    } else {
+      docs = docs.filter((issue) => (
+        (issue.reporter && issue.reporter.id === eadl.representative.id)
+        || (issue.assignee && issue.assignee.id === eadl.representative.id)
+      ));
+    }
+
+    docs.sort((a, b) => {
+      if (a.created_date && b.created_date) {
+        return a.created_date < b.created_date ? 1 : -1; // descending
+      }
+      return 0;
+    });
+
+    setIssues(docs);
+  };
+
   const get_issues = async () => {
-    
+
     setConnected(true);
     await check_network();
-    
+
     setIssues([]);
     if (!(eadl && eadl.representative)) return;
 
     // Récupère d'abord les dernières données du serveur avant de relire la base locale : sans ce
     // sync, "tirer pour rafraîchir" ne faisait que ré-afficher le même instantané local.
     try {
-      await runSyncSafely();
+      runSyncSafely();
     } catch (err) {
       console.log(err);
     }
 
     try {
-      const issueRecords = await database.get('issues').query(Q.where('confirmed', true)).fetch();
-      let docs = await toLegacyIssueShapes(issueRecords);
-
-      const isGlobalViewer = eadl.administrative_region == '1'
-        && eadl.representative.groups
-        && (eadl.representative.groups.includes('ViewerOfAllIssues') || eadl.representative.groups.includes('Admin'));
-
-      if (isGlobalViewer) {
-        // pas de filtre supplémentaire : toutes les issues confirmées
-      } else if (eadl.administrative_region == '1') {
-        docs = docs.filter((issue) => issue.publish);
-      } else {
-        docs = docs.filter((issue) => (
-          (issue.reporter && issue.reporter.id === eadl.representative.id)
-          || (issue.assignee && issue.assignee.id === eadl.representative.id)
-        ));
-      }
-
-      docs.sort((a, b) => {
-        if (a.created_date && b.created_date) {
-          return a.created_date < b.created_date ? 1 : -1; // descending
-        }
-        return 0;
-      });
-
-      setIssues(docs);
+      await loadIssuesFromLocalDb();
       setRefreshing(false);
     } catch (err) {
       console.log(err);
       setRefreshing(false);
     }
   }
+
+  // Quand une synchronisation automatique (intervalle, retour réseau, retour au premier plan) se
+  // termine pendant que l'écran est ouvert, on relit la liste locale pour afficher les nouvelles
+  // mises à jour sans que l'utilisateur ait à tirer pour rafraîchir.
+  useSyncCompletion(loadIssuesFromLocalDb);
+
   useEffect(() => {
     // FETCH ISSUE CATEGORY
     get_issues();

@@ -89,10 +89,74 @@ class ForceFullResyncError extends Error {}
  *   (CLAUDE.md §9 : "l'application doit mettre l'utilisateur en attente avec un affichage de
  *   barre de progression" lors des téléchargements complets).
  */
+/**
+ * Un cycle pull+push WatermelonDB unique. `pullCountRef` est partagé entre plusieurs cycles
+ * (cf. `runSync`) pour que la numérotation `onProgress({ phase: 'pull', current })` reste
+ * continue sur l'ensemble pull-push-pull plutôt que de repartir de 1 au second cycle.
+ */
+async function performSyncCycle({ deviceId, onProgress, pullCountRef }) {
+  let cursor = null;
+
+  await synchronize({
+    database,
+    pullChanges: async ({ lastPulledAt, schemaVersion, migration }) => {
+      const { data } = await api.get('/sync/pull/', {
+        params: {
+          last_pulled_at: lastPulledAt ?? 0,
+          schema_version: schemaVersion,
+          cursor: cursor ?? undefined,
+          device_id: deviceId,
+        },
+      });
+
+      if (data.force_full_resync) {
+        throw new ForceFullResyncError();
+      }
+
+      cursor = data.has_more ? data.cursor : null;
+      pullCountRef.count += 1;
+      onProgress?.({ phase: 'pull', current: pullCountRef.count });
+
+      const deserializedChanges = {};
+      for (const [tableName, tableChanges] of Object.entries(data.changes || {})) {
+        deserializedChanges[tableName] = {
+          created: (tableChanges.created || []).map((r) => deserializeRecordForPull(tableName, r)),
+          updated: (tableChanges.updated || []).map((r) => deserializeRecordForPull(tableName, r)),
+          deleted: tableChanges.deleted || [],
+        };
+      }
+
+      return {
+        changes: deserializedChanges,
+        timestamp: data.timestamp,
+        hasMore: data.has_more,
+      };
+    },
+
+    pushChanges: async ({ changes, lastPulledAt }) => {
+      const serializedChanges = {};
+      for (const [tableName, tableChanges] of Object.entries(changes)) {
+        serializedChanges[tableName] = {
+          created: (tableChanges.created || []).map((r) => serializeRecordForPush(tableName, r)),
+          updated: (tableChanges.updated || []).map((r) => serializeRecordForPush(tableName, r)),
+          deleted: tableChanges.deleted || [],
+        };
+      }
+      await api.post('/sync/push/', {
+        changes: serializedChanges,
+        last_pulled_at: lastPulledAt,
+        device_id: deviceId,
+      });
+    },
+
+    migrationsEnabledAtVersion: 1,
+    sendCreatedAsUpdated: true, // simplifie le traitement côté Django (cf. §3.4.1)
+  });
+}
+
 export async function runSync({ onProgress } = {}) {
   const deviceId = await getDeviceId();
-  let cursor = null;
-  let pullCount = 0;
+  const pullCountRef = { count: 0 };
 
   // Doit impérativement passer AVANT `synchronize()` (push compris), pas après : `reasons`/
   // `escalation_reasons` peuvent référencer un `attachment_id` (ex. PDF de résolution/escalade,
@@ -106,61 +170,15 @@ export async function runSync({ onProgress } = {}) {
   await enqueuePendingUploads();
 
   try {
-    await synchronize({
-      database,
-      pullChanges: async ({ lastPulledAt, schemaVersion, migration }) => {
-        const { data } = await api.get('/sync/pull/', {
-          params: {
-            last_pulled_at: lastPulledAt ?? 0,
-            schema_version: schemaVersion,
-            cursor: cursor ?? undefined,
-            device_id: deviceId,
-          },
-        });
-
-        if (data.force_full_resync) {
-          throw new ForceFullResyncError();
-        }
-
-        cursor = data.has_more ? data.cursor : null;
-        pullCount += 1;
-        onProgress?.({ phase: 'pull', current: pullCount });
-
-        const deserializedChanges = {};
-        for (const [tableName, tableChanges] of Object.entries(data.changes || {})) {
-          deserializedChanges[tableName] = {
-            created: (tableChanges.created || []).map((r) => deserializeRecordForPull(tableName, r)),
-            updated: (tableChanges.updated || []).map((r) => deserializeRecordForPull(tableName, r)),
-            deleted: tableChanges.deleted || [],
-          };
-        }
-
-        return {
-          changes: deserializedChanges,
-          timestamp: data.timestamp,
-          hasMore: data.has_more,
-        };
-      },
-
-      pushChanges: async ({ changes, lastPulledAt }) => {
-        const serializedChanges = {};
-        for (const [tableName, tableChanges] of Object.entries(changes)) {
-          serializedChanges[tableName] = {
-            created: (tableChanges.created || []).map((r) => serializeRecordForPush(tableName, r)),
-            updated: (tableChanges.updated || []).map((r) => serializeRecordForPush(tableName, r)),
-            deleted: tableChanges.deleted || [],
-          };
-        }
-        await api.post('/sync/push/', {
-          changes: serializedChanges,
-          last_pulled_at: lastPulledAt,
-          device_id: deviceId,
-        });
-      },
-
-      migrationsEnabledAtVersion: 1,
-      sendCreatedAsUpdated: true, // simplifie le traitement côté Django (cf. §3.4.1)
-    });
+    // 1er cycle : pull (état serveur courant) puis push (envoi des créations/modifs locales).
+    await performSyncCycle({ deviceId, onProgress, pullCountRef });
+    // 2e pull-push : WatermelonDB n'expose pas de pull "seul" hors de `synchronize()`, donc le
+    // pull-push-pull demandé s'obtient en enchaînant un second cycle complet. Son pull récupère
+    // l'écho du push qui vient d'avoir lieu (utile si le serveur recalcule/complète des champs,
+    // ex. `auto_increment_id`) ainsi que d'éventuels changements concurrents poussés par
+    // d'autres utilisateurs entre les deux appels réseau. Son push est un no-op si aucune
+    // écriture locale n'a eu lieu depuis le premier cycle (cas courant).
+    await performSyncCycle({ deviceId, onProgress, pullCountRef });
   } catch (err) {
     if (err instanceof ForceFullResyncError) {
       await forceFullResync({ onProgress });
@@ -189,5 +207,27 @@ async function forceFullResync({ onProgress }) {
   onProgress?.({ phase: 'reset' });
   await database.write(async () => {
     await database.unsafeResetDatabase();
+  });
+}
+
+/**
+ * Vide la table locale `adls` (référentiel des facilitateurs, pull seul — cf. CLAUDE.md §2)
+ * appelée à la déconnexion (store/ducks/authentication.duck.js::logout) : elle ne doit contenir,
+ * sur cet appareil, que le facilitateur actuellement connecté ; la conserver après déconnexion
+ * exposerait son profil (nom, périmètre administratif...) à quiconque se connecte ensuite avec un
+ * autre compte sur le même appareil, avant même le premier pull qui la repeuplerait.
+ *
+ * Suppression physique (`destroyPermanently`) plutôt que `markAsDeleted()` : cette table n'est de
+ * toute façon jamais poussée au serveur (absente de `SYNC_WRITABLE_MODELS` côté backend), une
+ * tombstone locale n'aurait donc aucun effet utile — juste une ligne fantôme en plus jusqu'au
+ * prochain pull.
+ */
+export async function clearLocalAdls() {
+  const adlsCollection = database.get('adls');
+  const localAdls = await adlsCollection.query().fetch();
+  if (localAdls.length === 0) return;
+
+  await database.write(async () => {
+    await database.batch(...localAdls.map((adl) => adl.prepareDestroyPermanently()));
   });
 }

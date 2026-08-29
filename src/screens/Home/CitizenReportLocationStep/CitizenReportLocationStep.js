@@ -25,8 +25,9 @@ function CitizenReportLocationStep({ route }) {
   const [cantons, setCantons] = useState(null);
   const [villages, setVillages] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  const get_user_adl_infos = async () => {
 
-  useEffect(() => {
     const fetchUserCommune = async () => {
       if (!userCommune) {
         const { userDoc, userCommune: usrC } = await getUserDocs();
@@ -40,12 +41,10 @@ function CitizenReportLocationStep({ route }) {
     };
 
     fetchUserCommune(); // Call the fetch userCommune data function
-
+      
     if (userCommune) {
       setLoading(true);
       
-      // `eadl` (issu de getUserDocs, cf. redux userDocument) porte déjà `administrative_regions_objects`
-      // — inutile de le rechercher une seconde fois via une réplication PouchDB locale désormais retirée.
       const adm_regions_objects = eadl?.administrative_regions_objects;
       
       if (adm_regions_objects && adm_regions_objects.length > 0) {
@@ -76,8 +75,8 @@ function CitizenReportLocationStep({ route }) {
 
         }
         
-        setCantons(_cantons.sort((a, b) => a.name.localeCompare(b.name)));
-        setVillages(_villages.sort((a, b) => a.name.localeCompare(b.name)))
+        setCantons(_cantons.sort((a, b) => a.name.localeCompare(b.name)) ?? []);
+        setVillages(_villages.sort((a, b) => a.name.localeCompare(b.name)) ?? []);
         setLoading(false);
 
       } else {
@@ -91,8 +90,8 @@ function CitizenReportLocationStep({ route }) {
             });
             // return;
           } else {
-            setCantons(response.cantons);
-            setVillages(response.villages);
+            setCantons(response.cantons ?? []);
+            setVillages(response.villages ?? []);
             setLoading(false);
           }
         }).catch((er) => {
@@ -107,6 +106,10 @@ function CitizenReportLocationStep({ route }) {
       }
     }
 
+  }
+  useEffect(() => {
+    
+    get_user_adl_infos();
 
   }, [dispatch, userCommune, username]);
 
@@ -150,10 +153,17 @@ function CitizenReportLocationStep({ route }) {
 
     // });
 
+    // Ne sert que de filet de sécurité (spinner qui ne se termine jamais) si aucune donnée
+    // locale n'a pu être chargée : `get_user_adl_infos()` (effet ci-dessus) sait déjà lire les
+    // cantons/villages depuis le cache local hors-ligne, donc ce check ne doit jamais écraser des
+    // données déjà chargées par cet effet — sinon, selon l'ordre d'arrivée (race condition), un
+    // `NetInfo.fetch()` qui se résout après coup effaçait silencieusement les cantons/villages
+    // déjà affichés dès qu'on est hors connexion (symptôme observé : champ village qui ne
+    // s'affiche jamais après sélection du canton, nécessitant plusieurs rafraîchissements).
     NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
-        setCantons([]);
-        setVillages([]);
+        setCantons((prev) => (prev && prev.length > 0 ? prev : []));
+        setVillages((prev) => (prev && prev.length > 0 ? prev : []));
         setLoading(false);
       }
     });
@@ -188,6 +198,7 @@ function CitizenReportLocationStep({ route }) {
           uniqueRegion={userCommune}
           cantons={cantons}
           villages={villages}
+          get_user_adl_infos={get_user_adl_infos}
         />
       </SafeAreaView>
     );

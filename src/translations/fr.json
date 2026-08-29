@@ -136,6 +136,12 @@
   "unable_access_internet": "Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!",
   "session_expired_please_login": "Votre session a expiré. Veuillez vous reconnecter.",
   "unable_retrieve_your_information": "Nous n'arrivons pas avoir vos informations sur le serveur.",
+  "login_invalid_credentials": "Email ou mot de passe incorrect.",
+  "login_network_error": "Impossible de se connecter au serveur. Vérifiez votre connexion et réessayez.",
+  "login_error_generic": "Une erreur est survenue lors de la connexion. Veuillez réessayer.",
+  "repository_not_found_locally": "Référentiel introuvable localement.\n Retournez à la page d'accueil et relancez une synchronisation. Revenez enregistrer la plainte une fois relancée la synchronisation.",
+  "not_possible_to_register": "Impossible d'enregistrer la plainte localement.",
+  "location_not_specified": "L'emplacement de cette plainte/demande n'est pas précisé.",
 
   //location step
   "step_4": "Étape 4",

@@ -96,7 +96,7 @@ export function setOnSessionExpired(callback) {
 const SESSION_TOAST_ID = 'api-session-expired';
 
 function handleSessionExpired() {
-  Toast?.show(i18n.t('session_expired_please_login'), { id: SESSION_TOAST_ID, type: 'danger', duration: 4000, placement: 'top' });
+  Toast?.show(i18n.t('session_expired_please_login'), { id: SESSION_TOAST_ID, type: 'danger', duration: 5000, placement: 'top' });
   if (onSessionExpired) onSessionExpired();
 }
 
@@ -115,11 +115,11 @@ export class ApiRequestBlockedError extends Error {}
 export async function ensureRequestAllowed({ requireAuth = true } = {}) {
   const netState = await NetInfo.fetch();
   if (!netState.isConnected) {
-    Toast?.show(i18n.t('unable_access_wifi'), { id: CONNECTIVITY_TOAST_ID, type: 'danger', duration: 4000, placement: 'top' });
+    Toast?.show(i18n.t('unable_access_wifi'), { id: CONNECTIVITY_TOAST_ID, type: 'danger', duration: 5000, placement: 'top' });
     throw new ApiRequestBlockedError('No network connection');
   }
   if (netState.isInternetReachable === false) {
-    Toast?.show(i18n.t('unable_access_internet'), { id: CONNECTIVITY_TOAST_ID, type: 'danger', duration: 4000, placement: 'top' });
+    Toast?.show(i18n.t('unable_access_internet'), { id: CONNECTIVITY_TOAST_ID, type: 'danger', duration: 5000, placement: 'top' });
     throw new ApiRequestBlockedError('Internet not reachable');
   }
 

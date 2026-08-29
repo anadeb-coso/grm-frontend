@@ -239,13 +239,13 @@ function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenG
       }));
       const anyError = records.some((r) => r.uploadStatus === 'error');
       if (anyError) {
-        toast?.show(t('attachments_upload_deferred'), { type: 'danger', duration: 3000 });
+        toast?.show(t('attachments_upload_deferred'), { type: 'danger', duration: 5000 });
       } else {
         toast?.show(t('attachments_synchronized'), { type: 'success', duration: 2500 });
       }
     } catch (err) {
       console.log(err);
-      toast?.show(t('attachments_upload_deferred'), { type: 'danger', duration: 3000 });
+      toast?.show(t('attachments_upload_deferred'), { type: 'danger', duration: 5000 });
     } finally {
       setUploadingAttachments(false);
     }
@@ -285,16 +285,20 @@ function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenG
       // clair — même garde-fou que pour statusId/categoryId/issueTypeId ci-dessus.
       const administrativeRegionId = parseInt(issue.issueLocation?.administrative_id, 10);
 
-      if (!statusId || !categoryId || !issueTypeId || !administrativeRegionId || Number.isNaN(administrativeRegionId)) {
-        Alert.alert('Erreur', "Référentiel introuvable localement — relancez une synchronisation.");
+      if (!statusId || !categoryId || !issueTypeId) {
+        Alert.alert('Erreur', t('repository_not_found_locally')); 
         setSubmitting(false);
         return;
       }
 
+      if (!administrativeRegionId || Number.isNaN(administrativeRegionId)) {
+        Alert.alert('Erreur', t('location_not_specified'));
+      }
+
+      const internalCode = `${category?.abbreviation || 'ISS'}-${Date.now()}-${randomCodeNumber}`;
+
       const newIssue = await createWithId(database.get('issues'), (r) => {
-        // `internal_code` doit être unique côté serveur (issue.models.Issue) : on génère une
-        // valeur stable dès la création plutôt que la chaîne vide de l'ancien flux CouchDB.
-        r.internalCode = `${category?.abbreviation || 'ISS'}-${Date.now()}-${randomCodeNumber}`;
+        r.internalCode = internalCode;
         r.trackingCode = trackingCode;
         r.autoIncrementId = parseInt(String(Date.now()).slice(-8));
         r.description = description;
@@ -375,13 +379,13 @@ function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenG
               .query(Q.where('issue', newIssue.id), Q.where('upload_status', Q.notEq('done')))
               .fetch();
             if (stillPending.length > 0) {
-              toast?.show(t('attachments_upload_deferred'), { type: 'danger', duration: 3000 });
+              toast?.show(t('attachments_upload_deferred'), { type: 'danger', duration: 5000 });
             } else {
               toast?.show(t('attachments_synchronized'), { type: 'success', duration: 2500 });
             }
           })
           .catch(() => {
-            toast?.show(t('attachments_upload_deferred'), { type: 'danger', duration: 3000 });
+            toast?.show(t('attachments_upload_deferred'), { type: 'danger', duration: 5000 });
           });
       }
 
@@ -393,6 +397,7 @@ function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenG
           ...issue,
           id: newIssue.id,
           tracking_code: trackingCode,
+          internal_code: internalCode,
           name: citizenName,
           category,
           issueType,
@@ -403,7 +408,7 @@ function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenG
       });
     } catch (err) {
       console.log(err);
-      Alert.alert('Erreur', "Impossible d'enregistrer la plainte localement.");
+      Alert.alert('Erreur', t('not_possible_to_register'));
     } finally {
       setSubmitting(false);
     }

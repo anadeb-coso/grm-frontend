@@ -1,6 +1,7 @@
 import { Map } from "immutable";
 import { createActions, handleActions } from "redux-actions";
 import { startWatermelonSync, stopWatermelonSync } from "../../database/watermelonSyncManager";
+import { clearLocalAdls } from "../../database/sync";
 import { logout as jwtLogout } from "../../api/client";
 import {
   clearEncryptedValues,
@@ -42,6 +43,10 @@ export const { init, login, signUp, logout } = createActions({
     stopWatermelonSync();
     jwtLogout();
     clearEncryptedValues()
+    // Table locale `adls` : ne doit contenir que le facilitateur actuellement connecté sur cet
+    // appareil (cf. database/sync.js::clearLocalAdls) — vidée à la déconnexion pour ne pas
+    // exposer son profil à un compte différent qui se connecterait ensuite sur le même appareil.
+    clearLocalAdls();
     return { username: null };
   },
 });

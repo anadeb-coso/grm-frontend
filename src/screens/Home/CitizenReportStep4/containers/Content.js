@@ -53,14 +53,14 @@ function Content({ issue }) {
       <Text style={[styles.stepSubtitle, { textAlign: 'center' }]}>{t('step_4_issue_code')}</Text>
       <Text
         style={{
-          fontSize: 49,
+          fontSize: 25,
           fontWeight: 'bold',
           textAlign: 'center',
           color: colors.primary,
           marginBottom: 40,
         }}
       >
-        {issue.tracking_code}
+        {issue.internal_code}
       </Text>
       <View style={{ alignSelf: 'center' }}>
         {/* <View */}
@@ -106,6 +106,9 @@ function Content({ issue }) {
         >
           {t('step_4_back_text')}
         </Button>
+        <Text></Text>
+        <Text></Text>
+        <Text></Text>
       </View>
     </ScrollView>
   );

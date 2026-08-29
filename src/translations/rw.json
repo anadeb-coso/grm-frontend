@@ -185,6 +185,12 @@
 	"unable_access_internet": "We are unable to access the internet. Please check your connection!", //to complete
 	"session_expired_please_login": "Your session has expired. Please log in again.", //to complete
 	"unable_retrieve_your_information": "We are unable to retrieve your information from the server.", //to complete
+	"login_invalid_credentials": "Incorrect email or password.", //to complete
+	"login_network_error": "Unable to reach the server. Please check your connection and try again.", //to complete
+	"login_error_generic": "An error occurred while logging in. Please try again.", //to complete
+	"repository_not_found_locally": "Repository not found locally.\n Return to the homepage and restart synchronization. Return to submit your complaint once synchronization has restarted.", //to complete
+	"not_possible_to_register": "It is not possible to register the complaint locally.",
+	"location_not_specified": "The location of this complaint/request is not specified.",
 
 	//location step
 	"step_4": "Intambwe ya 4",

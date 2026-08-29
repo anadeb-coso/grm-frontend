@@ -27,7 +27,7 @@ const theme = {
   },
 };
 
-export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, villages }) {
+export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, villages, get_user_adl_infos }) {
   const { t } = useTranslation();
   const navigation = useNavigation();
   //   const [communes, setCommunes] = useState(issueCommunes);
@@ -65,17 +65,17 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
 
   
 
-  const setAdministrativeLevel = () => {
+  const setAdministrativeLevel = async () => {
     let d = [];
     if(cantons.length == 0 && villages.length == 0){
       setHideCantonField(true);
       setHideVillageField(true);
     }else if([0, 1].includes(cantons.length)){
       setHideCantonField(true);
-      setVillagesInfos(true, canton);
+      await setVillagesInfos(true, canton);
     }else{
       setHideCantonField(false);
-      setVillagesInfos(false, canton);
+      await setVillagesInfos(false, canton);
       for(let i=0; i<cantons.length; i++){
         d.push({name: String(cantons[i].name), id: String(cantons[i].id)});
         if(i+1==cantons.length){
@@ -84,18 +84,29 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
       }
     }
   }
+
+  const call_administratif_levels_fetch = async () => {
+    await setAdministrativeLevel();
+  }
+
+
   useEffect(() => {
-    setAdministrativeLevel();
+    call_administratif_levels_fetch();
     // setVillagesInfos(hideCantonField, canton);
-   
-  }, []);
-  const onRefresh = () => {
+    // Dépend de `cantons`/`villages` (et non `[]`) : ces props peuvent encore changer après le
+    // premier rendu (ex. `get_user_adl_infos()` du parent qui résout après le montage de ce
+    // composant) — sans ça, `hideCantonField`/`hideVillageField`/`cantonsItems`/`villagesItems`
+    // restaient figés sur les valeurs (parfois vides) du tout premier rendu, et le champ village
+    // ne s'affichait jamais tant qu'on ne quittait/rouvrait pas l'écran.
+  }, [cantons, villages]);
+  const onRefresh = async () => {
     setRefreshing(true);
-    setAdministrativeLevel();
+    await get_user_adl_infos();
+    await setAdministrativeLevel();
     setRefreshing(false);
   };
 
-  const setVillagesInfos = (hideC, c) => {
+  const setVillagesInfos = async (hideC, c) => {
     let v = [];
     if([0, 1].includes(villages.length) || (hideC == false && c == null)){
       setHideVillageField(true);
@@ -267,8 +278,8 @@ export function Content({ stepOneParams, stepTwoParams, uniqueRegion, cantons, v
             items={cantonsItems}
             setPickerValue={setCanton}
             setItems={setCantonsItems}
-            onSelectItem={(item) => {
-              setVillagesInfos(hideCantonField, item);
+            onSelectItem={async (item) => {
+              await setVillagesInfos(hideCantonField, item);
               setSelectedselectedCanton(item);
             }}
             open={open}

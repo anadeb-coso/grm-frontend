@@ -112,7 +112,7 @@ export function WorkInProgress() {
     // Récupère d'abord les dernières données du serveur avant de relire la base locale : sans ce
     // sync, "tirer pour rafraîchir" ne faisait que ré-afficher le même instantané local.
     try {
-      await runSyncSafely();
+      runSyncSafely();
     } catch (err) {
       console.log(err);
     }

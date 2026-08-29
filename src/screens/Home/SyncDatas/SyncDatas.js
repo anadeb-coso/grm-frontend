@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Modal, Text, Image } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import * as Progress from 'react-native-progress';
@@ -14,6 +14,7 @@ import CheckCircle from '../../../../assets/check-circle.svg';
 import { database } from '../../../database';
 import { runSyncSafely } from '../../../database/watermelonSyncManager';
 import API from '../../../services/API';
+import { subscribeSyncStatus } from '../../../database/watermelonSyncManager';
 
 
 function SyncDatas({ navigation }) {
@@ -33,6 +34,10 @@ function SyncDatas({ navigation }) {
 
   const onDismissSnackBar = () => setErrorVisible(false);
   const { userDocument: eadl } = useSelector((state) => state.get('userDocument').toObject());
+  
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  useEffect(() => subscribeSyncStatus(setIsSyncing), []);
   
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
@@ -248,7 +253,7 @@ function SyncDatas({ navigation }) {
 
 
       <Datas />
-      {loading ? (
+      {(isSyncing || loading) ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           {syncProgress?.phase === 'reset' || syncProgress?.phase === 'pull' ? (
             <>
@@ -286,7 +291,7 @@ function SyncDatas({ navigation }) {
               color: '#ffffff',
             }}
           >
-            Sync
+            {t('sync')}
           </CustomGreenButton>
         </View>
       )}

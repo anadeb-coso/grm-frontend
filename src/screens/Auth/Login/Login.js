@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
   ScrollView,
@@ -29,9 +30,11 @@ function Login() {
 
   const [loading, setLoading] = useState(false);
   const [isPasswordSecure, setIsPasswordSecure] = useState(true);
+  const [loginError, setLoginError] = useState(null);
 
   const onLoginPress = async (data) => {
     setLoading(true);
+    setLoginError(null);
     try {
       // Authentification JWT (grm-backend/src/sync : /api/auth/token/) — remplace l'ancien flux
       // de connexion CouchDB. `jwtLogin` stocke déjà les tokens de façon chiffrée
@@ -48,6 +51,18 @@ function Login() {
       dispatch(login({ email: data?.email }));
     } catch (error) {
       console.error(error);
+      // `jwtLogin` (src/api/client.js) fait un appel axios brut, sans intercepteur : l'erreur HTTP
+      // (401 SimpleJWT, ou erreur réseau si hors-ligne) remontait ici sans jamais être affichée —
+      // l'utilisateur voyait juste le spinner disparaître, sans aucun feedback.
+      const status = error?.response?.status;
+      const message =
+        status === 401 || status === 400
+          ? t('login_invalid_credentials')
+          : error?.request
+          ? t('login_network_error')
+          : t('login_error_generic');
+      setLoginError(message);
+      Alert.alert(t('login'), message, [{ text: 'OK' }], { cancelable: false });
     } finally {
       setLoading(false);
     }
@@ -197,6 +212,7 @@ function Login() {
                   {errors.password && (
                     <Text style={styles.errorText}>{errors.password.message}</Text>
                   )}
+                  {loginError && <Text style={styles.errorText}>{loginError}</Text>}
                 </View>
 
                 {/* <TouchableOpacity style={styles.hintContainer}> */}

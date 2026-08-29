@@ -69,9 +69,9 @@ function ImagesList({ attachments, getAndSetAttachments, refreshing }) {
   }
   useEffect(() => {
     setTimeout(() => {
-      attachments?.filter(elt => ![undefined, null, ""].includes(elt?.local_url))?.length > 0 &&
+      attachments?.filter(elt => ![undefined, null, ""].includes(elt?.attachment?.local_url))?.length > 0 &&
         _setAttachments(
-          attachments?.filter(elt => ![undefined, null, ""].includes(elt?.local_url))?.map(
+          attachments?.filter(elt => ![undefined, null, ""].includes(elt?.attachment?.local_url))?.map(
             (obj) => <AttachmentComponent key={`${obj?.attachment?.id} ${obj?.attachment?.local_url}`} attachment={obj} />
           )
         );

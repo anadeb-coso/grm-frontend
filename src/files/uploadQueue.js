@@ -116,7 +116,7 @@ export async function enqueuePendingUploads({ notifyOnError = true } = {}) {
   }
 
   if (failedCount > 0 && notifyOnError) {
-    Toast?.show(i18n.t('attachments_upload_failed_retry_hint'), { type: 'danger', duration: 5000 });
+    Toast?.show(i18n.t('attachments_upload_failed_retry_hint'), { type: 'danger', duration: 10000 });
   }
 }
 

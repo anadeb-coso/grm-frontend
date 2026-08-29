@@ -53,7 +53,7 @@ export function check_issues(dbConfig, eadl, language='fr') {
                 }
 
                 // Déclenche la synchronisation WatermelonDB (remplace SyncToRemoteDatabase/PouchDB).
-                await runSyncSafely();
+                runSyncSafely();
 
             }
         });

@@ -31,6 +31,7 @@ import { colors } from '../../../../utils/colors';
 import { database } from '../../../../database';
 import { createWithId } from '../../../../database/utils/createWithId';
 import { runSyncSafely } from '../../../../database/watermelonSyncManager';
+import { useSyncCompletion } from '../../../../database/useSyncCompletion';
 import { toLegacyIssueShape } from '../../../../utils/issueLegacyShape';
 import { styles } from './Content.styles';
 import LoadingScreen from '../../../../components/LoadingScreen/LoadingScreen';
@@ -139,13 +140,13 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
     function _isRecordResolutionEnabled(x) {
       if (x.open_status && isIssueAssignedToMe) {
-        return issue.status?.id === x.id;
+        return issue.status?.id === x.id && !issue.escalate_flag;
       }
     }
 
     function _isNotResolveEnabled(x) {
       if (!x.rejected_status && !x.final_status && !x.unresolved_status && issue.category.id != 2 && isIssueAssignedToMe) {
-        return issue.status?.id === x.id;
+        return issue.status?.id === x.id && !issue.escalate_flag;
       }
     }
 
@@ -295,28 +296,40 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   // requête (référentiel qui change rarement, cf. CLAUDE.md).
   //
   // `issue` (le dict "legacy shape", cf. utils/issueLegacyShape.js) est construit UNE SEULE FOIS
-  // par l'écran appelant (IssueActions.js, au moment de la navigation) puis muté en place ici —
-  // `runSyncSafely()` met bien à jour la ligne SQLite sous-jacente (`issueRecord`), mais rien ne
-  // rafraîchissait ensuite les champs scalaires/relations de `issue` (statut, catégorie,
-  // assignation, description, résultat de recherche...) à partir de `issueRecord` : un
-  // rafraîchissement manuel resynchronisait bien le serveur, sans jamais faire réapparaître le
-  // changement à l'écran — ni sur les informations affichées, ni sur les boutons d'action (dérivés
-  // de `issue.status`/`issue.category`, cf. `updateActionButtons`). D'où le correctif : reconstruire
-  // `issue` depuis `issueRecord` (déjà à jour après le sync) et rejouer tout ce qui en dérive.
+  // par l'écran appelant (IssueActions.js, au moment de la navigation) puis muté en place ici — un
+  // sync met bien à jour la ligne SQLite sous-jacente (`issueRecord`), mais rien ne rafraîchissait
+  // ensuite les champs scalaires/relations de `issue` (statut, catégorie, assignation, description,
+  // résultat de recherche...) à partir de `issueRecord` : le changement ne réapparaissait à l'écran
+  // ni sur les informations affichées, ni sur les boutons d'action (dérivés de `issue.status`/
+  // `issue.category`, cf. `updateActionButtons`). D'où `refreshFromLocal` : reconstruire `issue`
+  // depuis `issueRecord` (déjà à jour après le sync) et rejouer tout ce qui en dérive, y compris le
+  // niveau d'escalade courant. NE JAMAIS appeler `runSyncSafely()` ici : cette fonction est aussi
+  // rejouée à la fin de chaque synchronisation automatique (cf. `useSyncCompletion`), l'y appeler
+  // créerait une boucle de synchronisation.
+  const refreshFromLocal = async () => {
+    Object.assign(issue, await toLegacyIssueShape(issueRecord));
+    refreshAssigneeDerivedState();
+    updateActionButtons();
+    await get_current_adl_obj();
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await runSyncSafely();
-      Object.assign(issue, await toLegacyIssueShape(issueRecord));
-      refreshAssigneeDerivedState();
-      updateActionButtons();
-      await get_current_adl_obj();
+      runSyncSafely();
+      await refreshFromLocal();
     } catch (err) {
       console.warn(err);
     } finally {
       setRefreshing(false);
     }
   };
+
+  // Quand une synchronisation automatique (intervalle, retour réseau, retour au premier plan) se
+  // termine pendant que l'écran est ouvert, on relit la base locale pour afficher les nouvelles
+  // mises à jour (statut, assignation, escalade...) sans que l'utilisateur ait à tirer pour
+  // rafraîchir.
+  useSyncCompletion(refreshFromLocal);
 
   //Media
   const [isLoading, setLoading] = useState(false);
@@ -594,6 +607,8 @@ function Content({ issue, navigation, statuses = [], eadl }) {
 
       } catch (err) {
         console.warn(err);
+        setLoading(false);
+        Alert.alert('Erreur', err.message);
       }
     } else {
       ToastAndroid.show(`${t('step_2_only_three_files')}`, ToastAndroid.SHORT);
@@ -1000,6 +1015,14 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     });
   }
 
+  // Un membre CVGP ne doit plus pouvoir agir sur une plainte qui a quitté le niveau Village
+  // (remontée vers Canton/Préfecture/Région/Pays) : les boutons d'action deviennent inactifs dès
+  // que `currentAdlObj.escalate_to.administrative_level` (niveau courant, cf. get_current_adl_obj)
+  // n'est plus "Village", pour ce profil uniquement.
+  const isCvgpMember = !!eadl?.representative?.groups?.includes('CVGPMembers');
+  const hasLeftVillageLevel = currentAdlObj.escalate_to.administrative_level !== 'Village';
+  const actionsDisabledForCvgp = isCvgpMember && hasLeftVillageLevel;
+
   return (
     <ScrollView
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -1037,7 +1060,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           >
             <TouchableOpacity
               onPress={() => _showDialog()}
-              disabled={!isAcceptEnabled || escalateFlag}
+              disabled={!isAcceptEnabled || escalateFlag || actionsDisabledForCvgp}
               style={{
                 alignItems: 'center',
                 flexDirection: 'row',
@@ -1051,14 +1074,14 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   style={{ marginRight: 5 }}
                   name="rightsquare"
                   size={35}
-                  color={(isAcceptEnabled && !escalateFlag) ? colors.primary : colors.disabled}
+                  color={(isAcceptEnabled && !escalateFlag && !actionsDisabledForCvgp) ? colors.primary : colors.disabled}
                 />
                 <Feather name="help-circle" size={24} color="gray" />
               </View>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={_showRecordStepsDialog}
-              disabled={!isRecordResolutionEnabled}
+              disabled={!isRecordResolutionEnabled || actionsDisabledForCvgp}
               style={{
                 alignItems: 'center',
                 flexDirection: 'row',
@@ -1074,14 +1097,14 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   style={{ marginRight: 5 }}
                   name="rightsquare"
                   size={35}
-                  color={isRecordResolutionEnabled ? colors.primary : colors.disabled}
+                  color={(isRecordResolutionEnabled && !actionsDisabledForCvgp) ? colors.primary : colors.disabled}
                 />
                 <Feather name="help-circle" size={24} color="gray" />
               </View>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={_showRecordResolutionDialog}
-              disabled={!isRecordResolutionEnabled}
+              disabled={!isRecordResolutionEnabled || actionsDisabledForCvgp}
               style={{
                 alignItems: 'center',
                 flexDirection: 'row',
@@ -1095,7 +1118,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   style={{ marginRight: 5 }}
                   name="rightsquare"
                   size={35}
-                  color={isRecordResolutionEnabled ? colors.primary : colors.disabled}
+                  color={(isRecordResolutionEnabled && !actionsDisabledForCvgp) ? colors.primary : colors.disabled}
                 />
                 <Feather name="help-circle" size={24} color="gray" />
               </View>
@@ -1104,7 +1127,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
             {/* Not resolve */}
             <TouchableOpacity
               onPress={_showNotresolveDialog}
-              disabled={!isNotResolveEnabled}
+              disabled={!isNotResolveEnabled || actionsDisabledForCvgp}
               style={{
                 alignItems: 'center',
                 flexDirection: 'row',
@@ -1118,7 +1141,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   style={{ marginRight: 5 }}
                   name="rightsquare"
                   size={35}
-                  color={isNotResolveEnabled ? colors.error : colors.disabled}
+                  color={(isNotResolveEnabled && !actionsDisabledForCvgp) ? colors.error : colors.disabled}
                 />
                 <Feather name="help-circle" size={24} color="gray" />
               </View>
@@ -1127,7 +1150,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           </View>
           <TouchableOpacity
             onPress={_showEscalateDialog}
-            disabled={issue.status.id !== 5 || currentAdlObj.escalate_to.administrative_level == "Country" || escalateFlag}
+            disabled={issue.status.id !== 5 || currentAdlObj.escalate_to.administrative_level == "Country" || escalateFlag || actionsDisabledForCvgp}
             style={{
               alignItems: 'center',
               flexDirection: 'row',
@@ -1142,7 +1165,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 style={{ marginRight: 5 }}
                 name="rightsquare"
                 size={35}
-                color={((issue.status.id == 5 && currentAdlObj.escalate_to.administrative_level != "Country" && !escalateFlag)) ? colors.primary : colors.disabled}
+                color={((issue.status.id == 5 && currentAdlObj.escalate_to.administrative_level != "Country" && !escalateFlag && !actionsDisabledForCvgp)) ? colors.primary : colors.disabled}
               />
               <Feather name="help-circle" size={24} color="gray" />
             </View>

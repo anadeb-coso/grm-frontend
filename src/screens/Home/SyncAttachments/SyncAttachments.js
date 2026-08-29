@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Modal, Text, ScrollView, RefreshControl } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import ImagesList from './components/ImagesList';
 import CustomGreenButton from '../../../components/CustomGreenButton/CustomGreenButton';
 import SyncImage from '../../../../assets/sync-image.svg';
 import CheckCircle from '../../../../assets/check-circle.svg';
+import { subscribeSyncStatus } from '../../../database/watermelonSyncManager';
 
 function SyncAttachments({ navigation }) {
   const { t } = useTranslation();
@@ -25,6 +26,8 @@ function SyncAttachments({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
 
   const onDismissSnackBar = () => setErrorVisible(false);
+
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Simplifié par rapport à la version PouchDB : la table `attachments` WatermelonDB suit déjà
   // `upload_status` par pièce jointe (cf. database/schema.js et
@@ -54,7 +57,25 @@ function SyncAttachments({ navigation }) {
   }, []);
 
   useEffect(() => {
+    subscribeSyncStatus(setIsSyncing);
+
     getAndSetAttachments();
+  }, [getAndSetAttachments]);
+
+  // Rafraîchit la liste des pièces jointes toutes les 10s tant qu'une synchronisation
+  // (upload en cours ou chargement) est active, pour refléter la progression en temps réel.
+  const isSyncingRef = useRef(isSyncing);
+  const loadingRef = useRef(loading);
+  useEffect(() => { isSyncingRef.current = isSyncing; }, [isSyncing]);
+  useEffect(() => { loadingRef.current = loading; }, [loading]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isSyncingRef.current || loadingRef.current) {
+        getAndSetAttachments();
+      }
+    }, 10000);
+    return () => clearInterval(interval);
   }, [getAndSetAttachments]);
 
   // Réutilise la même file d'upload JWT que la synchronisation automatique
@@ -138,7 +159,7 @@ function SyncAttachments({ navigation }) {
         </View>
       </Modal>
       {
-        attachments?.filter(elt => ![undefined, null, ""].includes(elt?.local_url))?.length > 0 ? 
+        attachments?.filter(elt => ![undefined, null, ""].includes(elt?.attachment?.local_url))?.length > 0 ? 
         <ImagesList attachments={attachments} getAndSetAttachments={getAndSetAttachments} refreshing={refreshing} /> 
         : <ScrollView
               style={{ flex: 1 }}
@@ -154,8 +175,12 @@ function SyncAttachments({ navigation }) {
       }
       
 
-      {loading ? (
-        <ActivityIndicator color={colors.primary} style={{ marginVertical: 10 }} />
+      {(isSyncing || loading) ? (
+        // <ActivityIndicator color={colors.primary} style={{ marginVertical: 10 }} />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <ActivityIndicator size="large" color="#24c38b" />
+          <Text style={{ fontSize: 18, marginTop: 12 }} color="#000000">{t('sync_in_progress_take_time')}</Text>
+        </View>
       ) : <>
         {/* {attachments?.filter(elt => ![undefined, null, ""].includes(elt?.local_url))?.length > 0  ?  */}
         <View>

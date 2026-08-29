@@ -3,20 +3,20 @@ import 'intl-pluralrules';
 import { initReactI18next } from 'react-i18next';
 import en from './en.json';
 import fr from './fr.json';
-import rw from './rw.json';
+// import rw from './rw.json';
 
 const { languageDetectorPlugin } = require('./LanguageDetectorPlugin');
 
 // set default fallback language
-export const DEFAULT_LANGUAGE = 'rw';
+export const DEFAULT_LANGUAGE = 'fr';
 
 const resources = {
   en: {
     translation: en,
   },
-  rw: {
-    translation: rw,
-  },
+  // rw: {
+  //   translation: rw,
+  // },
   fr: {
     translation: fr,
   },

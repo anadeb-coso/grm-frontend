@@ -18,10 +18,10 @@ function LanguageSelector() {
             label: 'English',
             value: 'en',
           },
-          {
-            label: 'Kinyarwanda',
-            value: 'rw',
-          },
+          // {
+          //   label: 'Kinyarwanda',
+          //   value: 'rw',
+          // },
           {
             label: 'Français',
             value: 'fr',

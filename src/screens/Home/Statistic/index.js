@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 import { Q } from '@nozbe/watermelondb';
+import { useSelector } from 'react-redux';
 import { colors } from '../../../utils/colors';
 import { database } from '../../../database';
 import { runSyncSafely } from '../../../database/watermelonSyncManager';
@@ -17,6 +18,8 @@ export function IssuesStatistic() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [issues, setIssues] = useState();
+
+  const { userDocument: eadl } = useSelector((state) => state.get('userDocument').toObject());
 
 
   useEffect(() => {
@@ -29,19 +32,49 @@ export function IssuesStatistic() {
 
   const get_issues = async () => {
     setIssues([]);
+
+    if (!(eadl && eadl.representative)) return;
+
+    const isGlobalViewer = eadl.administrative_region == '1'
+      && eadl.representative.groups
+      && (eadl.representative.groups.includes('ViewerOfAllIssues') || eadl.representative.groups.includes('Admin'));
+
+
     try {
-      const [issueRecords, statusRecords] = await Promise.all([
+      const [issueRecords, statusRecords, categoryRecords] = await Promise.all([
         database.get('issues').query(Q.where('confirmed', true)).fetch(),
         database.get('issue_statuses').query().fetch(),
+        database.get('issue_categories').query().fetch(),
       ]);
       const statusesByServerId = new Map(statusRecords.map((s) => [s.id, s]));
-      const docs = issueRecords.map((issue) => {
+      const categoriesByServerId = new Map(categoryRecords.map((c) => [c.id, c]));
+      let docs = issueRecords.map((issue) => {
         const status = statusesByServerId.get(issue.statusId);
+        const category = categoriesByServerId.get(issue.categoryId);
         return {
+          reporter: issue.reporterId ? { id: issue.reporterId } : null,
           assignee: issue.assigneeId ? { id: issue.assigneeId, name: issue.assigneeName } : null,
           status: status ? { id: status.legacyId, name: status.name } : null,
+          category: category ? { id: category.legacyId, name: category.name } : null,
+          publish: issue.publish,
         };
       });
+
+      // Filtre selon les droits de l'utilisateur : un viewer global voit toutes les issues
+      // confirmées, un utilisateur "pays" (administrative_region == '1') sans droit global ne
+      // voit que les issues publiées, et un facilitateur ne voit que les issues qu'il a
+      // rapportées ou qui lui sont assignées.
+      if (isGlobalViewer) {
+        // pas de filtre supplémentaire : toutes les issues confirmées
+      } else if (eadl.administrative_region == '1') {
+        docs = docs.filter((issue) => issue.publish);
+      } else {
+        docs = docs.filter((issue) => (
+          (issue.reporter && issue.reporter.id === eadl.representative.id)
+          || (issue.assignee && issue.assignee.id === eadl.representative.id)
+        ));
+      }
+
       setIssues(docs);
       setRefreshing(false);
     } catch (err) {
@@ -56,7 +89,7 @@ export function IssuesStatistic() {
     // sync, "tirer pour rafraîchir" ne faisait que ré-afficher le même instantané local, sans
     // jamais aller chercher les mises à jour côté serveur.
     try {
-      await runSyncSafely();
+      runSyncSafely();
     } catch (err) {
       console.log(err);
     }
@@ -79,7 +112,7 @@ export function IssuesStatistic() {
       }
     >
 
-<View style={{ flex: 1, margin: 25 }}>
+        <View style={{ flex: 1, margin: 25 }}>
           <Text>
             <Text style={styles.text_title}>{t('number_issues_saved')} : </Text>
             <Text>{issues.length ?? " - "}</Text>

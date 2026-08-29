@@ -61,7 +61,7 @@ class API {
     }
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
-    d = ""
+    let d = "";
     for (var [key, value] of Object.entries(filter)) {
       d += "&" + key + "=" + value;
     }

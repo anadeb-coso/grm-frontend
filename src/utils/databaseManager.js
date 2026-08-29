@@ -164,37 +164,52 @@ const resolveAdministrativeRegionsObjects = async (ids) => {
 // passe de l'utilisateur à chaque appel (cf. l'ancien `/authentication/obtain-auth-credentials/`,
 // conservé côté backend uniquement pour les installations mobiles pas encore mises à jour).
 export const getUserDocs = async () => {
-  const cachedDoc = await getData('userDoc');
-  const cachedCommune = await getData('userCommune');
+  // Seul le profil ADL brut (`administrative_regions`/`additional_administrative_regions`, la
+  // liste d'ids — rarement modifiée) est mis en cache, pour éviter de rappeler
+  // `/authentication/me/` à chaque écran. `administrative_regions_objects`/
+  // `additional_administrative_regions_objects` (la résolution canton -> villages) ne sont PLUS
+  // mis en cache ci-dessous : ils sont recalculés à CHAQUE appel depuis le cache local
+  // `administrative_regions` (WatermelonDB, alimenté en tâche de fond par
+  // syncAdministrativeLevels() — voir ensureAdministrativeLevelsSynced() plus bas). Avant ce
+  // correctif, un premier appel effectué avant la fin du tout premier sync (cache local encore
+  // vide/incomplet) figeait définitivement un `administrative_regions_objects` vide dans
+  // AsyncStorage : aucun sync ultérieur (même réussi) ne le corrigeait plus jamais, tant que
+  // l'utilisateur ne se déconnectait pas explicitement (seul moment où ce cache est vidé, cf.
+  // authentication.duck.js::logout -> clearEncryptedValues()) — symptôme observé sur
+  // CitizenReportLocationStep (villages du canton jamais affichés) et, par ricochet, sur la garde
+  // "Référentiel introuvable" de CitizenReportStep3 (administrative_region_id jamais résolu).
+  let userDoc = await getData('userDoc');
 
-  if (cachedDoc && cachedCommune) {
-    return { userDoc: cachedDoc, userCommune: cachedCommune };
+  if (!userDoc) {
+    const response = await new API().getMyProfile();
+    userDoc = response?.eadl || null;
+    if (userDoc) {
+      await storeData('userDoc', userDoc);
+    }
   }
 
-  let userDoc = null;
-  let userCommune = null;
-  let ids = [];
-
-  const response = await new API().getMyProfile();
-  userDoc = response?.eadl || null;
-  if (userDoc) {
-    // Attend qu'une tentative de synchronisation des niveaux administratifs se soit déroulée
-    // (succès ou échec) avant de lire le cache local `administrative_regions` ci-dessous — sinon,
-    // juste après le login, `resolveUserCommune`/`resolveAdministrativeRegionsObjects` peuvent
-    // s'exécuter avant que `startWatermelonSync()` ait fini de peupler ce cache en arrière-plan,
-    // et renvoyer des localités vides (impactait notamment CitizenReportLocationStep).
-    await ensureAdministrativeLevelsSynced();
-    userCommune = await resolveUserCommune(userDoc.administrative_region);
-    userDoc.administrative_regions_objects = await resolveAdministrativeRegionsObjects(
-      (userDoc.administrative_regions && userDoc.administrative_regions.length > 0) ? userDoc.administrative_regions : (userDoc.administrative_region ? [userDoc.administrative_region] : [])
-    );
-    userDoc.additional_administrative_regions_objects = await resolveAdministrativeRegionsObjects(
-      (userDoc.additional_administrative_regions && userDoc.additional_administrative_regions.length > 0) ? userDoc.additional_administrative_regions : (userDoc.administrative_region ? [userDoc.administrative_region] : [])
-    );
+  if (!userDoc) {
+    return { userDoc: null, userCommune: null };
   }
 
-  await storeData('userDoc', userDoc);
+  // Attend qu'une tentative de synchronisation des niveaux administratifs se soit déroulée
+  // (succès ou échec) avant de lire le cache local `administrative_regions` ci-dessous — sinon,
+  // juste après le login, `resolveUserCommune`/`resolveAdministrativeRegionsObjects` peuvent
+  // s'exécuter avant que `startWatermelonSync()` ait fini de peupler ce cache en arrière-plan,
+  // et renvoyer des localités vides (impactait notamment CitizenReportLocationStep).
+  await ensureAdministrativeLevelsSynced();
+  const userCommune = await resolveUserCommune(userDoc.administrative_region);
+  const administrative_regions_objects = await resolveAdministrativeRegionsObjects(
+    (userDoc.administrative_regions && userDoc.administrative_regions.length > 0) ? userDoc.administrative_regions : (userDoc.administrative_region ? [userDoc.administrative_region] : [])
+  );
+  const additional_administrative_regions_objects = await resolveAdministrativeRegionsObjects(
+    (userDoc.additional_administrative_regions && userDoc.additional_administrative_regions.length > 0) ? userDoc.additional_administrative_regions : (userDoc.administrative_region ? [userDoc.administrative_region] : [])
+  );
+
   await storeData('userCommune', userCommune);
 
-  return { userDoc, userCommune };
+  return {
+    userDoc: { ...userDoc, administrative_regions_objects, additional_administrative_regions_objects },
+    userCommune,
+  };
 };

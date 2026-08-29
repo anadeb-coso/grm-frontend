@@ -18,8 +18,6 @@ EXPO_PUBLIC_VERSION_ENV=""
 EXPO_PUBLIC_PACKAGE_ENV=""
 
 EXPO_PUBLIC_CDD_BASE_URL_ENV='http://10.0.2.2:8001'
-EXPO_PUBLIC_MIS_BASE_URL_ENV='http://10.0.2.2:8000'
-EXPO_PUBLIC_COUCHDB_BASE_URL_ENV='http://10.0.2.2:5984'
 EXPO_PUBLIC_GRM_BASE_URL_ENV='http://10.0.2.2:8002'
 
 EXPO_PUBLIC_DIAGNOSTIC_MAP_LATITUDE_ENV=
@@ -107,6 +105,16 @@ You'll see the apk on `\android\app\build\outputs\apk`
 - `Added a server health/connectivity check to avoid failed sync attempts and give clearer feedback when the backend is unreachable`
 - `Updated all issue-related screens (reporting steps, issue detail, issue history, issue actions, issue search, comments) and related modules (budget allocation/log, participatory budgeting, subprojects, statistics, sync/attachments screens) to work against the new WatermelonDB models`
 - `Added automated tests covering the new sync engine (pull/push, full resync, administrative levels sync, upload ordering)`
+
+### 2.5.2 (24) : 2026.08.29
+- `Fixed a sync deadlock on issue escalation: pushing an escalation whose attached file (PV) had not finished uploading no longer rolls back the issue update — the issue now reaches the server and the batch self-heals on the next sync cycle instead of retrying forever`
+- `Fixed offline-created records never converging on the server: the backend now keeps the UUID generated locally at creation instead of assigning a new one, so a record and its later references (updates, escalation levels, reasons) stay linked`
+- `Fixed retried "created" records that already exist server-side being rejected in a loop (duplicate internal_code): they are now updated in place`
+- `Fixed partial issue updates (e.g. escalate flag / status only) being rejected with "field is required" errors when the batch did not carry every field`
+- `Villages of a canton assigned to a facilitator are now synced down to the device, so the village field can be filled after selecting that canton`
+- `Issues tracked by a CVGP committee member are now automatically reassigned (community facilitator → supervisor → safeguard) with a notification to the new assignee once the issue is escalated above the village level`
+- `Issue notification emails now show the issue internal code instead of the tracking code`
+
 
 
 ## Devices commands to know

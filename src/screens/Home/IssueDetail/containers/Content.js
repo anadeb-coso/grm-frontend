@@ -20,6 +20,7 @@ import { colors } from '../../../../utils/colors';
 import { database } from '../../../../database';
 import { createWithId } from '../../../../database/utils/createWithId';
 import { runSyncSafely } from '../../../../database/watermelonSyncManager';
+import { useSyncCompletion } from '../../../../database/useSyncCompletion';
 import { toLegacyIssueShape } from '../../../../utils/issueLegacyShape';
 import { getUserDocs } from '../../../../utils/databaseManager';
 import { citizenTypes } from '../../../../utils/utils';
@@ -299,32 +300,43 @@ function Content({ issue }) {
     }
   }, [userCommune]);
 
+  // Relit la base locale (déjà à jour après un sync) et reconstruit l'affichage.
+  // `issue` (le dict "legacy shape", cf. utils/issueLegacyShape.js) est construit UNE SEULE FOIS
+  // par l'écran appelant (au moment de la navigation) puis muté en place ici — un sync met bien à
+  // jour la ligne SQLite sous-jacente (`issueRecord`), mais rien ne rafraîchissait ensuite les
+  // champs scalaires/relations de `issue` (statut, catégorie, assignation, description, résultat
+  // de recherche...) à partir de `issueRecord` : `loadIssueChildren()` ne rafraîchit que les
+  // tables enfants (commentaires, pièces jointes, raisons), pas l'issue elle-même. D'où la
+  // reconstruction explicite ici. NE JAMAIS appeler `runSyncSafely()` ici : cette fonction est
+  // aussi rejouée à la fin de chaque synchronisation automatique (cf. `useSyncCompletion`).
+  const refreshFromLocal = async () => {
+    Object.assign(issue, await toLegacyIssueShape(issueRecord));
+    refreshAssigneeDerivedState();
+    await Promise.all([getAdministrativeLevels(), loadIssueChildren()]);
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     try {
       // Récupère d'abord les dernières données du serveur avant de relire la base locale : sans
       // ce sync, "tirer pour rafraîchir" ne faisait que ré-afficher le même instantané local.
-      await runSyncSafely();
-      // `issue` (le dict "legacy shape", cf. utils/issueLegacyShape.js) est construit UNE SEULE
-      // FOIS par l'écran appelant (au moment de la navigation) puis muté en place ici —
-      // `runSyncSafely()` met bien à jour la ligne SQLite sous-jacente (`issueRecord`), mais rien
-      // ne rafraîchissait ensuite les champs scalaires/relations de `issue` (statut, catégorie,
-      // assignation, description, résultat de recherche...) à partir de `issueRecord` :
-      // `loadIssueChildren()` ci-dessous ne rafraîchit que les tables enfants (commentaires,
-      // pièces jointes, raisons), pas l'issue elle-même. D'où la reconstruction explicite ici.
-      Object.assign(issue, await toLegacyIssueShape(issueRecord));
-      refreshAssigneeDerivedState();
+      runSyncSafely();
       // Correctif au passage : `setRefreshing(false)` s'exécutait auparavant immédiatement après
-      // avoir déclenché ces deux appels asynchrones sans les attendre, donc avant même qu'ils
-      // n'aient eu le temps de partir — l'indicateur de chargement disparaissait donc
-      // instantanément au lieu de refléter la vraie durée du rafraîchissement.
-      await Promise.all([getAdministrativeLevels(), loadIssueChildren()]);
+      // avoir déclenché des appels asynchrones sans les attendre, donc avant même qu'ils n'aient
+      // eu le temps de partir — l'indicateur de chargement disparaissait donc instantanément au
+      // lieu de refléter la vraie durée du rafraîchissement.
+      await refreshFromLocal();
     } catch (err) {
       console.log(err);
     } finally {
       setRefreshing(false);
     }
   };
+
+  // Quand une synchronisation automatique (intervalle, retour réseau, retour au premier plan) se
+  // termine pendant que l'écran est ouvert, on relit la base locale pour afficher les nouvelles
+  // mises à jour sans que l'utilisateur ait à tirer pour rafraîchir.
+  useSyncCompletion(refreshFromLocal);
 
   const saveADLIssue = async () => {
     // `administrative_region` est requis côté serveur (sync/serializers.py::IssueSyncSerializer,

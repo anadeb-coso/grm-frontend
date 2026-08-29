@@ -24,7 +24,7 @@ function Content() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await runSyncSafely();
+      runSyncSafely();
     } catch (err) {
       console.log(err);
     } finally {
