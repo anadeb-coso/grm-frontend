@@ -59,7 +59,6 @@ describe('runSync', () => {
         has_more: false,
       },
     });
-    api.post.mockResolvedValueOnce({});
 
     await runSync();
 
@@ -67,6 +66,20 @@ describe('runSync', () => {
     expect(issues).toHaveLength(1);
     expect(issues[0].internalCode).toBe('DRP-1');
     expect(issues[0].administrativeRegionId).toBe(2439);
+    // Rien à pousser -> un seul pull (pas de 2e cycle pull-push-pull).
+    expect(api.get).toHaveBeenCalledTimes(1);
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('ne relance pas de 2e pull quand il n\'y a rien à pousser', async () => {
+    api.get.mockResolvedValue({
+      data: { force_full_resync: false, changes: {}, timestamp: Date.now(), has_more: false },
+    });
+
+    await runSync();
+
+    expect(api.get).toHaveBeenCalledTimes(1);
+    expect(api.post).not.toHaveBeenCalled();
   });
 
   it('pousse les créations locales avec les dates converties en ISO-8601', async () => {
@@ -78,13 +91,16 @@ describe('runSync', () => {
       issue.createdDate = new Date('2026-01-01T00:00:00.000Z').getTime();
     });
 
-    api.get.mockResolvedValueOnce({
+    // Deux pulls attendus : le 1er cycle pousse DRP-2, donc un 2e cycle (pull d'écho) est enchaîné.
+    api.get.mockResolvedValue({
       data: { force_full_resync: false, changes: {}, timestamp: Date.now(), has_more: false },
     });
-    api.post.mockResolvedValueOnce({});
+    api.post.mockResolvedValue({});
 
     await runSync();
 
+    expect(api.get).toHaveBeenCalledTimes(2);
+    expect(api.post).toHaveBeenCalledTimes(1); // le push du 2e cycle est un no-op
     expect(api.post).toHaveBeenCalledWith(
       '/sync/push/',
       expect.objectContaining({

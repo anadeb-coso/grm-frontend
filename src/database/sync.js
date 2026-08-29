@@ -93,9 +93,14 @@ class ForceFullResyncError extends Error {}
  * Un cycle pull+push WatermelonDB unique. `pullCountRef` est partagé entre plusieurs cycles
  * (cf. `runSync`) pour que la numérotation `onProgress({ phase: 'pull', current })` reste
  * continue sur l'ensemble pull-push-pull plutôt que de repartir de 1 au second cycle.
+ *
+ * Retourne `{ pushed }` : `true` si `pushChanges` a réellement envoyé au moins un enregistrement
+ * (création/modif/suppression locale). Utilisé par `runSync` pour décider s'il faut enchaîner un
+ * second cycle (le 2e pull n'a d'intérêt que pour récupérer l'écho d'un push qui a eu lieu).
  */
 async function performSyncCycle({ deviceId, onProgress, pullCountRef }) {
   let cursor = null;
+  let pushed = false;
 
   await synchronize({
     database,
@@ -134,6 +139,12 @@ async function performSyncCycle({ deviceId, onProgress, pullCountRef }) {
     },
 
     pushChanges: async ({ changes, lastPulledAt }) => {
+      const hasLocalChanges = Object.values(changes).some(
+        (t) => (t.created?.length || 0) + (t.updated?.length || 0) + (t.deleted?.length || 0) > 0
+      );
+      if (!hasLocalChanges) return; // rien à pousser : n'appelle même pas l'API
+      pushed = true;
+
       const serializedChanges = {};
       for (const [tableName, tableChanges] of Object.entries(changes)) {
         serializedChanges[tableName] = {
@@ -152,6 +163,8 @@ async function performSyncCycle({ deviceId, onProgress, pullCountRef }) {
     migrationsEnabledAtVersion: 1,
     sendCreatedAsUpdated: true, // simplifie le traitement côté Django (cf. §3.4.1)
   });
+
+  return { pushed };
 }
 
 export async function runSync({ onProgress } = {}) {
@@ -171,14 +184,16 @@ export async function runSync({ onProgress } = {}) {
 
   try {
     // 1er cycle : pull (état serveur courant) puis push (envoi des créations/modifs locales).
-    await performSyncCycle({ deviceId, onProgress, pullCountRef });
-    // 2e pull-push : WatermelonDB n'expose pas de pull "seul" hors de `synchronize()`, donc le
-    // pull-push-pull demandé s'obtient en enchaînant un second cycle complet. Son pull récupère
-    // l'écho du push qui vient d'avoir lieu (utile si le serveur recalcule/complète des champs,
-    // ex. `auto_increment_id`) ainsi que d'éventuels changements concurrents poussés par
-    // d'autres utilisateurs entre les deux appels réseau. Son push est un no-op si aucune
-    // écriture locale n'a eu lieu depuis le premier cycle (cas courant).
-    await performSyncCycle({ deviceId, onProgress, pullCountRef });
+    const { pushed } = await performSyncCycle({ deviceId, onProgress, pullCountRef });
+
+    // 2e cycle (pull-push-pull) UNIQUEMENT si le 1er a réellement poussé quelque chose : son
+    // pull sert à récupérer l'écho du push (champs recalculés côté serveur, ex.
+    // `auto_increment_id`). S'il n'y a rien eu à pousser, ce 2e pull ne ferait que re-télécharger
+    // un état déjà à jour — inutile ; les changements concurrents d'autres utilisateurs seront
+    // repris au prochain cycle périodique.
+    if (pushed) {
+      await performSyncCycle({ deviceId, onProgress, pullCountRef });
+    }
   } catch (err) {
     if (err instanceof ForceFullResyncError) {
       await forceFullResync({ onProgress });

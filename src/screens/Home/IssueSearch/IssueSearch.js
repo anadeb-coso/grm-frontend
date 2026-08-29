@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView } from 'react-native';
+import { View } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
@@ -165,7 +165,7 @@ function IssueSearch() {
 
 
   return (
-    <SafeAreaView style={[customStyles.container, { flex: 1 }]}>
+    <View style={[customStyles.container, { flex: 1 }]}>
 
       <Content
         issues={issues}
@@ -183,7 +183,7 @@ function IssueSearch() {
 
       <SnackBarCheckFileUnsyncComponent />
 
-    </SafeAreaView>
+    </View>
   );
 }
 

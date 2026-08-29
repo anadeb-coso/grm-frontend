@@ -306,6 +306,8 @@
 	"reported_by": "Reported by", //to complete
 	"me": "Me", //to complete
 	"issues": "Issues", //to complete
+	"all_categories": "All categories", //to complete
+	"category_filter": "Category", //to complete
 	"escalate_to_label": "at level", //to complete
 	"search_label": "Search...", //to complete
 

@@ -17,14 +17,15 @@ const SearchBar = ({clicked, searchPhrase, setSearchPhrase, setClicked, onChange
         {/* search Icon */}
         <Feather
           name="search"
-          size={17}
-          color="black"
-          style={{ marginLeft: 1 }}
+          size={16}
+          color="#8a97a3"
+          style={{ marginLeft: 2 }}
         />
         {/* Input field */}
         <TextInput
           style={styles.input}
           placeholder={t('search_label')}
+          placeholderTextColor="#9aa5af"
           value={searchPhrase}
           onChangeText={(value) => {
             setSearchPhrase(value);
@@ -36,7 +37,7 @@ const SearchBar = ({clicked, searchPhrase, setSearchPhrase, setClicked, onChange
         />
         {/* cross Icon, depending on whether the search bar is clicked or not */}
         {clicked && (
-          <Entypo name="cross" size={20} color="black" style={{ padding: 1 }} onPress={() => {
+          <Entypo name="cross" size={18} color="#8a97a3" style={{ padding: 1 }} onPress={() => {
               setSearchPhrase("");
               onChangeFunction("");
           }}/>
@@ -77,35 +78,40 @@ export default SearchBar;
 // styles
 const styles = StyleSheet.create({
   container: {
-    // margin: 15,
-    marginTop: 5,
     justifyContent: "flex-start",
     alignItems: "center",
     flexDirection: "row",
-    width: "90%",
-
+    width: "100%",
   },
   searchBar__unclicked: {
-    padding: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
     flexDirection: "row",
-    width: "95%",
-    backgroundColor: "#d9dbda",
-    borderRadius: 15,
+    width: "100%",
+    backgroundColor: "#f2f5f6",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e6ebee",
     alignItems: "center",
   },
   searchBar__clicked: {
-    padding: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
     flexDirection: "row",
-    // width: "80%",
     width: "100%",
-    backgroundColor: "#d9dbda",
-    borderRadius: 15,
+    backgroundColor: "#f2f5f6",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e6ebee",
     alignItems: "center",
-    justifyContent: "space-evenly",
+    justifyContent: "space-between",
   },
   input: {
-    fontSize: 20,
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Poppins_400Regular",
+    color: "#2f3a45",
     marginLeft: 10,
-    width: "90%",
+    padding: 0,
   },
 });

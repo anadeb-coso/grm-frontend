@@ -224,6 +224,8 @@
   "reported_by": "Reported by",
   "me": "Me",
   "issues": "Issues",
+  "all_categories": "All categories",
+  "category_filter": "Category",
   "escalate_to_label": "at level",
   "search_label": "Search...",
 

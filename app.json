@@ -3,7 +3,7 @@
     "name": "MGP TG",
     "description": "L’application MGP est une application de gestion et de suivi des plaintes collectées sur le terrain. Elle nous permet d’avoir une vue globale des incidents ou problèmes liés aux projets pilotés par ANADEB. L'application MGP nous facilite l'échange entre nos collaborateurs pour qu'ils soient à l'écoute des incidents survenus sur le terrain.",
     "slug": "grm-app",
-    "version": "2.5.2",
+    "version": "2.5.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "owner": "sigexpoanadeb",
@@ -43,7 +43,7 @@
         "android.permission.REQUEST_INSTALL_PACKAGES"
       ],
       "package": "com.anadeb.grmapp",
-      "versionCode": 24
+      "versionCode": 25
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -115,6 +115,15 @@ You'll see the apk on `\android\app\build\outputs\apk`
 - `Issues tracked by a CVGP committee member are now automatically reassigned (community facilitator → supervisor → safeguard) with a notification to the new assignee once the issue is escalated above the village level`
 - `Issue notification emails now show the issue internal code instead of the tracking code`
 
+### 2.5.3 (25) : 2026.08.29
+- `Sync: skip the second pull of the pull-push-pull cycle when the push had nothing to send (no local changes) — a plain pull-push is enough in that case`
+- `Issue list: added infinite scroll — 10 issues are loaded first, the next 10 load automatically when scrolling near the bottom, and so on`
+- `Issue list: the header (status tabs + search + "Plaintes" count) is now fixed at the top and no longer scrolls away with the list`
+- `Issue list: removed the empty gap between the app header and the list, and tightened the space between the filters and the "Plaintes" count`
+- `Issue list: the "Cat" filter now has an "All categories" option to clear the category filter; the category dropdown shows category names again instead of their numeric ids`
+- `Issue list: moved the search field and the category filter each onto their own full-width row, renamed "Cat" to "Catégorie" (en/fr), and restyled both filters`
+- `Issue list: text and category filters now stay applied when switching status tabs (Registe / Assigned / Open / Resolved)`
+- `Issue list: filters are now evaluated against the whole issue list of the current tab, not only the issues already displayed by the paginated scroll`
 
 
 ## Devices commands to know

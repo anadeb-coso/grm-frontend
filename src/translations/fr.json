@@ -226,6 +226,8 @@
   "reported_by": "Rapporté par",
   "me": "Moi",
   "issues": "Plaintes",
+  "all_categories": "Toutes les catégories",
+  "category_filter": "Catégorie",
   "escalate_to_label": "au niveau",
   "search_label": "Rechercher...",
 
