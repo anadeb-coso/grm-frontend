@@ -22,6 +22,9 @@ import Phase from './models/Phase';
 import Task from './models/Task';
 import BpProject from './models/BpProject';
 import BudgetAllocationEntry from './models/BudgetAllocationEntry';
+import InternetCreditCampaign from './models/InternetCreditCampaign';
+import InternetCreditBeneficiary from './models/InternetCreditBeneficiary';
+import InternetCreditConfirmation from './models/InternetCreditConfirmation';
 
 // Sous Jest, SQLiteAdapter nécessite des bindings natifs indisponibles dans l'environnement Node
 // des tests : on bascule sur LokiJSAdapter (mémoire), l'adapter recommandé par WatermelonDB pour
@@ -72,5 +75,8 @@ export const database = new Database({
     Task,
     BpProject,
     BudgetAllocationEntry,
+    InternetCreditCampaign,
+    InternetCreditBeneficiary,
+    InternetCreditConfirmation,
   ],
 });

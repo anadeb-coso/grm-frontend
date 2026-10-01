@@ -1,7 +1,7 @@
 import { Map } from "immutable";
 import { createActions, handleActions } from "redux-actions";
 import { startWatermelonSync, stopWatermelonSync } from "../../database/watermelonSyncManager";
-import { clearLocalAdls } from "../../database/sync";
+import { clearLocalAdls, clearLocalInternetCredits } from "../../database/sync";
 import { logout as jwtLogout } from "../../api/client";
 import {
   clearEncryptedValues,
@@ -47,6 +47,8 @@ export const { init, login, signUp, logout } = createActions({
     // appareil (cf. database/sync.js::clearLocalAdls) — vidée à la déconnexion pour ne pas
     // exposer son profil à un compte différent qui se connecterait ensuite sur le même appareil.
     clearLocalAdls();
+    // Même raison pour les notifications de forfait internet CVGP (filtrées par utilisateur).
+    clearLocalInternetCredits();
     return { username: null };
   },
 });

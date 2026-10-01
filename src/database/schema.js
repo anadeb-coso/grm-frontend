@@ -1,12 +1,75 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
+// Forfait internet CVGP (schéma v3). Défini à part car réutilisé tel quel par la migration v3
+// (migrations.js::createTable) : les deux doivent rester strictement identiques.
+// Campagnes et bénéficiaires sont en lecture seule (pull, filtrés par utilisateur côté serveur),
+// les confirmations sont créées sur le mobile et poussées (grm-backend/src/sync/views.py).
+export const INTERNET_CREDIT_TABLE_DEFINITIONS = [
+  {
+    name: 'internet_credit_campaigns',
+    columns: [
+      { name: 'period', type: 'number' }, // 1er jour du mois (epoch ms)
+      { name: 'month_label', type: 'string' }, // ex. "Septembre 2026"
+      { name: 'sent_date', type: 'number' },
+      { name: 'package_label', type: 'string' },
+      { name: 'amount', type: 'number' },
+      { name: 'is_deleted', type: 'boolean' },
+      { name: 'created_at', type: 'number' },
+      { name: 'updated_at', type: 'number' },
+    ],
+  },
+  {
+    // Une ligne par membre CVGP (= un CVD) et par mois.
+    name: 'internet_credit_beneficiaries',
+    columns: [
+      { name: 'campaign', type: 'string', isIndexed: true },
+      { name: 'cvgp_member', type: 'number', isOptional: true, isIndexed: true },
+      { name: 'member_name', type: 'string' },
+      { name: 'phone_number', type: 'string' },
+      { name: 'cvd_id', type: 'number', isOptional: true },
+      { name: 'cvd_name', type: 'string' },
+      { name: 'village_names', type: 'string' },
+      { name: 'cvgp_message', type: 'string' },
+      { name: 'fc_message', type: 'string' },
+      { name: 'is_deleted', type: 'boolean' },
+      { name: 'created_at', type: 'number' },
+      { name: 'updated_at', type: 'number' },
+    ],
+  },
+  {
+    name: 'internet_credit_confirmations',
+    columns: [
+      { name: 'beneficiary', type: 'string', isIndexed: true },
+      { name: 'role', type: 'string' }, // 'cvgp' | 'fc'
+      { name: 'confirmed_by', type: 'number', isOptional: true },
+      { name: 'confirmed_by_name', type: 'string', isOptional: true },
+      { name: 'message', type: 'string' },
+      { name: 'checked', type: 'boolean' },
+      // Data URL PNG : présente uniquement localement jusqu'au push (jamais renvoyée au pull,
+      // cf. InternetCreditConfirmationSyncSerializer) — `has_signature` fait foi ensuite.
+      { name: 'signature', type: 'string', isOptional: true },
+      { name: 'has_signature', type: 'boolean' },
+      { name: 'description', type: 'string', isOptional: true },
+      { name: 'confirmed_at', type: 'number' },
+      { name: 'source', type: 'string' },
+      { name: 'is_deleted', type: 'boolean' },
+      { name: 'created_at', type: 'number' },
+      { name: 'updated_at', type: 'number' },
+    ],
+  },
+];
+
+export const INTERNET_CREDIT_TABLE_NAMES = INTERNET_CREDIT_TABLE_DEFINITIONS.map((t) => t.name);
+
+const INTERNET_CREDIT_TABLES = INTERNET_CREDIT_TABLE_DEFINITIONS.map((definition) => tableSchema(definition));
+
 // Les noms de colonnes des FK (`status`, `category`, `age_group`, `issue_type`, `assignee`,
 // `reporter`, `administrative_region`...) correspondent volontairement aux noms de champs
 // exposés par les serializers DRF côté backend (grm-backend/src/sync/serializers.py) — Django
 // REST Framework nomme un PrimaryKeyRelatedField d'après le nom du champ FK, pas `<champ>_id`.
 // Garder les mêmes noms des deux côtés évite une couche de traduction dans sync.js.
 export const schema = appSchema({
-  version: 2,
+  version: 3,
   tables: [
     tableSchema({
       name: 'issues',
@@ -369,5 +432,8 @@ export const schema = appSchema({
         { name: 'updated_at', type: 'number' },
       ],
     }),
+
+    // ---- Forfait internet CVGP (v3) : cf. grm-backend/src/internet_credits ----
+    ...INTERNET_CREDIT_TABLES,
   ],
 });

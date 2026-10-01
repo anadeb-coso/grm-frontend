@@ -6,7 +6,10 @@ const mockSynchronize = jest.fn().mockResolvedValue(undefined);
 jest.mock('@nozbe/watermelondb/sync', () => ({ synchronize: (...args) => mockSynchronize(...args) }));
 
 jest.mock('../index', () => ({ database: {} }));
-jest.mock('../../api/client', () => ({ api: { get: jest.fn(), post: jest.fn() } }));
+jest.mock('../../api/client', () => ({
+  api: { get: jest.fn(), post: jest.fn() },
+  getCurrentUserId: jest.fn().mockResolvedValue(null),
+}));
 jest.mock('../../utils/storageManager', () => ({
   getData: jest.fn().mockResolvedValue('test-device-id'),
   storeData: jest.fn().mockResolvedValue(undefined),

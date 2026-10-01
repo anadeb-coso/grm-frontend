@@ -1,4 +1,6 @@
-import { addColumns, schemaMigrations } from '@nozbe/watermelondb/Schema/migrations';
+import { addColumns, createTable, schemaMigrations } from '@nozbe/watermelondb/Schema/migrations';
+
+import { INTERNET_CREDIT_TABLE_DEFINITIONS } from './schema';
 
 export const migrations = schemaMigrations({
   migrations: [
@@ -16,6 +18,13 @@ export const migrations = schemaMigrations({
           ],
         }),
       ],
+    },
+    {
+      toVersion: 3,
+      // Forfait internet CVGP. Les lignes déjà présentes côté serveur avant cette mise à jour
+      // sont récupérées au pull suivant : WatermelonDB transmet `migration.tables`, que sync.js
+      // relaie au serveur (`full_tables`) pour un envoi intégral de ces tables.
+      steps: INTERNET_CREDIT_TABLE_DEFINITIONS.map((definition) => createTable(definition)),
     },
   ],
 });

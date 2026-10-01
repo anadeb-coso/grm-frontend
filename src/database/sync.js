@@ -1,12 +1,17 @@
 import { synchronize } from '@nozbe/watermelondb/sync';
 
 import { database } from './index';
-import { api } from '../api/client';
-import { getData, storeData } from '../utils/storageManager';
+import { INTERNET_CREDIT_TABLE_NAMES } from './schema';
+import { emitRejectedRecords } from './syncEvents';
+import { api, getCurrentUserId } from '../api/client';
+import { getData, removeValue, storeData } from '../utils/storageManager';
 import { enqueuePendingUploads } from '../files/uploadQueue';
 import { uuidv4 } from './utils/uuid';
 
 const DEVICE_ID_KEY = 'syncDeviceId';
+// Utilisateur à qui appartiennent les lignes locales du forfait internet CVGP (filtrées par
+// utilisateur côté serveur) — cf. `prepareUserScopedTables`.
+const INTERNET_CREDITS_OWNER_KEY = 'internetCreditsOwnerId';
 
 // Colonnes de type date/datetime stockées en epoch ms côté WatermelonDB, mais attendues au
 // format ISO-8601 par les DateTimeField Django côté serveur (grm-backend/src/sync/serializers.py).
@@ -20,6 +25,8 @@ const DATE_COLUMNS_BY_TABLE = {
   phases: ['open_at', 'due_at', 'closed_at'],
   tasks: ['open_at', 'due_at', 'closed_at'],
   budget_allocations: ['entry_date'],
+  internet_credit_campaigns: ['period', 'sent_date'],
+  internet_credit_confirmations: ['confirmed_at'],
 };
 
 async function getDeviceId() {
@@ -94,23 +101,33 @@ class ForceFullResyncError extends Error {}
  * (cf. `runSync`) pour que la numérotation `onProgress({ phase: 'pull', current })` reste
  * continue sur l'ensemble pull-push-pull plutôt que de repartir de 1 au second cycle.
  *
- * Retourne `{ pushed }` : `true` si `pushChanges` a réellement envoyé au moins un enregistrement
- * (création/modif/suppression locale). Utilisé par `runSync` pour décider s'il faut enchaîner un
- * second cycle (le 2e pull n'a d'intérêt que pour récupérer l'écho d'un push qui a eu lieu).
+ * Retourne `{ pushed, rejected }` : `pushed` vaut `true` si `pushChanges` a réellement envoyé au
+ * moins un enregistrement (création/modif/suppression locale). Utilisé par `runSync` pour décider
+ * s'il faut enchaîner un second cycle (le 2e pull n'a d'intérêt que pour récupérer l'écho d'un
+ * push qui a eu lieu). `rejected` : ids refusés par le serveur, par table (cf.
+ * `purgeRejectedRecords`).
+ *
+ * `fullTables` : tables à recevoir intégralement plutôt qu'en diff (cf. `prepareUserScopedTables`).
  */
-async function performSyncCycle({ deviceId, onProgress, pullCountRef }) {
+async function performSyncCycle({ deviceId, onProgress, pullCountRef, fullTables = [] }) {
   let cursor = null;
   let pushed = false;
+  let rejected = null;
 
   await synchronize({
     database,
     pullChanges: async ({ lastPulledAt, schemaVersion, migration }) => {
+      // Tables créées par une migration de schéma depuis la dernière sync (ex. v3 : forfait
+      // internet CVGP) : leurs lignes serveur antérieures à `lastPulledAt` ne seraient jamais
+      // envoyées par un pull incrémental — le serveur les renvoie donc en entier (`full_tables`).
+      const tablesToFetchInFull = [...new Set([...(migration?.tables || []), ...fullTables])];
       const { data } = await api.get('/sync/pull/', {
         params: {
           last_pulled_at: lastPulledAt ?? 0,
           schema_version: schemaVersion,
           cursor: cursor ?? undefined,
           device_id: deviceId,
+          full_tables: tablesToFetchInFull.length ? tablesToFetchInFull.join(',') : undefined,
         },
       });
 
@@ -153,18 +170,84 @@ async function performSyncCycle({ deviceId, onProgress, pullCountRef }) {
           deleted: tableChanges.deleted || [],
         };
       }
-      await api.post('/sync/push/', {
+      const response = await api.post('/sync/push/', {
         changes: serializedChanges,
         last_pulled_at: lastPulledAt,
         device_id: deviceId,
       });
+      // 200 + `rejected` : certains enregistrements (confirmations de forfait hors périmètre,
+      // forfait supprimé entre-temps...) ont été refusés sans faire échouer le push.
+      rejected = response?.data?.rejected || null;
     },
 
     migrationsEnabledAtVersion: 1,
     sendCreatedAsUpdated: true, // simplifie le traitement côté Django (cf. §3.4.1)
   });
 
-  return { pushed };
+  return { pushed, rejected };
+}
+
+/**
+ * Supprime localement les enregistrements refusés par le serveur au push. `synchronize()` les a
+ * déjà marqués comme synchronisés (le push a répondu 200) : sans ce nettoyage ils resteraient
+ * affichés comme « confirmés » sur l'appareil alors qu'ils n'existent pas côté serveur. Le
+ * retrait d'une confirmation de forfait fait réapparaître la notification correspondante.
+ */
+async function purgeRejectedRecords(rejected) {
+  if (!rejected) return;
+  const toDestroy = [];
+  for (const [tableName, ids] of Object.entries(rejected)) {
+    if (!ids?.length) continue;
+    const records = await database.get(tableName).query().fetch();
+    const rejectedIds = new Set(ids.map(String));
+    records.filter((r) => rejectedIds.has(r.id)).forEach((r) => toDestroy.push(r));
+  }
+  if (toDestroy.length) {
+    await database.write(async () => {
+      await database.batch(...toDestroy.map((r) => r.prepareDestroyPermanently()));
+    });
+  }
+  emitRejectedRecords(rejected);
+}
+
+async function destroyAllLocalRecords(tableNames) {
+  const records = [];
+  for (const tableName of tableNames) {
+    records.push(...(await database.get(tableName).query().fetch()));
+  }
+  if (!records.length) return;
+  await database.write(async () => {
+    await database.batch(...records.map((r) => r.prepareDestroyPermanently()));
+  });
+}
+
+/**
+ * Les tables du forfait internet CVGP sont filtrées par utilisateur au pull (membre CVGP : sa
+ * ligne ; FC/AC : les CVD de son périmètre). Si un autre compte que celui qui les a reçues se
+ * connecte sur l'appareil, on les vide et on demande au serveur de les renvoyer intégralement :
+ * sinon ce compte verrait les notifications du précédent, et ne recevrait jamais les siennes
+ * (déjà antérieures à `lastPulledAt`). Retourne les tables à recevoir en entier et une fonction
+ * à appeler une fois la synchronisation réussie.
+ */
+async function prepareUserScopedTables() {
+  const userId = await getCurrentUserId();
+  const owner = await getData(INTERNET_CREDITS_OWNER_KEY);
+  if (!userId || String(owner) === String(userId)) {
+    return { fullTables: [], commit: async () => {} };
+  }
+  await destroyAllLocalRecords(INTERNET_CREDIT_TABLE_NAMES);
+  return {
+    fullTables: INTERNET_CREDIT_TABLE_NAMES,
+    commit: async () => storeData(INTERNET_CREDITS_OWNER_KEY, String(userId)),
+  };
+}
+
+/** Appelée à la déconnexion (store/ducks/authentication.duck.js::logout), comme `clearLocalAdls`.
+ * Oublie aussi le propriétaire : la prochaine connexion (même compte ou non) redemande ces tables
+ * en entier, puisqu'un pull incrémental ne renverrait pas les lignes qu'on vient de vider. */
+export async function clearLocalInternetCredits() {
+  await removeValue(INTERNET_CREDITS_OWNER_KEY);
+  await destroyAllLocalRecords(INTERNET_CREDIT_TABLE_NAMES);
 }
 
 export async function runSync({ onProgress } = {}) {
@@ -182,9 +265,15 @@ export async function runSync({ onProgress } = {}) {
   // (30s), sans jamais pouvoir se corriger d'elle-même.
   await enqueuePendingUploads();
 
+  const userScopedTables = await prepareUserScopedTables();
+
   try {
     // 1er cycle : pull (état serveur courant) puis push (envoi des créations/modifs locales).
-    const { pushed } = await performSyncCycle({ deviceId, onProgress, pullCountRef });
+    const { pushed, rejected } = await performSyncCycle({
+      deviceId, onProgress, pullCountRef, fullTables: userScopedTables.fullTables,
+    });
+    await purgeRejectedRecords(rejected);
+    await userScopedTables.commit();
 
     // 2e cycle (pull-push-pull) UNIQUEMENT si le 1er a réellement poussé quelque chose : son
     // pull sert à récupérer l'écho du push (champs recalculés côté serveur, ex.
@@ -192,7 +281,8 @@ export async function runSync({ onProgress } = {}) {
     // un état déjà à jour — inutile ; les changements concurrents d'autres utilisateurs seront
     // repris au prochain cycle périodique.
     if (pushed) {
-      await performSyncCycle({ deviceId, onProgress, pullCountRef });
+      const second = await performSyncCycle({ deviceId, onProgress, pullCountRef });
+      await purgeRejectedRecords(second.rejected);
     }
   } catch (err) {
     if (err instanceof ForceFullResyncError) {

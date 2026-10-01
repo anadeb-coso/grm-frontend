@@ -1,87 +1,57 @@
-import React, { useState } from "react";
-import UpdatableList from "../../../../components/UpdatableList";
+import React, { useCallback, useState } from "react";
+import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
+import { ActivityIndicator, Text } from "react-native-paper";
+import { useNavigation } from "@react-navigation/native";
+import { useTranslation } from "react-i18next";
 import { styles } from "./Content.style";
-import NotificationItem from "../components/NotificationItem";
-import { SafeAreaView, View } from "react-native";
-import { Text } from "react-native-paper";
+import InternetCreditNotificationItem from "../components/InternetCreditNotificationItem";
+import { useInternetCreditNotifications } from "../../../../database/internetCredits";
+import { runSyncSafely } from "../../../../database/watermelonSyncManager";
 import { colors } from "../../../../utils/colors";
-const randomRange = (min, max) => Math.floor(Math.random() * (max - min)) + min;
 
-const generateMockData = (amount) => {
-  let data = [];
-  for (let i = 0; i < amount; i++) {
-    const id = randomRange(0, 2000);
-    const logo = randomRange(0, 3);
-    const isRead = randomRange(0, 2);
-    data.push({
-      title:
-        "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-      logo: [
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Eo_circle_indigo_letter-j.svg/600px-Eo_circle_indigo_letter-j.svg.png",
-        "https://www.fluentu.com/blog/wp-content/uploads/2018/07/language-audio-books-2-1.png",
-        "https://www.vhv.rs/dpng/d/1-11823_circle-location-icon-png-transparent-png.png",
-      ][logo],
-      id,
-      isRead: !!isRead,
-      date: "03/29/2020",
-      hour: "2:48pm",
-    });
-  }
-  return data;
-};
-
+/** Espace « Notifications » : confirmations de réception du forfait internet CVGP en attente. */
 const Content = () => {
-  const [data, setData] = useState(generateMockData(10));
-  const removeText = (item) => {
-    setData(data.filter((_item) => _item.id !== item.id));
-  };
-  const onRead = (item) => {
-    const foundIndex = data.findIndex((x) => x.id === item.id);
-    const updatedData = data.slice();
-    item.isRead = true;
-    updatedData[foundIndex] = item;
-    setData(updatedData);
-  };
+  const { t } = useTranslation();
+  const navigation = useNavigation();
+  const { loading, items } = useInternetCreditNotifications();
+  const [refreshing, setRefreshing] = useState(false);
 
-  const handleFetchMoreData = async () => {
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
     try {
-      await new Promise((res, _rej) => {
-        const tout = setTimeout(() => {
-          clearTimeout(tout);
-          res();
-        }, 1000);
-      });
-      setData((d) => d.concat(generateMockData(10)));
-    } catch (error) {
+      await runSyncSafely();
     } finally {
+      setRefreshing(false);
     }
-  };
+  }, []);
+
+  if (loading) {
+    return <ActivityIndicator style={{ marginTop: 50 }} color={colors.primary} size="large" />;
+  }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ justifyContent: "center", alignItems: "center", flex: 1 }}>
-        <Text style={{ color: colors.primary, fontWeight: "bold" }}>
-          Upcoming feature.
-        </Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <FlatList
+        data={items}
+        keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
+        contentContainerStyle={items.length ? undefined : styles.emptyContainer}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>{t("no_notifications")}</Text>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <InternetCreditNotificationItem
+            notification={item}
+            onPress={() => navigation.navigate("InternetCreditConfirmation", { beneficiaryId: item.id })}
+          />
+        )}
+      />
     </SafeAreaView>
   );
-
-  // return (
-  //   <UpdatableList
-  //     onFetchMoreData={handleFetchMoreData}
-  //     contentContainerStyle={styles.listContent}
-  //     data={data}
-  //     keyExtractor={(_, i) => `item-${i}`}
-  //     renderItem={({ item }) => (
-  //       <NotificationItem
-  //         {...item}
-  //         onRead={() => onRead(item)}
-  //         onRemovePress={() => removeText(item)}
-  //       />
-  //     )}
-  //   />
-  // );
 };
 
 export default Content;

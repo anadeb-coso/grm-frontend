@@ -6,6 +6,7 @@ import { api } from '../../api/client';
 
 jest.mock('../../api/client', () => ({
   api: { get: jest.fn(), post: jest.fn() },
+  getCurrentUserId: jest.fn().mockResolvedValue(null),
 }));
 
 jest.mock('../../files/uploadQueue', () => ({

@@ -2,8 +2,9 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useToast } from 'react-native-toast-notifications';
 import posed from 'react-native-pose';
 import BottomTabNavigator from '../../components/Navigation/BottomTabNavigator';
 import { colors } from '../../utils/colors';
@@ -21,6 +22,9 @@ import GRM from './GRM/GRM';
 import IssueDetail from './IssueDetail/IssueDetail';
 import IssueSearch from './IssueSearch/IssueSearch';
 import Notifications from './Notifications';
+import InternetCreditConfirmation from './Notifications/InternetCreditConfirmation';
+import { useInternetCreditNotifications } from '../../database/internetCredits';
+import { subscribeRejectedRecords } from '../../database/syncEvents';
 import ParticipatoryBudgetingList from './ParticipatoryBudgeting/ParticipatoryBudgetingList';
 import PhaseTasks from './PhaseTasks/PhaseTasks';
 import RegisterSubprojects from './RegisterSubprojects/RegisterSubprojects';
@@ -216,6 +220,7 @@ function ProfileStackScreen() {
 }
 
 function NotificationsStackScreen() {
+  const { t } = useTranslation();
   return (
     <NotificationsStack.Navigator>
       <NotificationsStack.Screen
@@ -228,6 +233,11 @@ function NotificationsStackScreen() {
         }}
         name="Notifications"
         component={Notifications}
+      />
+      <NotificationsStack.Screen
+        name="InternetCreditConfirmation"
+        options={customHeaderOptions(t('internet_credit_confirmation_title'))}
+        component={InternetCreditConfirmation}
       />
       <NotificationsStack.Screen name="WorkInProgress" component={WorkInProgress} />
     </NotificationsStack.Navigator>
@@ -269,6 +279,19 @@ function IssueDetailTabsStack(props) {
 }
 
 function HomeRouter() {
+  const { t } = useTranslation();
+  const toast = useToast();
+  // Pastille sur l'onglet Notifications : confirmations de forfait internet CVGP en attente.
+  const { items: pendingNotifications } = useInternetCreditNotifications();
+
+  // Confirmation refusée par le serveur au push (forfait supprimé, hors périmètre) : elle vient
+  // d'être retirée de la base locale (database/sync.js), la notification réapparaît.
+  useEffect(() => subscribeRejectedRecords((rejected) => {
+    if (rejected?.internet_credit_confirmations?.length) {
+      toast.show(t('internet_credit_confirmation_rejected'), { type: 'warning', placement: 'top', duration: 6000 });
+    }
+  }), [t, toast]);
+
   return (
     <BottomTabNavigator>
       <Tab.Screen
@@ -290,6 +313,8 @@ function HomeRouter() {
         name="Notifications"
         options={{
           headerShown: false,
+          tabBarBadge: pendingNotifications.length || undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.error, color: 'white' },
           tabBarIcon: ({ focused, color, size }) => (
             <AnimatedIonicons
               pose={focused ? 'focused' : 'unfocused'}

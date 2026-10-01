@@ -15,4 +15,7 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
   // listContent: { paddingTop: 20 },
+  emptyContainer: { flexGrow: 1 },
+  empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 30 },
+  emptyText: { color: "#707070", fontFamily: "Poppins_400Regular", textAlign: "center" },
 });
