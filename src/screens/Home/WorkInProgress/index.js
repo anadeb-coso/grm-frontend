@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import {
   SafeAreaView, Text, ImageBackground, ScrollView,
   View, StyleSheet, Image, Dimensions, TouchableOpacity,
-  RefreshControl
+  RefreshControl, Alert
 } from 'react-native';
+import { hasUnsyncedChanges } from '@nozbe/watermelondb/sync';
 import { Button, ActivityIndicator, List, ToggleButton } from 'react-native-paper';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
@@ -38,6 +39,34 @@ export function WorkInProgress() {
   const get_adl_region_objects = () => {
     setAdministrative_regions_objects(eadl?.administrative_regions_objects ?? []);
   }
+
+  // Si un autre compte se connecte ensuite sur l'appareil, la base locale est vidée
+  // (database/sync.js::prepareLocalDatabaseOwner) : on prévient donc avant de déconnecter quand des
+  // données ou des fichiers ne sont pas encore envoyés.
+  const onLogoutPress = async () => {
+    let unsyncedDatas = false;
+    let unsyncedFiles = 0;
+    try {
+      [unsyncedDatas, unsyncedFiles] = await Promise.all([
+        hasUnsyncedChanges({ database }),
+        database.get('attachments').query(Q.where('upload_status', Q.notEq('done'))).fetchCount(),
+      ]);
+    } catch (e) {
+      // vérification impossible : on ne bloque pas la déconnexion
+    }
+    if (!unsyncedDatas && !unsyncedFiles) {
+      dispatch(logout());
+      return;
+    }
+    const details = [
+      unsyncedDatas && t('update_unsynced_datas'),
+      unsyncedFiles > 0 && t('update_unsynced_files', { n: unsyncedFiles }),
+    ].filter(Boolean).join('\n');
+    Alert.alert(t('logout'), `${details}\n\n${t('logout_unsynced_warning')}`, [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('logout_anyway'), style: 'destructive', onPress: () => dispatch(logout()) },
+    ]);
+  };
   useEffect(() => {
     const fetchUserCommune = async () => {
       if (!eadl) {
@@ -437,7 +466,7 @@ export function WorkInProgress() {
         <View style={{ flex: 1, margin: 25 }}>
           <LanguageSelector />
           {/* <Text>Work in Progress </Text> */}
-          <Button color="#24c38b" onPress={() => dispatch(logout())}>
+          <Button color="#24c38b" onPress={onLogoutPress}>
             {t('logout')}
           </Button>
         </View>

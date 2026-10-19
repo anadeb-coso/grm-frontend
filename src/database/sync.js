@@ -1,7 +1,8 @@
 import { synchronize } from '@nozbe/watermelondb/sync';
+import { getLastPulledAt } from '@nozbe/watermelondb/sync/impl';
 
 import { database } from './index';
-import { INTERNET_CREDIT_TABLE_NAMES } from './schema';
+import { USER_SCOPED_TABLE_NAMES } from './schema';
 import { emitRejectedRecords } from './syncEvents';
 import { api, getCurrentUserId } from '../api/client';
 import { getData, removeValue, storeData } from '../utils/storageManager';
@@ -9,9 +10,18 @@ import { enqueuePendingUploads } from '../files/uploadQueue';
 import { uuidv4 } from './utils/uuid';
 
 const DEVICE_ID_KEY = 'syncDeviceId';
-// Utilisateur à qui appartiennent les lignes locales du forfait internet CVGP (filtrées par
-// utilisateur côté serveur) — cf. `prepareUserScopedTables`.
-const INTERNET_CREDITS_OWNER_KEY = 'internetCreditsOwnerId';
+// Utilisateur à qui appartiennent les lignes locales des tables filtrées par utilisateur côté
+// serveur (forfait internet CVGP, notifications de commentaire) — cf. `prepareUserScopedTables`.
+// Clé conservée telle quelle depuis la v3 : la renommer forcerait un retéléchargement inutile.
+const USER_SCOPED_DATA_OWNER_KEY = 'internetCreditsOwnerId';
+// Compte (id `auth.User` du JWT) à qui appartient le contenu de la base locale — cf.
+// `prepareLocalDatabaseOwner`. Jamais effacé à la déconnexion : c'est ce qui permet de reconnaître,
+// à la connexion suivante, un compte différent du précédent.
+const LOCAL_DATABASE_OWNER_KEY = 'localDatabaseOwnerId';
+// Tables filtrées par utilisateur au pull, en plus de celles de `prepareUserScopedTables` : `issues`
+// (localités d'intervention, plaintes enregistrées ou assignées — grm-backend/src/sync/views.py::
+// _issue_visibility_filter) et le budget participatif (facilitateur propriétaire, SYNC_OWNED_MODELS).
+const ACCOUNT_SCOPED_TABLE_NAMES = ['issues', 'phases', 'tasks', 'bp_projects', 'budget_allocations'];
 
 // Colonnes de type date/datetime stockées en epoch ms côté WatermelonDB, mais attendues au
 // format ISO-8601 par les DateTimeField Django côté serveur (grm-backend/src/sync/serializers.py).
@@ -27,7 +37,23 @@ const DATE_COLUMNS_BY_TABLE = {
   budget_allocations: ['entry_date'],
   internet_credit_campaigns: ['period', 'sent_date'],
   internet_credit_confirmations: ['confirmed_at'],
+  issue_notifications: ['read_at'],
 };
+
+// Colonnes JSON stockées en chaîne côté WatermelonDB (colonne `string`), échangées sous forme de
+// liste avec le serveur (JSONField Django, cf. grm-backend/src/sync/serializers.py).
+const JSON_COLUMNS_BY_TABLE = {
+  comments: ['notify_emails', 'notify_user_ids'],
+};
+
+function parseJsonOrNull(value) {
+  if (typeof value !== 'string') return value ?? null;
+  try {
+    return value.trim() ? JSON.parse(value) : null;
+  } catch (err) {
+    return null;
+  }
+}
 
 async function getDeviceId() {
   let deviceId = await getData(DEVICE_ID_KEY);
@@ -43,13 +69,19 @@ function toISOStringOrNull(epochMs) {
   return new Date(epochMs).toISOString();
 }
 
-/** Convertit les colonnes date epoch-ms d'un enregistrement brut WatermelonDB vers ISO-8601. */
+/** Convertit les colonnes date epoch-ms (vers ISO-8601) et JSON (chaîne vers liste) d'un
+ * enregistrement brut WatermelonDB. */
 function serializeRecordForPush(tableName, raw) {
   const dateColumns = DATE_COLUMNS_BY_TABLE[tableName] || [];
   const record = { ...raw };
   for (const column of dateColumns) {
     if (column in record) {
       record[column] = toISOStringOrNull(record[column]);
+    }
+  }
+  for (const column of JSON_COLUMNS_BY_TABLE[tableName] || []) {
+    if (column in record) {
+      record[column] = parseJsonOrNull(record[column]) ?? [];
     }
   }
   return record;
@@ -76,6 +108,11 @@ function deserializeRecordForPull(tableName, raw) {
   for (const column of dateColumns) {
     if (column in record) {
       record[column] = toEpochMsOrNull(record[column]);
+    }
+  }
+  for (const column of JSON_COLUMNS_BY_TABLE[tableName] || []) {
+    if (column in record && record[column] !== null && typeof record[column] !== 'string') {
+      record[column] = JSON.stringify(record[column]);
     }
   }
   // `created_at`/`updated_at` existent sur (quasiment) toutes les tables synchronisées et ne
@@ -222,8 +259,9 @@ async function destroyAllLocalRecords(tableNames) {
 }
 
 /**
- * Les tables du forfait internet CVGP sont filtrées par utilisateur au pull (membre CVGP : sa
- * ligne ; FC/AC : les CVD de son périmètre). Si un autre compte que celui qui les a reçues se
+ * Les tables du forfait internet CVGP (membre CVGP : sa ligne ; FC/AC : les CVD de son périmètre)
+ * et les notifications de commentaire (destinataire) sont filtrées par utilisateur au pull. Si
+ * un autre compte que celui qui les a reçues se
  * connecte sur l'appareil, on les vide et on demande au serveur de les renvoyer intégralement :
  * sinon ce compte verrait les notifications du précédent, et ne recevrait jamais les siennes
  * (déjà antérieures à `lastPulledAt`). Retourne les tables à recevoir en entier et une fonction
@@ -231,28 +269,66 @@ async function destroyAllLocalRecords(tableNames) {
  */
 async function prepareUserScopedTables() {
   const userId = await getCurrentUserId();
-  const owner = await getData(INTERNET_CREDITS_OWNER_KEY);
+  const owner = await getData(USER_SCOPED_DATA_OWNER_KEY);
   if (!userId || String(owner) === String(userId)) {
     return { fullTables: [], commit: async () => {} };
   }
-  await destroyAllLocalRecords(INTERNET_CREDIT_TABLE_NAMES);
+  await destroyAllLocalRecords(USER_SCOPED_TABLE_NAMES);
   return {
-    fullTables: INTERNET_CREDIT_TABLE_NAMES,
-    commit: async () => storeData(INTERNET_CREDITS_OWNER_KEY, String(userId)),
+    fullTables: USER_SCOPED_TABLE_NAMES,
+    commit: async () => storeData(USER_SCOPED_DATA_OWNER_KEY, String(userId)),
   };
 }
 
 /** Appelée à la déconnexion (store/ducks/authentication.duck.js::logout), comme `clearLocalAdls`.
  * Oublie aussi le propriétaire : la prochaine connexion (même compte ou non) redemande ces tables
  * en entier, puisqu'un pull incrémental ne renverrait pas les lignes qu'on vient de vider. */
-export async function clearLocalInternetCredits() {
-  await removeValue(INTERNET_CREDITS_OWNER_KEY);
-  await destroyAllLocalRecords(INTERNET_CREDIT_TABLE_NAMES);
+export async function clearLocalUserScopedData() {
+  await removeValue(USER_SCOPED_DATA_OWNER_KEY);
+  await destroyAllLocalRecords(USER_SCOPED_TABLE_NAMES);
+}
+
+/**
+ * Le pull est incrémental (depuis `lastPulledAt`) et plusieurs tables sont filtrées par
+ * utilisateur (ACCOUNT_SCOPED_TABLE_NAMES) : un autre compte qui se connectait sur l'appareil ne
+ * recevait que les lignes modifiées depuis la dernière synchronisation du compte précédent, jamais
+ * le reste de son propre périmètre — sa liste de plaintes restait vide, même après une
+ * synchronisation manuelle, tant que les données de l'application n'étaient pas effacées.
+ *
+ * - Autre compte que celui de la base locale : on la vide (comme `forceFullResync`) pour
+ *   retélécharger tout l'état serveur du nouveau compte, ce qui retire aussi de l'appareil les
+ *   données du précédent. À faire avant tout envoi, fichiers compris : les modifications non
+ *   synchronisées du compte précédent ne doivent pas partir avec le jeton du nouveau (le serveur
+ *   refuse les plaintes d'un autre compte, `_issue_owned_by`, ce qui bloquait chaque
+ *   synchronisation) — la déconnexion prévient quand il en reste (WorkInProgress).
+ * - Propriétaire inconnu (base déjà synchronisée avant ce suivi) : rien n'est vidé, ces tables
+ *   sont simplement redemandées en entier une fois.
+ */
+async function prepareLocalDatabaseOwner({ onProgress }) {
+  const noChange = { fullTables: [], commit: async () => {} };
+  const userId = await getCurrentUserId();
+  const owner = await getData(LOCAL_DATABASE_OWNER_KEY);
+  if (!userId || String(owner) === String(userId)) return noChange;
+
+  const storeOwner = async () => storeData(LOCAL_DATABASE_OWNER_KEY, String(userId));
+  if (owner === null || owner === undefined) {
+    // Jamais synchronisée : le premier pull renvoie déjà tout.
+    const alreadyPulled = Boolean(await getLastPulledAt(database));
+    return { fullTables: alreadyPulled ? ACCOUNT_SCOPED_TABLE_NAMES : [], commit: storeOwner };
+  }
+  await forceFullResync({ onProgress });
+  // Enregistré tout de suite, pas après la synchronisation : si celle-ci échoue, la suivante ne
+  // doit pas revider une base qui contient peut-être déjà des saisies du nouveau compte.
+  await storeOwner();
+  return noChange;
 }
 
 export async function runSync({ onProgress } = {}) {
   const deviceId = await getDeviceId();
   const pullCountRef = { count: 0 };
+
+  // Avant tout envoi, fichiers compris (cf. prepareLocalDatabaseOwner).
+  const localDatabaseOwner = await prepareLocalDatabaseOwner({ onProgress });
 
   // Doit impérativement passer AVANT `synchronize()` (push compris), pas après : `reasons`/
   // `escalation_reasons` peuvent référencer un `attachment_id` (ex. PDF de résolution/escalade,
@@ -270,10 +346,14 @@ export async function runSync({ onProgress } = {}) {
   try {
     // 1er cycle : pull (état serveur courant) puis push (envoi des créations/modifs locales).
     const { pushed, rejected } = await performSyncCycle({
-      deviceId, onProgress, pullCountRef, fullTables: userScopedTables.fullTables,
+      deviceId,
+      onProgress,
+      pullCountRef,
+      fullTables: [...userScopedTables.fullTables, ...localDatabaseOwner.fullTables],
     });
     await purgeRejectedRecords(rejected);
     await userScopedTables.commit();
+    await localDatabaseOwner.commit();
 
     // 2e cycle (pull-push-pull) UNIQUEMENT si le 1er a réellement poussé quelque chose : son
     // pull sert à récupérer l'écho du push (champs recalculés côté serveur, ex.
