@@ -121,6 +121,39 @@ export async function enqueuePendingUploads({ notifyOnError = true } = {}) {
 }
 
 /**
+ * Supprime une pièce jointe jamais envoyée au serveur (écran « Synchronisation des fichiers ») :
+ * rien n'existe côté serveur, l'enregistrement local est donc détruit définitivement. Les raisons
+ * (décision, preuve de résolution/escalade) qui la référencent perdent cette référence : sans ça,
+ * leur push échouerait indéfiniment (pièce jointe inconnue du serveur, cf. sync.js::runSync).
+ * La copie locale du fichier n'est effacée que si elle appartient à l'application (cache ou
+ * dossier documents), jamais un fichier de l'utilisateur. Renvoie `false` si le fichier a été
+ * envoyé entre-temps.
+ */
+export async function discardUnsyncedAttachment(attachmentId) {
+  const attachment = await database.get('attachments').find(attachmentId);
+  if (attachment.uploadStatus === 'done') return false;
+
+  const [reasons, escalationReasons] = await Promise.all([
+    database.get('reasons').query(Q.where('attachment', attachmentId)).fetch(),
+    database.get('escalation_reasons').query(Q.where('attachment', attachmentId)).fetch(),
+  ]);
+  await database.write(async () => {
+    await database.batch(
+      ...[...reasons, ...escalationReasons].map((r) => r.prepareUpdate((record) => { record.attachmentId = null; })),
+      attachment.prepareDestroyPermanently(),
+    );
+  });
+
+  const { localUri } = attachment;
+  const ownedByApp = [FileSystem.cacheDirectory, FileSystem.documentDirectory]
+    .some((dir) => dir && localUri && localUri.startsWith(dir));
+  if (ownedByApp) {
+    await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {});
+  }
+  return true;
+}
+
+/**
  * Répercute côté serveur la suppression locale d'une pièce jointe (bouton "retirer ce fichier",
  * cf. IssueActions/CitizenReportStep3/DocumentTask/RegisterSubprojects "onAttachmentRemove") —
  * `attachments` est exclue de `SYNC_WRITABLE_MODELS` (cf. grm-backend/src/sync/views.py), donc un

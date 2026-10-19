@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons, AntDesign, Feather } from '@expo/vector-icons';
 import { useBackHandler } from '@react-native-community/hooks';
 import { Audio } from 'expo-av';
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import moment from 'moment';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -9,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Image, Platform, ScrollView, Text, TouchableOpacity,
   View, FlatList, SafeAreaView, RefreshControl, Alert,
-  StyleSheet, Animated, ImageBackground, ProgressBarAndroid
+  StyleSheet, Animated, ImageBackground, ProgressBarAndroid, ToastAndroid
 } from 'react-native';
 import Collapsible from 'react-native-collapsible';
 import { Button, IconButton, Divider, Dialog, Paragraph, Portal, ActivityIndicator } from 'react-native-paper';
@@ -96,6 +97,7 @@ function Content({ issue }) {
   const [position, setPosition] = useState(null);
   const [imageError, setImageError] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [addingEvidence, setAddingEvidence] = useState(false);
 
   const [issueAttachments, setIssueAttachments] = useState([]);
   const [issueReasons, setIssueReasons] = useState([]);
@@ -465,6 +467,47 @@ function Content({ issue }) {
         return next;
       });
     }
+  };
+
+  // Preuves supplémentaires ajoutées par l'assigné (photo prise sur le moment, ou image/PDF
+  // choisi) : pièce jointe de l'issue envoyée par la file d'upload habituelle
+  // (files/uploadQueue.js, compression des images comprise) à la prochaine synchronisation.
+  const addEvidence = async (source) => {
+    setAddingEvidence(true);
+    try {
+      const result = source === 'camera'
+        ? await ImagePicker.launchCameraAsync({ quality: 0.8 })
+        : await DocumentPicker.getDocumentAsync({
+          type: ['image/*', 'application/pdf'], copyToCacheDirectory: true, multiple: false,
+        });
+      const asset = result?.assets?.[0];
+      if (result?.canceled || !asset?.uri) return;
+      await createWithId(database.get('attachments'), (a) => {
+        a.issueId = issueRecord.id;
+        a.fileName = asset.name || asset.fileName || asset.uri.split('/').pop();
+        a.contentType = asset.mimeType || (source === 'camera' ? 'image/jpeg' : 'application/octet-stream');
+        a.localUri = asset.uri;
+        a.size = asset.size || asset.fileSize || null;
+        a.uploadStatus = 'pending';
+        a.downloadStatus = 'done';
+      });
+      await loadIssueChildren();
+      ToastAndroid.show(t('evidence_added'), ToastAndroid.SHORT);
+      runSyncSafely();
+    } catch (err) {
+      console.warn('Ajout de la preuve impossible', err);
+      Alert.alert(t('file_read_error'), t('file_read_error_try_again'));
+    } finally {
+      setAddingEvidence(false);
+    }
+  };
+
+  const chooseEvidenceSource = () => {
+    Alert.alert(t('add_evidence'), t('add_evidence_hint'), [
+      { text: t('take_photo'), onPress: () => addEvidence('camera') },
+      { text: t('choose_file'), onPress: () => addEvidence('file') },
+      { text: t('cancel'), style: 'cancel' },
+    ]);
   };
 
   const onAddComment = async () => {
@@ -927,6 +970,19 @@ function Content({ issue }) {
               }
               )
             }
+            {isIssueAssignedToMe && (
+              <Button
+                icon="paperclip"
+                mode="outlined"
+                textColor={colors.primary}
+                style={{ alignSelf: 'flex-start', marginTop: 10, borderColor: colors.primary }}
+                loading={addingEvidence}
+                disabled={addingEvidence}
+                onPress={chooseEvidenceSource}
+              >
+                {t('add_evidence')}
+              </Button>
+            )}
             {isSyncing && <View>
               <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" key={"task_progress_key"} />
             </View>}

@@ -4,7 +4,7 @@ import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { Q } from '@nozbe/watermelondb';
 import { database } from '../../../database';
-import { enqueuePendingUploads } from '../../../files/uploadQueue';
+import { discardUnsyncedAttachment, enqueuePendingUploads } from '../../../files/uploadQueue';
 import { colors } from '../../../utils/colors';
 import ImagesList from './components/ImagesList';
 import CustomGreenButton from '../../../components/CustomGreenButton/CustomGreenButton';
@@ -77,6 +77,21 @@ function SyncAttachments({ navigation }) {
     }, 10000);
     return () => clearInterval(interval);
   }, [getAndSetAttachments]);
+
+  const deleteAttachment = async (attachmentId) => {
+    try {
+      const deleted = await discardUnsyncedAttachment(attachmentId);
+      if (!deleted) {
+        setErrorMessage(t('file_already_synced'));
+        setErrorVisible(true);
+      }
+    } catch (err) {
+      console.warn('Suppression du fichier impossible', err);
+      setErrorMessage(FILE_READ_ERROR_TRY_AGAIN);
+      setErrorVisible(true);
+    }
+    await getAndSetAttachments();
+  };
 
   // Réutilise la même file d'upload JWT que la synchronisation automatique
   // (src/files/uploadQueue.js) — compression, limite de taille, retry compris.
@@ -160,7 +175,13 @@ function SyncAttachments({ navigation }) {
       </Modal>
       {
         attachments?.filter(elt => ![undefined, null, ""].includes(elt?.attachment?.local_url))?.length > 0 ? 
-        <ImagesList attachments={attachments} getAndSetAttachments={getAndSetAttachments} refreshing={refreshing} /> 
+        <ImagesList
+          attachments={attachments}
+          getAndSetAttachments={getAndSetAttachments}
+          refreshing={refreshing}
+          onDeleteAttachment={deleteAttachment}
+          canDelete={!isSyncing && !loading}
+        />
         : <ScrollView
               style={{ flex: 1 }}
               contentContainerStyle={{ justifyContent: 'center', alignItems: 'center', padding: 20 }} 

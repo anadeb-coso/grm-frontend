@@ -25,6 +25,7 @@ import BudgetAllocationEntry from './models/BudgetAllocationEntry';
 import InternetCreditCampaign from './models/InternetCreditCampaign';
 import InternetCreditBeneficiary from './models/InternetCreditBeneficiary';
 import InternetCreditConfirmation from './models/InternetCreditConfirmation';
+import IssueNotification from './models/IssueNotification';
 
 // Sous Jest, SQLiteAdapter nécessite des bindings natifs indisponibles dans l'environnement Node
 // des tests : on bascule sur LokiJSAdapter (mémoire), l'adapter recommandé par WatermelonDB pour
@@ -78,5 +79,6 @@ export const database = new Database({
     InternetCreditCampaign,
     InternetCreditBeneficiary,
     InternetCreditConfirmation,
+    IssueNotification,
   ],
 });

@@ -1,8 +1,11 @@
+// Indexé par `citizen_type`, comme CITIZEN_TYPE_CHOICES_ALT côté web (grm-backend/src/dashboard/
+// grm/__init__.py) : 0/1 = plaignant (1 = nom confidentiel), 2 = particulier pour le compte
+// d'autrui, 3 = organisation pour le compte d'autrui.
 export const citizenTypes = [
-    "Organization on behalf of others",
-    "Citizen on behalf of others",
     "Complainant",
-    "Complainant"
+    "Complainant",
+    "Citizen on behalf of others",
+    "Organization on behalf of others"
 ]
 
 export const administrative_levels = [

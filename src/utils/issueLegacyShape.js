@@ -32,7 +32,9 @@ export async function toLegacyIssueShape(issue) {
     publish: issue.publish,
     citizen: issue.citizen,
     contact_medium: issue.contactMedium,
-    citizen_type: issue.citizenType,
+    // Entier, comme dans les documents CouchDB : les écrans comparent `citizen_type === 1` (nom
+    // confidentiel masqué à qui n'est pas assigné), ce qui échouait avec la chaîne stockée.
+    citizen_type: issue.citizenType ? Number(issue.citizenType) : null,
     citizen_group_1: issue.citizenGroup1,
     citizen_group_2: issue.citizenGroup2,
     citizen_or_group: issue.citizenOrGroup,

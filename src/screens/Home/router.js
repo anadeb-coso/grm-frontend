@@ -23,7 +23,9 @@ import IssueDetail from './IssueDetail/IssueDetail';
 import IssueSearch from './IssueSearch/IssueSearch';
 import Notifications from './Notifications';
 import InternetCreditConfirmation from './Notifications/InternetCreditConfirmation';
+import IssueComments from './Notifications/IssueComments';
 import { useInternetCreditNotifications } from '../../database/internetCredits';
+import { useCommentNotifications } from '../../database/issueNotifications';
 import { subscribeRejectedRecords } from '../../database/syncEvents';
 import ParticipatoryBudgetingList from './ParticipatoryBudgeting/ParticipatoryBudgetingList';
 import PhaseTasks from './PhaseTasks/PhaseTasks';
@@ -239,6 +241,11 @@ function NotificationsStackScreen() {
         options={customHeaderOptions(t('internet_credit_confirmation_title'))}
         component={InternetCreditConfirmation}
       />
+      <NotificationsStack.Screen
+        name="IssueComments"
+        options={customHeaderOptions(t('comments_section_title'))}
+        component={IssueComments}
+      />
       <NotificationsStack.Screen name="WorkInProgress" component={WorkInProgress} />
     </NotificationsStack.Navigator>
   );
@@ -281,8 +288,12 @@ function IssueDetailTabsStack(props) {
 function HomeRouter() {
   const { t } = useTranslation();
   const toast = useToast();
-  // Pastille sur l'onglet Notifications : confirmations de forfait internet CVGP en attente.
+  // Pastille sur l'onglet Notifications : confirmations de forfait internet CVGP en attente et
+  // issues ayant des commentaires non lus.
   const { items: pendingNotifications } = useInternetCreditNotifications();
+  const { items: commentNotifications } = useCommentNotifications();
+  const unreadNotificationsCount = pendingNotifications.length
+    + commentNotifications.filter((n) => n.unreadCount > 0).length;
 
   // Confirmation refusée par le serveur au push (forfait supprimé, hors périmètre) : elle vient
   // d'être retirée de la base locale (database/sync.js), la notification réapparaît.
@@ -313,7 +324,7 @@ function HomeRouter() {
         name="Notifications"
         options={{
           headerShown: false,
-          tabBarBadge: pendingNotifications.length || undefined,
+          tabBarBadge: unreadNotificationsCount || undefined,
           tabBarBadgeStyle: { backgroundColor: colors.error, color: 'white' },
           tabBarIcon: ({ focused, color, size }) => (
             <AnimatedIonicons

@@ -63,13 +63,47 @@ export const INTERNET_CREDIT_TABLE_NAMES = INTERNET_CREDIT_TABLE_DEFINITIONS.map
 
 const INTERNET_CREDIT_TABLES = INTERNET_CREDIT_TABLE_DEFINITIONS.map((definition) => tableSchema(definition));
 
+// Options de notification d'un commentaire écrit (schéma v4), ajoutées à `comments` : définies à
+// part car réutilisées telles quelles par la migration v4 (migrations.js::addColumns).
+export const COMMENT_NOTIFICATION_COLUMNS = [
+  { name: 'is_user_comment', type: 'boolean', isOptional: true },
+  { name: 'send_email', type: 'boolean', isOptional: true },
+  // Listes JSON (adresses email, ids de comptes) — cf. sync.js::JSON_COLUMNS_BY_TABLE.
+  { name: 'notify_emails', type: 'string', isOptional: true },
+  { name: 'notify_user_ids', type: 'string', isOptional: true },
+];
+
+// Notifications « nouveau commentaire » du compte connecté (schéma v4) : pull filtré sur le
+// destinataire par le serveur, le mobile n'y renseigne que `read_at` (grm-backend/src/sync/views.py).
+export const ISSUE_NOTIFICATION_TABLE_DEFINITION = {
+  name: 'issue_notifications',
+  columns: [
+    { name: 'recipient', type: 'number', isOptional: true },
+    { name: 'issue', type: 'string', isIndexed: true },
+    { name: 'comment', type: 'string', isOptional: true, isIndexed: true },
+    { name: 'kind', type: 'string' },
+    { name: 'read_at', type: 'number', isOptional: true },
+    // Copies prises par le serveur : affichables même si l'issue n'est pas synchronisée localement.
+    { name: 'issue_code', type: 'string', isOptional: true },
+    { name: 'comment_text', type: 'string', isOptional: true },
+    { name: 'author_name', type: 'string', isOptional: true },
+    { name: 'is_deleted', type: 'boolean' },
+    { name: 'created_at', type: 'number' },
+    { name: 'updated_at', type: 'number' },
+  ],
+};
+
+// Tables filtrées par utilisateur côté serveur : vidées et retéléchargées en entier quand un autre
+// compte se connecte sur l'appareil (sync.js::prepareUserScopedTables).
+export const USER_SCOPED_TABLE_NAMES = [...INTERNET_CREDIT_TABLE_NAMES, ISSUE_NOTIFICATION_TABLE_DEFINITION.name];
+
 // Les noms de colonnes des FK (`status`, `category`, `age_group`, `issue_type`, `assignee`,
 // `reporter`, `administrative_region`...) correspondent volontairement aux noms de champs
 // exposés par les serializers DRF côté backend (grm-backend/src/sync/serializers.py) — Django
 // REST Framework nomme un PrimaryKeyRelatedField d'après le nom du champ FK, pas `<champ>_id`.
 // Garder les mêmes noms des deux côtés évite une couche de traduction dans sync.js.
 export const schema = appSchema({
-  version: 3,
+  version: 4,
   tables: [
     tableSchema({
       name: 'issues',
@@ -139,6 +173,7 @@ export const schema = appSchema({
         { name: 'author_name', type: 'string', isOptional: true },
         { name: 'comment', type: 'string' },
         { name: 'due_at', type: 'number' },
+        ...COMMENT_NOTIFICATION_COLUMNS,
         { name: 'is_deleted', type: 'boolean' },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
@@ -435,5 +470,6 @@ export const schema = appSchema({
 
     // ---- Forfait internet CVGP (v3) : cf. grm-backend/src/internet_credits ----
     ...INTERNET_CREDIT_TABLES,
+    tableSchema(ISSUE_NOTIFICATION_TABLE_DEFINITION),
   ],
 });

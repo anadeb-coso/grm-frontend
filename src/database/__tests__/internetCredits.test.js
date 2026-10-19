@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'; // requis par LokiJSAdapter (adapter de test, cf. database/index.js)
 
 import { database } from '../index';
-import { clearLocalInternetCredits, runSync } from '../sync';
+import { clearLocalUserScopedData, runSync } from '../sync';
 import { createInternetCreditConfirmation, loadInternetCreditNotifications } from '../internetCredits';
 import { subscribeRejectedRecords } from '../syncEvents';
 import { api, getCurrentUserId } from '../../api/client';
@@ -40,7 +40,9 @@ const LINE = {
   fc_message: 'FC : CVGP du CVD KPEKPE a bien reçu le crédit internet', is_deleted: false, created_at: NOW, updated_at: NOW,
 };
 const SIGNATURE = 'data:image/png;base64,iVBORw0KGgo=';
-const INTERNET_CREDIT_TABLES = 'internet_credit_campaigns,internet_credit_beneficiaries,internet_credit_confirmations';
+// Tables filtrées par utilisateur (forfait internet + notifications de commentaire), demandées en
+// entier au premier pull et quand un autre compte se connecte (sync.js::prepareUserScopedTables).
+const USER_SCOPED_TABLES = 'internet_credit_campaigns,internet_credit_beneficiaries,internet_credit_confirmations,issue_notifications';
 
 function pullResponse(changes = {}) {
   return { data: { force_full_resync: false, changes, timestamp: Date.now(), has_more: false } };
@@ -71,7 +73,7 @@ describe('forfait internet CVGP (mobile MGP)', () => {
   it('affiche la notification au membre CVGP et demande les tables en entier au premier pull', async () => {
     await receiveLine(CVGP_ID);
 
-    expect(api.get.mock.calls[0][1].params.full_tables).toBe(INTERNET_CREDIT_TABLES);
+    expect(api.get.mock.calls[0][1].params.full_tables).toBe(USER_SCOPED_TABLES);
     const notifications = await loadInternetCreditNotifications(CVGP_ID);
     expect(notifications).toHaveLength(1);
     expect(notifications[0]).toMatchObject({ role: 'cvgp', message: LINE.cvgp_message });
@@ -157,13 +159,13 @@ describe('forfait internet CVGP (mobile MGP)', () => {
     await runSync();
 
     expect(await database.get('internet_credit_beneficiaries').query().fetchCount()).toBe(0);
-    expect(api.get.mock.calls[1][1].params.full_tables).toBe(INTERNET_CREDIT_TABLES);
+    expect(api.get.mock.calls[1][1].params.full_tables).toBe(USER_SCOPED_TABLES);
     expect(storage.mockStore.internetCreditsOwnerId).toBe('99');
   });
 
   it('la déconnexion vide les tables et oublie le propriétaire', async () => {
     await receiveLine(CVGP_ID);
-    await clearLocalInternetCredits();
+    await clearLocalUserScopedData();
 
     expect(await database.get('internet_credit_campaigns').query().fetchCount()).toBe(0);
     expect(storage.mockStore.internetCreditsOwnerId).toBeUndefined();

@@ -1,13 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { Image, ScrollView, Text, View, RefreshControl } from 'react-native';
-import { ActivityIndicator, Card } from 'react-native-paper';
+import { Alert, Image, ScrollView, Text, View, RefreshControl } from 'react-native';
+import { ActivityIndicator, Card, IconButton } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../../../../utils/colors';
 
-function ImagesList({ attachments, getAndSetAttachments, refreshing }) {
+function ImagesList({ attachments, getAndSetAttachments, refreshing, onDeleteAttachment, canDelete }) {
   const { t } = useTranslation();
   const [_attachments, _setAttachments] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Fichier jamais envoyé : l'utilisateur peut le retirer (confirmation demandée), cf.
+  // files/uploadQueue.js::discardUnsyncedAttachment.
+  const confirmDelete = (attachment) => {
+    Alert.alert(t('delete_unsynced_file_title'), t('delete_unsynced_file_message'), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('delete'), style: 'destructive', onPress: () => onDeleteAttachment(attachment?.attachment?.id) },
+    ]);
+  };
+
   function AttachmentComponent({ attachment }) {
     return (
       <View
@@ -42,8 +52,10 @@ function ImagesList({ attachments, getAndSetAttachments, refreshing }) {
             marginVertical: 5,
           }}
         >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Text
             style={{
+              flex: 1,
               fontFamily: 'Poppins_400Regular',
               fontSize: 13,
               fontWeight: 'normal',
@@ -56,13 +68,24 @@ function ImagesList({ attachments, getAndSetAttachments, refreshing }) {
           >
             {!attachment.taskOrdinal &&
               `Fichier appartenant à un problème${
-                attachment?.attachment?.isAudio ? 
-                  ' [Audio Recording]' 
+                attachment?.attachment?.isAudio ?
+                  ' [Audio Recording]'
                 : attachment?.attachment?.local_url?.includes('.pdf') ? ' [PDF]' :  '.'
               }`}
             {attachment.taskOrdinal &&
               `Attachment on task ${attachment?.taskOrdinal} of \n phase ${attachment?.phaseOrdinal}`}
           </Text>
+          {onDeleteAttachment && (
+            <IconButton
+              icon="trash-can-outline"
+              iconColor={colors.error}
+              size={22}
+              disabled={!canDelete}
+              accessibilityLabel={t('delete')}
+              onPress={() => confirmDelete(attachment)}
+            />
+          )}
+          </View>
         </Card>
       </View>
     );
@@ -78,7 +101,7 @@ function ImagesList({ attachments, getAndSetAttachments, refreshing }) {
       setLoading(false);
     }, 500);
     return clearTimeout();
-  }, [attachments]);
+  }, [attachments, canDelete]);
   if (loading)
     return (
       <View style={{ flex: 1 }}>

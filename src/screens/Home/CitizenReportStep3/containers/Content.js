@@ -313,7 +313,10 @@ function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenG
         r.reporterName = eadl.representative?.name;
         r.citizen = citizenName ?? '';
         r.contactMedium = typeOfPerson;
-        r.citizenType = citizenType;
+        // Colonne `string` (comme `Issue.citizen_type` côté serveur) : WatermelonDB remplace par
+        // `null` toute valeur d'un autre type, or les boutons radio donnent 1/2/3 — le choix de
+        // confidentialité était donc perdu à l'enregistrement. 0 = choix désélectionné.
+        r.citizenType = citizenType ? String(citizenType) : null;
         r.citizenGroup1 = citizenGroup1;
         r.citizenGroup2 = citizenGroup2;
         r.citizenOrGroup = citizenOrGroup;
