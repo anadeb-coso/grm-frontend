@@ -419,5 +419,24 @@
   "sync_full_resync_reset": "Resetting local data...\nPlease wait.", //to complete
   "sync_full_resync_downloading": "Downloading all data (page {{page}})...\nThis may take a while.", //to complete
   "done": "Done", //to complete
-  "exit": "Exit" //to complete
+  "exit": "Exit", //to complete
+  "first_login_password_title": "New password", //to complete
+  "first_login_password_heading": "Choose your password", //to complete
+  "first_login_password_intro": "Welcome ({{email}})! For your security, replace the password received by e-mail before your first login. The new password will be valid on all the platforms (DCC, MGP and SIG).", //to complete
+  "first_login_password_new": "New password", //to complete
+  "first_login_password_confirm": "Confirm the new password", //to complete
+  "first_login_password_rules": "8 to 16 letters and digits, with at least one letter and one digit.", //to complete
+  "first_login_password_submit": "Change my password", //to complete
+  "first_login_password_required": "The new password is required.", //to complete
+  "first_login_password_mismatch": "The confirmation must be the same as the new password.", //to complete
+  "first_login_password_letters_digits_only": "The password must contain only letters and numbers.", //to complete
+  "first_login_password_min_length": "The password must contain at least 8 characters.", //to complete
+  "first_login_password_max_length": "The password must contain at most 16 characters.", //to complete
+  "first_login_password_needs_letter": "The password must contain at least one letter.", //to complete
+  "first_login_password_needs_digit": "The password must contain at least one digit.", //to complete
+  "first_login_password_same_as_current": "The new password must be different from the current one.", //to complete
+  "first_login_password_error": "The password could not be changed.", //to complete
+  "first_login_password_network_error": "The server cannot be reached. Check your connection and try again.", //to complete
+  "first_login_password_success": "Your password has been changed.", //to complete
+  "first_login_password_login_again": "Your password has been changed. Log in with the new password." //to complete
 }

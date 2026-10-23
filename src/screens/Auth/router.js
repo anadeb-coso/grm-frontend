@@ -6,6 +6,7 @@ import SelectUserType from "./SelectUserType";
 import Login from "./Login/Login";
 import SignUp from "./SignUp";
 import PasswordLoss from "./PasswordLoss";
+import FirstLoginPassword from "./FirstLoginPassword/FirstLoginPassword";
 import { colors } from "../../utils/colors";
 const Stack = createStackNavigator();
 let defaultHeaderOptions = {
@@ -40,6 +41,11 @@ const AuthStack = () => {
         name="PasswordLoss"
         component={PasswordLoss}
         options={{...defaultHeaderOptions, title: t('password_forget')}}
+      />
+      <Stack.Screen
+        name="FirstLoginPassword"
+        component={FirstLoginPassword}
+        options={{...defaultHeaderOptions, title: t('first_login_password_title')}}
       />
     </Stack.Navigator>
   );

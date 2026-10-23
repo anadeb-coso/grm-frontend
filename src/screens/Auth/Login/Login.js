@@ -17,6 +17,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { login as jwtLogin } from '../../../api/client';
 import { login } from '../../../store/ducks/authentication.duck';
+import { isPasswordChangeRequiredError } from '../../../utils/firstLoginPassword';
 
 import MESSAGES from '../../../utils/formErrorMessages';
 import { emailRegex, passwordRegex } from '../../../utils/formUtils';
@@ -50,6 +51,11 @@ function Login() {
       // `jwtLogin` ci-dessus) sert à authentifier les appels suivants.
       dispatch(login({ email: data?.email }));
     } catch (error) {
+      if (isPasswordChangeRequiredError(error)) {
+        // Mot de passe initial (compte créé dans le DCC) jamais changé : écran de changement, puis connexion.
+        navigation.navigate('FirstLoginPassword', { email: data?.email, password: data?.password });
+        return;
+      }
       console.error(error);
       // `jwtLogin` (src/api/client.js) fait un appel axios brut, sans intercepteur : l'erreur HTTP
       // (401 SimpleJWT, ou erreur réseau si hors-ligne) remontait ici sans jamais être affichée —
