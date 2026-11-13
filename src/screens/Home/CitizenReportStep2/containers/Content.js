@@ -70,6 +70,9 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
   const [date, setDate] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  // Date exacte de réception de la plainte (départ du délai de traitement au niveau Village).
+  const [receivedDate, setReceivedDate] = useState(new Date());
+  const [isReceivedDatePickerVisible, setReceivedDatePickerVisible] = useState(false);
   const [recording, setRecording] = useState();
   const [items, setItems] = useState(issueTypes ?? []);
   const [recordingURI, setRecordingURI] = useState();
@@ -452,6 +455,7 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
         stepOneParams,
         stepTwoParams: {
           date: date ? date.toISOString() : undefined,
+          receivedDate: receivedDate ? receivedDate.toISOString() : undefined,
           issueType: selectedIssueType
             ? { id: selectedIssueType.id, name: selectedIssueType.name }
             : null,
@@ -612,6 +616,31 @@ function Content({ stepOneParams, issueCategories, issueTypes }) {
             }}
           />
           <Text style={[styles.stepNote, { flex: 1 }]}>{t('step_2_recurrence')}</Text>
+        </View>
+        <View style={{ paddingHorizontal: 23, paddingBottom: 10 }}>
+          <Text style={styles.stepNote}>{t('received_date_label')}</Text>
+          <Button
+            compact
+            mode="outlined"
+            uppercase={false}
+            icon="calendar"
+            style={{ alignSelf: 'flex-start', marginTop: 5, borderColor: colors.primary }}
+            labelStyle={{ color: colors.primary, fontFamily: 'Poppins_400Regular', fontSize: 13 }}
+            onPress={() => setReceivedDatePickerVisible(true)}
+          >
+            {receivedDate ? moment(receivedDate).format('DD/MM/YYYY') : t('received_date_select')}
+          </Button>
+          <DateTimePickerModal
+            isVisible={isReceivedDatePickerVisible}
+            mode="date"
+            maximumDate={new Date()}
+            date={receivedDate ?? new Date()}
+            onConfirm={(_date) => {
+              setReceivedDate(_date);
+              setReceivedDatePickerVisible(false);
+            }}
+            onCancel={() => setReceivedDatePickerVisible(false)}
+          />
         </View>
         <View
           style={{

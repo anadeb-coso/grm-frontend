@@ -26,12 +26,12 @@ const ACCOUNT_SCOPED_TABLE_NAMES = ['issues', 'phases', 'tasks', 'bp_projects', 
 // Colonnes de type date/datetime stockées en epoch ms côté WatermelonDB, mais attendues au
 // format ISO-8601 par les DateTimeField Django côté serveur (grm-backend/src/sync/serializers.py).
 const DATE_COLUMNS_BY_TABLE = {
-  issues: ['created_date', 'intake_date', 'issue_date', 'resolution_date', 'reject_date', 'publish_date'],
+  issues: ['created_date', 'intake_date', 'received_date', 'issue_date', 'resolution_date', 'resolution_real_issue_date', 'reject_date', 'publish_date'],
   comments: ['due_at'],
-  issue_status_stories: ['datetime'],
-  reasons: ['due_at'],
+  issue_status_stories: ['datetime', 'action_date'],
+  reasons: ['due_at', 'action_date'],
   escalation_reasons: ['due_at'],
-  escalation_levels: ['due_at'],
+  escalation_levels: ['due_at', 'escalation_date'],
   phases: ['open_at', 'due_at', 'closed_at'],
   tasks: ['open_at', 'due_at', 'closed_at'],
   budget_allocations: ['entry_date'],

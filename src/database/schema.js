@@ -95,6 +95,21 @@ export const ISSUE_NOTIFICATION_TABLE_DEFINITION = {
 
 // Tables filtrées par utilisateur côté serveur : vidées et retéléchargées en entier quand un autre
 // compte se connecte sur l'appareil (sync.js::prepareUserScopedTables).
+// Délais de traitement par niveau (schéma v8), en lecture seule : calcul local des plaintes en
+// retard (utils/issueDeadlines.js), cf. grm-backend/src/issue/models.py::ProcessingDelay.
+export const PROCESSING_DELAY_TABLE_DEFINITION = {
+  name: 'processing_delays',
+  columns: [
+    { name: 'level', type: 'string' }, // Village | Canton | Commune | Prefecture | Region | Country
+    { name: 'committee_name', type: 'string', isOptional: true },
+    { name: 'delay_days', type: 'number', isOptional: true },
+    { name: 'working_days', type: 'boolean' },
+    { name: 'is_deleted', type: 'boolean' },
+    { name: 'created_at', type: 'number' },
+    { name: 'updated_at', type: 'number' },
+  ],
+};
+
 export const USER_SCOPED_TABLE_NAMES = [...INTERNET_CREDIT_TABLE_NAMES, ISSUE_NOTIFICATION_TABLE_DEFINITION.name];
 
 // Les noms de colonnes des FK (`status`, `category`, `age_group`, `issue_type`, `assignee`,
@@ -103,7 +118,7 @@ export const USER_SCOPED_TABLE_NAMES = [...INTERNET_CREDIT_TABLE_NAMES, ISSUE_NO
 // REST Framework nomme un PrimaryKeyRelatedField d'après le nom du champ FK, pas `<champ>_id`.
 // Garder les mêmes noms des deux côtés évite une couche de traduction dans sync.js.
 export const schema = appSchema({
-  version: 4,
+  version: 9,
   tables: [
     tableSchema({
       name: 'issues',
@@ -117,6 +132,10 @@ export const schema = appSchema({
         { name: 'contact_medium', type: 'string', isOptional: true },
         { name: 'citizen_type', type: 'string', isOptional: true },
         { name: 'citizen_group_1', type: 'string', isOptional: true },
+        // Sexe du plaignant ('male' | 'female'), v6.
+        { name: 'gender', type: 'string', isOptional: true },
+        // Le plaignant est-il un réfugié / PDI ? (null = non renseigné), v7.
+        { name: 'refugee_or_idp', type: 'boolean', isOptional: true },
         { name: 'citizen_group_2', type: 'string', isOptional: true },
         { name: 'citizen_or_group', type: 'string', isOptional: true },
         { name: 'source', type: 'string' },
@@ -128,8 +147,12 @@ export const schema = appSchema({
         { name: 'resolution_days', type: 'number' },
         { name: 'created_date', type: 'number' },
         { name: 'intake_date', type: 'number' },
+        // Date exacte de réception (départ du délai au niveau Village), v8.
+        { name: 'received_date', type: 'number', isOptional: true },
         { name: 'issue_date', type: 'number' },
         { name: 'resolution_date', type: 'number', isOptional: true },
+        // Date réelle de la résolution sur le terrain, saisie par l'utilisateur (v5).
+        { name: 'resolution_real_issue_date', type: 'number', isOptional: true },
         { name: 'reject_date', type: 'number', isOptional: true },
         { name: 'research_result', type: 'string', isOptional: true },
 
@@ -189,6 +212,8 @@ export const schema = appSchema({
         { name: 'user_full_name', type: 'string', isOptional: true },
         { name: 'comment', type: 'string', isOptional: true },
         { name: 'datetime', type: 'number' },
+        // Date réelle de l'action (acceptation / réouverture / investigation), v9.
+        { name: 'action_date', type: 'number', isOptional: true },
         { name: 'is_deleted', type: 'boolean' },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
@@ -205,6 +230,8 @@ export const schema = appSchema({
         { name: 'user', type: 'number', isOptional: true }, // authentication.User (pk entier)
         { name: 'user_name', type: 'string', isOptional: true },
         { name: 'due_at', type: 'number', isOptional: true },
+        // Date réelle de l'étape d'investigation, v9.
+        { name: 'action_date', type: 'number', isOptional: true },
         { name: 'attachment', type: 'string', isOptional: true, isIndexed: true },
         { name: 'is_deleted', type: 'boolean' },
         { name: 'created_at', type: 'number' },
@@ -235,6 +262,8 @@ export const schema = appSchema({
         { name: 'administrative_id', type: 'number', isOptional: true },
         { name: 'name', type: 'string', isOptional: true },
         { name: 'due_at', type: 'number' },
+        // Date réelle de l'escalade (départ du délai du niveau), v8.
+        { name: 'escalation_date', type: 'number', isOptional: true },
         { name: 'is_deleted', type: 'boolean' },
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
@@ -471,5 +500,6 @@ export const schema = appSchema({
     // ---- Forfait internet CVGP (v3) : cf. grm-backend/src/internet_credits ----
     ...INTERNET_CREDIT_TABLES,
     tableSchema(ISSUE_NOTIFICATION_TABLE_DEFINITION),
+    tableSchema(PROCESSING_DELAY_TABLE_DEFINITION),
   ],
 });

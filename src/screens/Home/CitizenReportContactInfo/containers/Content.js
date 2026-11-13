@@ -29,6 +29,8 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
   const [selectedAge, setSelectedAge] = useState(null);
   const [confidentialValue, setConfidentialValue] = useState(null);
   const [citizenOrGroupChoicesValue, setCitizenOrGroupChoicesValue] = useState(null);
+  // Le plaignant est-il un réfugié / PDI ? 'yes' | 'no' | null (non renseigné).
+  const [refugeeOrIdpValue, setRefugeeOrIdpValue] = useState(null);
   const [selectedCitizenGroupI, setSelectedCitizenGroupI] = useState(null);
   const [selectedCitizenGroupII, setSelectedCitizenGroupII] = useState(null);
   const [_citizenGroupsI, setCitizenGroupsI] = useState(citizenGroupsI ?? []);
@@ -124,6 +126,22 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
             </View>
           </RadioButton.Group>
 
+          <Text />
+          <Text>{t('step_2_refugee_or_idp_label')}</Text>
+          <RadioButton.Group
+            onValueChange={(newValue) => setRefugeeOrIdpValue(newValue === refugeeOrIdpValue ? null : newValue)}
+            value={refugeeOrIdpValue}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 5 }}>
+              <RadioButton.Android value="yes" uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('answer_yes')} </Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 5 }}>
+              <RadioButton.Android value="no" uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('answer_no')} </Text>
+            </View>
+          </RadioButton.Group>
+
         </View>
 
         <Text />
@@ -197,7 +215,8 @@ function Content({ stepOneParams, issueAges, citizenGroupsI, citizenGroupsII }) 
                       citizen_group_2: selectedCitizenGroupII,
                       gender: pickerGenderValue,
                       filledOnSomebodyElseBehalf: checked,
-                      citizen_or_group: citizenOrGroupChoicesValue
+                      citizen_or_group: citizenOrGroupChoicesValue,
+                      refugee_or_idp: refugeeOrIdpValue,
                     },
                   });
                 }}

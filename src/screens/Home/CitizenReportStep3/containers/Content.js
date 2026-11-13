@@ -71,11 +71,14 @@ function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenG
   const [citizenType, setCitizenType] = useState(issue.citizen_type ?? null);
   const [citizenOrGroup, setCitizenOrGroup] = useState(issue.citizen_or_group ?? null);
   const [gender, setGender] = useState(issue.gender ?? null);
+  const [refugeeOrIdp, setRefugeeOrIdp] = useState(issue.refugee_or_idp ?? null); // 'yes' | 'no' | null
   const [ageGroup, setAgeGroup] = useState(issue.ageGroup ?? null);
   const [citizenGroup1, setCitizenGroup1] = useState(issue.citizen_group_1 ?? null);
   const [citizenGroup2, setCitizenGroup2] = useState(issue.citizen_group_2 ?? null);
   const [issueDate, setIssueDate] = useState(issue.date ? new Date(issue.date) : null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [receivedDate, setReceivedDate] = useState(issue.receivedDate ? new Date(issue.receivedDate) : new Date());
+  const [isReceivedDatePickerVisible, setReceivedDatePickerVisible] = useState(false);
   const [category, setCategory] = useState(issue.category ?? null);
   const [issueType, setIssueType] = useState(issue.issueType ?? null);
   // `react-native-dropdown-picker` exige une valeur "brute" (l'id) séparée, contrôlée par
@@ -109,11 +112,12 @@ function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenG
       stepOneParams: {
         typeOfPerson, methodOfContact, contactInfo,
         name: citizenName, citizen_type: citizenType, citizen_or_group: citizenOrGroup,
-        gender, ageGroup, citizen_group_1: citizenGroup1, citizen_group_2: citizenGroup2,
+        gender, refugee_or_idp: refugeeOrIdp, ageGroup, citizen_group_1: citizenGroup1, citizen_group_2: citizenGroup2,
         filledOnSomebodyElseBehalf: issue.filledOnSomebodyElseBehalf,
       },
       stepTwoParams: {
         date: issueDate ? issueDate.toISOString() : undefined,
+        receivedDate: receivedDate ? receivedDate.toISOString() : undefined,
         issueType, ongoingEvent, eventRecurrence, category,
         additionalDetails: description,
         attachments,
@@ -320,6 +324,8 @@ function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenG
         r.citizenGroup1 = citizenGroup1;
         r.citizenGroup2 = citizenGroup2;
         r.citizenOrGroup = citizenOrGroup;
+        r.gender = gender ?? null;
+        r.refugeeOrIdp = refugeeOrIdp === 'yes' ? true : refugeeOrIdp === 'no' ? false : null;
         r.locationInfo = {
           issue_location: issue.issueLocation,
           location_description: locationDescription,
@@ -329,6 +335,7 @@ function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenG
         r.structureInCharge = { name: structureName, phone: structurePhone, email: structureEmail };
         r.createdDate = new Date();
         r.intakeDate = new Date();
+        r.receivedDate = receivedDate ?? new Date();
         r.issueDate = issueDate ?? new Date();
         r.resolutionDays = 0;
         r.ongoingIssue = !!ongoingEvent;
@@ -644,6 +651,20 @@ function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenG
               <Text style={styles.radioLabel}>{t('female')}</Text>
             </View>
           </RadioButton.Group>
+          <Text style={styles.radioLabel}>{t('step_2_refugee_or_idp_label')}</Text>
+          <RadioButton.Group
+            onValueChange={(newValue) => setRefugeeOrIdp(newValue === refugeeOrIdp ? null : newValue)}
+            value={refugeeOrIdp}
+          >
+            <View style={radioRowStyle}>
+              <RadioButton.Android value="yes" uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('answer_yes')}</Text>
+            </View>
+            <View style={radioRowStyle}>
+              <RadioButton.Android value="no" uncheckedColor="#dedede" color={colors.primary} />
+              <Text style={styles.radioLabel}>{t('answer_no')}</Text>
+            </View>
+          </RadioButton.Group>
           {issueAges && issueAges.length > 0 && (
             <View style={{ zIndex: 5000 }}>
               <CustomDropDownPicker
@@ -728,6 +749,30 @@ function Content({ issue, eadl, issueCategories, issueTypes, issueAges, citizenG
             date={issueDate ?? new Date()}
             onConfirm={handleIssueDateConfirm}
             onCancel={hideIssueDatePicker}
+          />
+
+          <Text style={styles.stepSubtitle}>{t('received_date_label')}</Text>
+          <Button
+            compact
+            theme={theme}
+            mode="outlined"
+            uppercase={false}
+            style={{ alignSelf: 'flex-start', borderColor: colors.primary }}
+            labelStyle={{ color: colors.primary, fontFamily: 'Poppins_400Regular', fontSize: 13 }}
+            onPress={() => setReceivedDatePickerVisible(true)}
+          >
+            {receivedDate ? moment(receivedDate).format('DD/MM/YYYY') : t('received_date_select')}
+          </Button>
+          <DateTimePickerModal
+            isVisible={isReceivedDatePickerVisible}
+            mode="date"
+            maximumDate={new Date()}
+            date={receivedDate ?? new Date()}
+            onConfirm={(_date) => {
+              setReceivedDate(_date);
+              setReceivedDatePickerVisible(false);
+            }}
+            onCancel={() => setReceivedDatePickerVisible(false)}
           />
 
           <Text style={styles.stepSubtitle}>{t('step_3_field_title_2')}</Text>

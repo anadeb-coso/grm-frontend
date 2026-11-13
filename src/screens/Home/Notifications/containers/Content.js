@@ -6,20 +6,24 @@ import { useTranslation } from "react-i18next";
 import { styles } from "./Content.style";
 import CommentNotificationItem from "../components/CommentNotificationItem";
 import InternetCreditNotificationItem from "../components/InternetCreditNotificationItem";
+import OverdueVillageNotificationItem from "../components/OverdueVillageNotificationItem";
 import { useInternetCreditNotifications } from "../../../../database/internetCredits";
 import { useCommentNotifications } from "../../../../database/issueNotifications";
 import { runSyncSafely } from "../../../../database/watermelonSyncManager";
+import { useOverdueIssues } from "../../../../utils/issueDeadlines";
 import { colors } from "../../../../utils/colors";
 
 /**
  * Espace « Notifications » : issues commentées (commentaires et non lus, cf.
- * database/issueNotifications.js) et confirmations de réception du forfait internet CVGP en attente.
+ * database/issueNotifications.js), villages ayant des plaintes en retard (utils/issueDeadlines.js)
+ * et confirmations de réception du forfait internet CVGP en attente.
  */
 const Content = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const { loading: creditsLoading, items: creditItems } = useInternetCreditNotifications();
   const { loading: commentsLoading, items: commentItems } = useCommentNotifications();
+  const { loading: overdueLoading, villages: overdueVillages } = useOverdueIssues();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -31,11 +35,12 @@ const Content = () => {
     }
   }, []);
 
-  if (creditsLoading || commentsLoading) {
+  if (creditsLoading || commentsLoading || overdueLoading) {
     return <ActivityIndicator style={{ marginTop: 50 }} color={colors.primary} size="large" />;
   }
 
   const sections = [
+    { key: "overdue", title: t("overdue_notifications_section"), data: overdueVillages },
     { key: "comments", title: t("comment_notifications_section"), data: commentItems },
     { key: "internet_credits", title: t("internet_credit_notifications_section"), data: creditItems },
   ].filter((section) => section.data.length > 0);
@@ -44,7 +49,7 @@ const Content = () => {
     <SafeAreaView style={styles.container}>
       <SectionList
         sections={sections}
-        keyExtractor={(item, index) => `${item.issueId || item.id}_${index}`}
+        keyExtractor={(item, index) => `${item.issueId || item.id || item.villageId}_${index}`}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
         }
@@ -59,7 +64,12 @@ const Content = () => {
             {section.title}
           </Text>
         )}
-        renderItem={({ item, section }) => (section.key === "comments" ? (
+        renderItem={({ item, section }) => (section.key === "overdue" ? (
+          <OverdueVillageNotificationItem
+            village={item}
+            onPress={() => navigation.navigate("OverdueIssues", { villageId: item.villageId, villageName: item.villageName })}
+          />
+        ) : section.key === "comments" ? (
           <CommentNotificationItem
             notification={item}
             onPress={() => navigation.navigate("IssueComments", { issueId: item.issueId, issueCode: item.issueCode })}

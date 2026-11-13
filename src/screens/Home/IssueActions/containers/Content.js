@@ -25,6 +25,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import * as FileSystem from 'expo-file-system';
 import { Q } from '@nozbe/watermelondb';
 import { colors } from '../../../../utils/colors';
@@ -33,6 +34,8 @@ import { createWithId } from '../../../../database/utils/createWithId';
 import { runSyncSafely } from '../../../../database/watermelonSyncManager';
 import { useSyncCompletion } from '../../../../database/useSyncCompletion';
 import { toLegacyIssueShape } from '../../../../utils/issueLegacyShape';
+import { nextEscalationLevel } from '../../../../utils/escalationChain';
+import ExactDateField from '../../../../components/ExactDateField';
 import { styles } from './Content.styles';
 import LoadingScreen from '../../../../components/LoadingScreen/LoadingScreen';
 import { formatDuration, getImageSize, image_compress, getImageDimensions, getAudioDuration } from '../../../../utils/functions';
@@ -87,8 +90,17 @@ function Content({ issue, navigation, statuses = [], eadl }) {
   const [citizenName, setCitizenName] = useState();
   const [reason, onChangeReason] = useState('');
   const [escalateComment, onChangeEscalateComment] = useState('');
+  // Dates réelles (aujourd'hui par défaut, modifiables) : acceptation / réouverture, investigation.
+  const [acceptRealDate, setAcceptRealDate] = useState(new Date());
+  const [investigationRealDate, setInvestigationRealDate] = useState(new Date());
+  // Date réelle de l'escalade (aujourd'hui par défaut, modifiable) : départ du délai du niveau.
+  const [escalationRealDate, setEscalationRealDate] = useState(new Date());
+  const [isEscalationDatePickerVisible, setEscalationDatePickerVisible] = useState(false);
   const [comment, onChangeComment] = useState('');
   const [resolution, onChangeResolution] = useState('');
+  // Date réelle de la résolution sur le terrain (saisie par l'utilisateur, obligatoire).
+  const [resolutionRealDate, setResolutionRealDate] = useState(null);
+  const [isResolutionDatePickerVisible, setResolutionDatePickerVisible] = useState(false);
   const [notResolutionComment, onChangeNotResolutionComment] = useState('');
   const [isAcceptEnabled, setIsAcceptEnabled] = useState(false);
   const [isRecordResolutionEnabled, setIsRecordResolutionEnabled] = useState(false);
@@ -192,54 +204,18 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       .query(Q.where('server_id', Number(current.parentId))).fetch())[0] || null;
   };
 
-  // Logique de remontée hiérarchique (procédure de gestion des plaintes §5) :
-  //  - Village (ou tout niveau de base) → Canton (parent immédiat)
-  //  - Canton → Région si la région est "Savanes" (saute la préfecture), sinon → Préfecture
-  //    (régions Kara/Centrale)
-  //  - Préfecture ou Région → toujours National, quel que soit le niveau atteint juste avant
-  // Résolu via la vraie hiérarchie administrative (table locale), plus une liste blanche de
-  // cantons forcément incomplète.
+  // Chaîne de remontée Village -> Canton -> Commune -> National : cf. utils/escalationChain.js.
   const get_next_administrative_level = async (current_escalate_to) => {
-    const level = current_escalate_to?.administrative_level;
-
-    if (level === "Prefecture" || level === "Region") {
-      return { administrative_level: "Country", administrative_id: null, name: "TOGO" };
-    }
-
-    if (level === "Canton") {
-      const commune = await get_parent_administrative_region(current_escalate_to.administrative_id);
-      
-      if (!commune) {
-        ToastAndroid.show(`${t('error_message_for_update')}`, ToastAndroid.SHORT);
-        return null;
-      }
-
-      const prefecture = await get_parent_administrative_region(commune.serverId ?? commune.server_id);
-      
-      if (!prefecture) {
-        ToastAndroid.show(`${t('error_message_for_update')}`, ToastAndroid.SHORT);
-        return null;
-      }
-      const region = await get_parent_administrative_region(prefecture.serverId ?? prefecture.server_id);
-      
-      if (region && region.name?.toUpperCase() === 'SAVANES') {
-        return { administrative_level: region.type ?? "Region", administrative_id: region.serverId ?? region.server_id, name: region.name };
-      }
-      return { administrative_level: prefecture.type ?? "Prefecture", administrative_id: prefecture.serverId ?? prefecture.server_id, name: prefecture.name };
-    }
-
-    // Niveau initial (village, ou catégorie traitée dès un niveau de base) → canton parent.
-    const canton = await get_parent_administrative_region(current_escalate_to?.administrative_id);
-    
-    if (!canton) {
+    const next = await nextEscalationLevel(current_escalate_to, get_parent_administrative_region);
+    if (next === undefined) {
       ToastAndroid.show(`${t('error_message_for_update')}`, ToastAndroid.SHORT);
       return null;
     }
-    return { administrative_level: canton.type ?? "Canton", administrative_id: canton.serverId ?? canton.server_id, name: canton.name };
-  }
+    return next;
+  };
 
-  // Le niveau d'escalade courant se détermine par rang hiérarchique fixe (Canton -> Préfecture/
-  // Région -> Pays, cf. get_next_administrative_level ci-dessus), PAS par `created_at` : sur les
+  // Le niveau d'escalade courant se détermine par rang hiérarchique fixe (Canton -> Commune ->
+  // Pays, cf. get_next_administrative_level ci-dessus), PAS par `created_at` : sur les
   // issues migrées depuis CouchDB, `escalation_administrativelevels[]` était stocké du plus
   // récent au plus ancien (comme tous les autres tableaux legacy), et migrate_grm_issues.py a
   // recréé les lignes `EscalationLevel` dans cet ordre littéral plutôt que chronologique réel —
@@ -743,7 +719,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     });
   };
 
-  const createStatusStory = async (statusRecordId, commentMessage) => {
+  const createStatusStory = async (statusRecordId, commentMessage, actionDate = null) => {
     if (!statusRecordId) return;
     await createWithId(database.get('issue_status_stories'), (r) => {
       r.issueId = issueRecord.id;
@@ -752,12 +728,13 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       r.userFullName = eadl?.representative?.name;
       r.comment = commentMessage;
       r.datetime = new Date();
+      r.actionDate = actionDate;
     });
   };
 
-  const issue_status_stories = async (status, coment_message) => {
+  const issue_status_stories = async (status, coment_message, actionDate = null) => {
     const statusRecordId = await resolveReferenceId('issue_statuses', status?.id);
-    await createStatusStory(statusRecordId, coment_message);
+    await createStatusStory(statusRecordId, coment_message, actionDate);
     //Check Issues to sync (new issues, escalade issues, assignment)
     check_issues(null, eadl, i18n.language);
   };
@@ -767,7 +744,8 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     const commentText = ([3, 4, 5].includes(issue.status.id)) ? t('issue_was_re_opened') : t('issue_was_accepted');
     await addComment(commentText);
     await saveIssueStatus(newStatus, 'accept');
-    await issue_status_stories(newStatus, `${commentText}` + ((reason && reason?.trim() != '') ? ` [${reason}]` : ''));
+    await issue_status_stories(newStatus, `${commentText}` + ((reason && reason?.trim() != '') ? ` [${reason}]` : ''), acceptRealDate);
+    setAcceptRealDate(new Date());
   };
 
   const rejectIssue = async () => {
@@ -829,7 +807,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       el.administrativeId = nextLevel.administrative_id ? String(nextLevel.administrative_id) : null;
       el.name = nextLevel.name || null;
       el.dueAt = new Date();
+      el.escalationDate = escalationRealDate;
     });
+    setEscalationRealDate(new Date());
 
     setDisableEscalation(true);
     setEscalatedDialog(true);
@@ -855,6 +835,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       r.userId = eadl?.representative?.id;
       r.userName = eadl?.representative?.name;
       r.dueAt = due_at;
+      r.actionDate = investigationRealDate;
     });
 
     for (const att of attachments) {
@@ -865,6 +846,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
         r.userId = eadl?.representative?.id;
         r.userName = eadl?.representative?.name;
         r.dueAt = due_at;
+        r.actionDate = investigationRealDate;
         r.attachmentId = attachmentRecord.id;
       });
     }
@@ -878,6 +860,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
         r.userId = eadl?.representative?.id;
         r.userName = eadl?.representative?.name;
         r.dueAt = due_at;
+        r.actionDate = investigationRealDate;
         r.attachmentId = attachmentRecord.id;
       });
     }
@@ -890,7 +873,8 @@ function Content({ issue, navigation, statuses = [], eadl }) {
     setRecordedSteps(true);
 
     const newStatus = statuses.find((x) => x.id === issue.status.id);
-    await issue_status_stories(newStatus, comment);
+    await issue_status_stories(newStatus, comment, investigationRealDate);
+    setInvestigationRealDate(new Date());
   };
 
   const recordResolution = () => {
@@ -917,7 +901,12 @@ function Content({ issue, navigation, statuses = [], eadl }) {
       setResolvePDF();
     }
 
-    await saveIssueStatus(newStatus, 'record_resolution', { researchResult: resolution });
+    await saveIssueStatus(newStatus, 'record_resolution', {
+      researchResult: resolution,
+      resolutionDate: new Date(), // date d'enregistrement de la résolution dans l'application
+      resolutionRealIssueDate: resolutionRealDate, // date réelle saisie par l'utilisateur
+    });
+    setResolutionRealDate(null);
     _hideRecordResolutionDialog();
     await issue_status_stories(newStatus, `${t('issue_was_resolved')}` + ((resolution && resolution.trim() != '') ? ` [${resolution}]` : ''));
   };
@@ -1236,7 +1225,14 @@ function Content({ issue, navigation, statuses = [], eadl }) {
           {!acceptedDialog && <Dialog.Title>{([3, 4, 5].includes(issue.status.id)) ? (t('re_open_issue') + " ?") : (t('accept_issue') + "?")}</Dialog.Title>}
           <Dialog.Content>
             {!acceptedDialog ? (
-              <Paragraph>{t('are_you_accepting')}</Paragraph>
+              <>
+                <Paragraph>{t('are_you_accepting')}</Paragraph>
+                <ExactDateField
+                  label={t('accept_real_date_label')}
+                  value={acceptRealDate}
+                  onChange={setAcceptRealDate}
+                />
+              </>
             ) : (
               <Paragraph>{t('you_have_accepted')}</Paragraph>
             )}
@@ -1296,6 +1292,31 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   theme={theme}
                   placeholder={t('comment_placeholder')}
                   onChangeText={onChangeEscalateComment}
+                />
+
+                <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#707070', marginTop: 13, paddingHorizontal: 5 }}>
+                  {t('escalation_real_date_label')}
+                </Text>
+                <Button
+                  compact
+                  theme={theme}
+                  mode="outlined"
+                  uppercase={false}
+                  style={{ alignSelf: 'flex-start', marginTop: 5, marginHorizontal: 5, borderColor: colors.primary }}
+                  labelStyle={{ color: colors.primary, fontFamily: 'Poppins_400Regular', fontSize: 13 }}
+                  onPress={() => setEscalationDatePickerVisible(true)}
+                >
+                  {escalationRealDate ? moment(escalationRealDate).format('DD/MM/YYYY') : t('escalation_real_date_select')}
+                </Button>
+                <DateTimePickerModal
+                  isVisible={isEscalationDatePickerVisible}
+                  mode="date"
+                  maximumDate={new Date()}
+                  onConfirm={(_date) => {
+                    setEscalationRealDate(_date);
+                    setEscalationDatePickerVisible(false);
+                  }}
+                  onCancel={() => setEscalationDatePickerVisible(false)}
                 />
 
                 <View style={{ paddingHorizontal: 5 }}>
@@ -1394,7 +1415,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 {t('cancel')}
               </Button>
               <Button
-                disabled={escalateComment === '' || !(escalatePDF)}
+                disabled={escalateComment === '' || !(escalatePDF) || !escalationRealDate}
                 theme={theme}
                 style={{ alignSelf: 'center', margin: 24 }}
                 labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
@@ -1440,6 +1461,11 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   mode="outlined"
                   theme={theme}
                   onChangeText={onChangeComment}
+                />
+                <ExactDateField
+                  label={t('investigation_real_date_label')}
+                  value={investigationRealDate}
+                  onChange={setInvestigationRealDate}
                 />
 
                 <View style={{ paddingHorizontal: 5 }}>
@@ -1672,6 +1698,39 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                   onChangeText={onChangeResolution}
                 />
 
+                <Text
+                  style={{
+                    fontFamily: 'Poppins_400Regular',
+                    fontSize: 12,
+                    color: '#707070',
+                    marginTop: 13,
+                    paddingHorizontal: 5,
+                  }}
+                >
+                  {t('resolution_real_date_label')}
+                </Text>
+                <Button
+                  compact
+                  theme={theme}
+                  mode="outlined"
+                  uppercase={false}
+                  style={{ alignSelf: 'flex-start', marginTop: 5, marginHorizontal: 5, borderColor: colors.primary }}
+                  labelStyle={{ color: colors.primary, fontFamily: 'Poppins_400Regular', fontSize: 13 }}
+                  onPress={() => setResolutionDatePickerVisible(true)}
+                >
+                  {resolutionRealDate ? moment(resolutionRealDate).format('DD/MM/YYYY') : t('resolution_real_date_select')}
+                </Button>
+                <DateTimePickerModal
+                  isVisible={isResolutionDatePickerVisible}
+                  mode="date"
+                  maximumDate={new Date()}
+                  onConfirm={(_date) => {
+                    setResolutionRealDate(_date);
+                    setResolutionDatePickerVisible(false);
+                  }}
+                  onCancel={() => setResolutionDatePickerVisible(false)}
+                />
+
                 <View style={{ paddingHorizontal: 5 }}>
                   <Text
                     style={{
@@ -1756,6 +1815,9 @@ function Content({ issue, navigation, statuses = [], eadl }) {
             ) : (
               <Text>
                 {'\n'}"{resolution}"
+                {resolutionRealDate
+                  ? `\n\n${t('resolution_real_date_label')} : ${moment(resolutionRealDate).format('DD/MM/YYYY')}`
+                  : ''}
               </Text>
             )}
           </Dialog.Content>
@@ -1774,7 +1836,7 @@ function Content({ issue, navigation, statuses = [], eadl }) {
                 {t('cancel')}
               </Button>
               <Button
-                disabled={resolution === '' || !(resolvePDF)}
+                disabled={resolution === '' || !(resolvePDF) || !resolutionRealDate}
                 theme={theme}
                 style={{ alignSelf: 'center', margin: 24 }}
                 labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}

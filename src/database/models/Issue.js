@@ -24,6 +24,8 @@ export default class Issue extends Model {
   @field('contact_medium') contactMedium;
   @field('citizen_type') citizenType;
   @field('citizen_group_1') citizenGroup1;
+  @field('gender') gender;
+  @field('refugee_or_idp') refugeeOrIdp;
   @field('citizen_group_2') citizenGroup2;
   @field('citizen_or_group') citizenOrGroup;
   @field('source') source;
@@ -56,8 +58,10 @@ export default class Issue extends Model {
   @date('publish_date') publishDate;
   @date('created_date') createdDate;
   @date('intake_date') intakeDate;
+  @date('received_date') receivedDate;
   @date('issue_date') issueDate;
   @date('resolution_date') resolutionDate;
+  @date('resolution_real_issue_date') resolutionRealIssueDate;
   @date('reject_date') rejectDate;
 
   @readonly @date('created_at') createdAt;

@@ -24,6 +24,8 @@ import IssueSearch from './IssueSearch/IssueSearch';
 import Notifications from './Notifications';
 import InternetCreditConfirmation from './Notifications/InternetCreditConfirmation';
 import IssueComments from './Notifications/IssueComments';
+import OverdueIssues from './Notifications/OverdueIssues';
+import { useOverdueIssues } from '../../utils/issueDeadlines';
 import { useInternetCreditNotifications } from '../../database/internetCredits';
 import { useCommentNotifications } from '../../database/issueNotifications';
 import { subscribeRejectedRecords } from '../../database/syncEvents';
@@ -246,6 +248,11 @@ function NotificationsStackScreen() {
         options={customHeaderOptions(t('comments_section_title'))}
         component={IssueComments}
       />
+      <NotificationsStack.Screen
+        name="OverdueIssues"
+        options={customHeaderOptions(t('overdue_issues_title'))}
+        component={OverdueIssues}
+      />
       <NotificationsStack.Screen name="WorkInProgress" component={WorkInProgress} />
     </NotificationsStack.Navigator>
   );
@@ -289,11 +296,13 @@ function HomeRouter() {
   const { t } = useTranslation();
   const toast = useToast();
   // Pastille sur l'onglet Notifications : confirmations de forfait internet CVGP en attente et
-  // issues ayant des commentaires non lus.
+  // issues ayant des commentaires non lus, villages ayant des plaintes en retard.
   const { items: pendingNotifications } = useInternetCreditNotifications();
   const { items: commentNotifications } = useCommentNotifications();
+  const { villages: overdueVillages } = useOverdueIssues();
   const unreadNotificationsCount = pendingNotifications.length
-    + commentNotifications.filter((n) => n.unreadCount > 0).length;
+    + commentNotifications.filter((n) => n.unreadCount > 0).length
+    + overdueVillages.length;
 
   // Confirmation refusée par le serveur au push (forfait supprimé, hors périmètre) : elle vient
   // d'être retirée de la base locale (database/sync.js), la notification réapparaît.

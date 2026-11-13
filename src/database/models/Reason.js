@@ -18,6 +18,7 @@ export default class Reason extends Model {
   @field('is_deleted') isDeleted;
 
   @date('due_at') dueAt;
+  @date('action_date') actionDate;
 
   @readonly @date('created_at') createdAt;
   @readonly @date('updated_at') updatedAt;

@@ -147,6 +147,9 @@
 	"step_2_structure_in_charge_email": "Structure's e-mail address", //to complete
 	"step_2_validation_email": "Email is Not Correct", //to complete
 	"step_2_citizen_or_group_label": "Complainant type", //to complete
+	"step_2_refugee_or_idp_label": "Uwatanze ikirego ni impunzi / uwavanywe mu byabo?",
+	"answer_yes": "Yego",
+	"answer_no": "Oya",
 	"step_2_citizen_or_group_individual": "Individual", //to complete
 	"step_2_citizen_or_group_group": "Group", //to complete
 	"step_2_only_three_files": "You can only attach 3 files", //to complete
@@ -347,6 +350,27 @@
 	"view_history": "Reba ibyahise",
 	"summarize_resolution": "Andika mu magambo make umwanzuro wafashwe.",
 	"please_confirm_resolution": "Emeza ko iki kibazo cyakemutse.",
+	"accept_real_date_label": "Exact date of acceptance / reopening",
+	"investigation_real_date_label": "Exact date of the investigation",
+	"exact_date_label": "Exact date:",
+	"overdue_notifications_section": "Overdue complaints",
+	"overdue_issues_count": "Overdue complaints: {{count}}",
+	"overdue_issues_title": "Overdue complaints",
+	"no_overdue_issues": "No overdue complaints.",
+	"deadline_label": "Deadline:",
+	"days_late": "Late: {{count}} day(s)",
+	"level_village": "Village",
+	"level_canton": "Canton",
+	"level_commune": "Commune",
+	"level_prefecture": "Prefecture",
+	"level_region": "Region",
+	"level_country": "National",
+	"escalation_real_date_label": "Actual date of the escalation",
+	"escalation_real_date_select": "Select the escalation date",
+	"received_date_label": "Exact date of receipt of the complaint",
+	"received_date_select": "Select the date of receipt",
+	"resolution_real_date_label": "Itariki nyayo ikibazo cyakemukiyeho",
+	"resolution_real_date_select": "Hitamo itariki cyakemukiyeho",
 	"confirm": "Emeza",
 	"you_are_escalating": "Iki kibazo ugiye kugishinga inzego zo hejuru. Sobanura neza impamvu itumye ucyohereza mu nzego zigukuriye",
 	"escalated_text": "Iki kibazo cyoherejwe ku nzego zo hejuru. Ubutumwa burohererezwa uwagishyize muri porogaramu ndetse no ku muturage.",

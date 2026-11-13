@@ -197,7 +197,7 @@ function Content({ issue }) {
     const reasonsList = (await Promise.all(
       otherReasonRecords.map(async (r) => {
         if (r.subject === 'comment') {
-          return { type: 'comment', id: r.id, user_name: r.userName, due_at: r.dueAt, comment: r.comment };
+          return { type: 'comment', id: r.id, user_name: r.userName, due_at: r.dueAt, action_date: r.actionDate, comment: r.comment };
         }
         const att = await fetchAttachmentSafely(r);
         return att ? { type: 'file', id: r.id, due_at: r.dueAt, duration_f: formatDuration(await getAudioDuration(att.uri)), ...attachmentToLegacy(att) } : null;
@@ -606,6 +606,9 @@ function Content({ issue }) {
             <View>
               <Text style={styles.radioLabel}>{item.user_name}</Text>
               <Text style={styles.radioLabel}>{moment(item.due_at).format('DD-MMM-YYYY')}</Text>
+              {!!item.action_date && (
+                <Text style={styles.radioLabel}>{t('exact_date_label')} {moment(item.action_date).format('DD-MMM-YYYY')}</Text>
+              )}
             </View>
           </View>
           <Text style={styles.stepNote}>{item.comment}</Text>

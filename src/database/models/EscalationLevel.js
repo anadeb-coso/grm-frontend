@@ -15,6 +15,7 @@ export default class EscalationLevel extends Model {
   @field('is_deleted') isDeleted;
 
   @date('due_at') dueAt;
+  @date('escalation_date') escalationDate;
 
   @readonly @date('created_at') createdAt;
   @readonly @date('updated_at') updatedAt;

@@ -17,6 +17,7 @@ export default class IssueStatusStory extends Model {
   @field('is_deleted') isDeleted;
 
   @date('datetime') datetime;
+  @date('action_date') actionDate;
 
   @readonly @date('created_at') createdAt;
   @readonly @date('updated_at') updatedAt;
