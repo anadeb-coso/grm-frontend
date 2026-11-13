@@ -114,8 +114,8 @@ android {
         applicationId 'com.anadeb.grmapp'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 25
-        versionName "2.5.3"
+        versionCode 26
+        versionName "2.6.0"
     }
     signingConfigs {
         debug {

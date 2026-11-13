@@ -125,6 +125,20 @@ You'll see the apk on `\android\app\build\outputs\apk`
 - `Issue list: text and category filters now stay applied when switching status tabs (Registe / Assigned / Open / Resolved)`
 - `Issue list: filters are now evaluated against the whole issue list of the current tab, not only the issues already displayed by the paginated scroll`
 
+### 2.6.0 (26) : 2026.10.27
+- `Added a "Notifications" tab with a badge counting pending items (unconfirmed internet credits + issues with unread comments)`
+- `Internet credits (CVGP): added the internet package confirmation module — a CVGP member confirms receipt of their own package, and the community facilitator (FC/AC) confirms for the CVDs of their area; pending confirmations are computed from the local database and work offline`
+- `Comment notifications: new comments on an issue now generate a notification for the village accounts concerned, grouped by issue (most recent first) with the number of comments and unread comments; opening the notification shows the issue comments thread`
+- `Comments: added a comment composer with notification options (send an email, choose the accounts/emails to notify); comments of confidential categories encrypted on the web dashboard are now handled in the comments list`
+- `First login: an account created in the DCC must now change its initial password at the first login (new "FirstLoginPassword" screen); the new password is applied to all platforms (DCC, MGP, SIG) at once`
+- `Account switch on the same phone: the local database is now reset and fully re-downloaded when a different user logs in, so a user never sees the previous user's issues`
+- `Sync: records rejected by the server during push are now purged locally and the user is notified in their language, instead of being retried forever`
+- `Uploads: an expired access token during a file upload is now refreshed automatically and the upload retried, instead of failing with a 401 until the app is reopened`
+- `Uploads: the local copy of a photo/audio/PDF is released once it is safely on the server; screens fall back on the remote file to display it`
+- `Fixed the confidentiality choice (citizen_type) of the issue collection step being lost when saving, which prevented the citizen name from being hidden for non-assigned users`
+- `Local database schema upgraded to version 4 (escalation departments of categories, internet credits tables, comment notification columns and notifications table), with existing data recovered on the next sync`
+- `Added automated tests for account switch, internet credits, comment notifications, citizen_type handling and first-login password rules`
+
 
 ## Devices commands to know
 
