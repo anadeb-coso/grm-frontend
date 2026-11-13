@@ -139,6 +139,16 @@ You'll see the apk on `\android\app\build\outputs\apk`
 - `Local database schema upgraded to version 4 (escalation departments of categories, internet credits tables, comment notification columns and notifications table), with existing data recovered on the next sync`
 - `Added automated tests for account switch, internet credits, comment notifications, citizen_type handling and first-login password rules`
 
+### 2.7.0 (27) : 2026.11.13
+- `Processing delays: the maximum processing delay of each level (Village, Canton, Commune, National), set on the web dashboard, is now synced to the phone (read only); overdue issues are computed locally with the same rules as the web (working or calendar days, starting from the exact received date at village level or the real escalation date at the escalated level) and work offline`
+- `Notifications: new "Overdue issues" section listing the villages that have overdue issues with their number; opening a village shows its overdue issues with the level, the deadline and the number of days late`
+- `Issue intake: added the exact date the complaint was received (start of the processing delay at village level, future dates excluded) and the question "Is the complainant a refugee / IDP?" (Yes / No)`
+- `Complainant gender is now stored and synced with the issue (used by the "by actor" statistics of the web diagnostics)`
+- `Issue actions: the real date of each action can now be entered (today by default, future dates excluded): acceptance / reopening, investigation, escalation (start of the delay of the new level) and resolution (required); the exact date is shown in the issue history`
+- `Escalation now follows the Village > Canton > Commune > National chain (Prefecture and Region are skipped; an issue already at Prefecture or Region stays there and goes to National at its next escalation); the current escalation level is determined by its rank in the hierarchy instead of its creation date, which was wrong for issues migrated from CouchDB`
+- `Local database schema upgraded from version 4 to version 9 (real resolution date, gender, refugee / IDP, received date, real escalation date, processing delays table, real action dates), with the processing delays downloaded in full at the next sync`
+- `Added automated tests for real action dates, overdue issues computation and the escalation chain`
+
 
 ## Devices commands to know
 
